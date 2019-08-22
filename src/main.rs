@@ -15,8 +15,8 @@ fn make_image() -> image::Image<render::Rgba> {
     let mut surface = ImageSurface::create(Format::ARgb32, width as i32, height as i32).unwrap();
     {
         let ctx = Context::new(&surface);
-        ctx.set_source_rgb(1.0, 1.0, 1.0);
-        ctx.paint();
+        //ctx.set_source_rgb(1.0, 1.0, 1.0);
+        //ctx.paint();
 
         ctx.move_to(0.0, 0.0);
         ctx.line_to(width as f64, height as f64);
@@ -54,12 +54,29 @@ fn main() {
         },
         &render::Dummy());
 
+    use renders::{
+        playback::Playback,
+        composite::{Composite, CompositeMode}
+    };
+
     render_to_mp4(
         5.0,
         &renders::sequence::Sequence {
             first: Box::new(renders::playback::Playback {buffer: Box::new(buffer)}),
             //second: Box::new(renders::plain::Plain(render::Rgba(1.0, 0.0, 0.0, 1.0))),
-            second: Box::new(renders::image_render::ImageRender {image: Box::new(image)}),
+            //second: Box::new(renders::image_render::ImageRender {image: Box::new(image)}),
+            second: Box::new(renders::composite::Composite {
+                layers: vec![
+                    (
+                        Box::new(renders::plain::Plain(render::Rgba(0.0, 0.0, 1.0, 1.0))),
+                        renders::composite::CompositeMode::None
+                    ),
+                    (
+                        Box::new(renders::image_render::ImageRender {image: Box::new(image)}),
+                        renders::composite::CompositeMode::Normal(0.5)
+                    )
+                ]
+            }),
             time: 3.0
         });
 }
