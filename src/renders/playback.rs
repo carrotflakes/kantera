@@ -1,0 +1,45 @@
+use crate::render::{Rgba, Render, RenderOpt};
+use crate::buffer::Buffer;
+
+pub enum Interpolation {
+    NearestNeighbor,
+    Linear
+}
+
+pub struct Playback<T> {
+    pub buffer: Box<Buffer<T>>,
+//    pub interpolation: Interpolation
+}
+
+impl <T: Default + Clone> Render<T> for Playback<T> {
+    fn sample(&self, u: f64, v: f64, time: f64) -> T {
+        //let Buffer {width, height, frame_num, framerate, vec} = self.buffer;
+        let frame_num = self.buffer.frame_num;
+        let framerate = self.buffer.framerate;
+        if (0.0..=1.0).contains(&u) && (0.0..=1.0).contains(&v) &&
+            (0.0..=frame_num as f64 / framerate as f64).contains(&time) {
+                let width = self.buffer.width;
+                let height = self.buffer.height;
+                let t = time.round() as usize;
+                let x = (u * width as f64).round() as usize;
+                let y = (v * height as f64).round() as usize;
+                self.buffer.vec[t * width * height + y * width + x].clone()
+            } else {
+                T::default()
+            }
+    }
+
+    /*
+    fn render(&self, ro: RenderOpt, buffer: &mut [T]) {
+        let RenderOpt {u_res, v_res, frame_range, framerate, ..} = ro;
+        for f in frame_range.start..frame_range.end {
+            for v in 0..v_res {
+                for u in 0..u_res {
+                    buffer[(f - frame_range.start) as usize * u_res * v_res + v * u_res + u] =
+                        self.sample(u as f64 / u_res as f64, v as f64 / v_res as f64, f as f64 / framerate as f64);
+                }
+            }
+        }
+
+   /}*/
+}
