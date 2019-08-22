@@ -7,15 +7,15 @@ pub enum Size {
     Cover,
 }
 
-pub struct Image<T> {
+pub struct ImageRender<T> {
     pub image: Box<Image<T>>,
 //    pub interpolation: Interpolation
 }
 
-impl <T: Default + Clone> Render<T> for Playback<T> {
+impl <T: Default + Clone> Render<T> for ImageRender<T> {
     fn sample(&self, u: f64, v: f64, time: f64) -> T {
         if (0.0..=1.0).contains(&u) && (0.0..=1.0).contains(&v) {
-            let width = self.iamge.width;
+            let width = self.image.width;
             let height = self.image.height;
             let x = (u * width as f64).round() as usize;
             let y = (v * height as f64).round() as usize;
