@@ -22,6 +22,13 @@ fn make_image() -> image::Image<render::Rgba> {
         ctx.line_to(width as f64, height as f64);
         ctx.set_source_rgb(1.0, 0.0, 0.0);
         ctx.stroke();
+
+        ctx.set_font_size(30.0);
+        let text = "kantera";
+        let ext = ctx.text_extents(text);
+        ctx.move_to((width as f64 - ext.width) / 2.0, (height as f64 + ext.height) / 2.0);
+        ctx.set_source_rgb(0.3, 0.3, 0.3);
+        ctx.show_text(text);
     }
 
     let data = surface.get_data().unwrap();
@@ -73,7 +80,7 @@ fn main() {
                     ),
                     (
                         Box::new(renders::image_render::ImageRender {image: Box::new(image)}),
-                        renders::composite::CompositeMode::Normal(0.5)
+                        renders::composite::CompositeMode::Normal(0.9)
                     )
                 ]
             }),
