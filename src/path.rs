@@ -5,7 +5,7 @@ pub enum PointType {
     Bezier,
 }
 
-#[derive(Clone)]
+#[derive(Debug)]
 pub struct Path {
     pub points: Vec<(f64, f64, PointType)>
 }
@@ -15,6 +15,12 @@ impl Path {
         Path {
             points: vec![(0.0, first_value, PointType::Constant)]
         }
+    }
+
+    pub fn build(first_value: f64, f: &Fn(&mut Self)) -> Self {
+        let mut path = Path::new(first_value);
+        f(&mut path);
+        path
     }
 
     pub fn append(&mut self, d_time: f64, value: f64, point_type: PointType) -> &mut Self {
@@ -40,7 +46,6 @@ impl Path {
                 };
             }
         }
-        println!("oops");
         self.points.last().unwrap().1
     }
 }

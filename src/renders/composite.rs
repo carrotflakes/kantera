@@ -1,9 +1,10 @@
 use crate::render::{Rgba, Render, RenderOpt};
+use crate::path::Path;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 pub enum CompositeMode {
     None,
-    Normal(f64)
+    Normal(Path)
 }
 
 pub struct Composite {
@@ -16,8 +17,8 @@ impl Render<Rgba> for Composite {
         for (render, cm) in &self.layers {
             value = match cm {
                 CompositeMode::None => render.sample(u, v, time),
-                CompositeMode::Normal(alpha) =>
-                    value.normal_blend(&render.sample(u, v, time), *alpha)
+                CompositeMode::Normal(alpha_path) =>
+                    value.normal_blend(&render.sample(u, v, time), alpha_path.get_value(time))
             };
         }
         value
