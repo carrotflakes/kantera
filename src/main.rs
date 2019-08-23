@@ -86,10 +86,9 @@ fn main() {
                     (
                         Box::new(ImageRender {image: Box::new(image)}),
                         CompositeMode::Normal(
-                            Path::build(0.0, &|path| {
-                                path.append(3.0, 0.0, PointType::Constant)
-                                    .append(2.0, 1.0, PointType::Linear);
-                            })
+                            Path::new(0.0)
+                                .append(3.0, 0.0, PointType::Constant)
+                                .append(2.0, 1.0, PointType::Linear)
                         )
                     )
                 ]

@@ -17,13 +17,7 @@ impl Path {
         }
     }
 
-    pub fn build(first_value: f64, f: &Fn(&mut Self)) -> Self {
-        let mut path = Path::new(first_value);
-        f(&mut path);
-        path
-    }
-
-    pub fn append(&mut self, d_time: f64, value: f64, point_type: PointType) -> &mut Self {
+    pub fn append(mut self, d_time: f64, value: f64, point_type: PointType) -> Self {
         assert!(0.0 <= d_time);
         self.points.push((self.points.last().unwrap().0 + d_time, value, point_type));
         self
