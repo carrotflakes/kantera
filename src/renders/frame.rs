@@ -24,7 +24,7 @@ impl <T> Render<T> for Frame<T> {
         }
     }
 
-    fn render(&self, ro: RenderOpt, buffer: &mut [T]) {
+    fn render(&self, ro: &RenderOpt, buffer: &mut [T]) {
         //let RenderOpt {u_res, v_res, frame_range, framerate, ..} = ro;
         self.child.render(ro, buffer);
     }

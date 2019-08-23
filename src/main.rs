@@ -10,7 +10,7 @@ mod renders;
 fn make_image() -> image::Image<render::Rgba> {
     use cairo::{ImageSurface, Format, Context};
 
-    let (width, height) = (320usize, 240usize);
+    let (width, height) = (640usize, 480usize);
     let mut surface = ImageSurface::create(Format::ARgb32, width as i32, height as i32).unwrap();
     {
         let ctx = Context::new(&surface);
@@ -60,7 +60,7 @@ fn main() {
 
     let image = make_image();
     let buffer = render_to_buffer(
-        render::RenderOpt {
+        &render::RenderOpt {
             u_range: 0.0..1.0,
             u_res: 20,
             v_range: 0.0..1.0,

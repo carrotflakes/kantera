@@ -15,33 +15,33 @@ impl <T> Render<T> for Sequence<T> {
         }.sample(u, v, time)
     }
 
-    fn render(&self, ro: RenderOpt, buffer: &mut [T]) {
+    fn render(&self, ro: &RenderOpt, buffer: &mut [T]) {
         let RenderOpt {u_res, v_res, frame_range, framerate, ..} = ro;
         let frame_size = u_res * v_res;
 
         {
-            let sep = frame_range.end.min((self.time * framerate as f64).floor() as i32);
+            let sep = frame_range.end.min((self.time * *framerate as f64).floor() as i32);
             if frame_range.start < sep {
-                self.first.render(RenderOpt {
+                self.first.render(&RenderOpt {
                     u_range: ro.u_range.start..ro.u_range.end,
                     u_res: ro.u_res,
                     v_range: ro.v_range.start..ro.v_range.end,
                     v_res: ro.v_res,
                     frame_range: frame_range.start..sep,
-                    framerate: framerate
+                    framerate: *framerate
                 }, &mut buffer[..(sep - frame_range.start as i32) as usize * frame_size]);
             }
         }
         {
-            let sep = frame_range.start.max((self.time * framerate as f64).floor() as i32);
+            let sep = frame_range.start.max((self.time * *framerate as f64).floor() as i32);
             if sep <= frame_range.end {
-                self.second.render(RenderOpt {
+                self.second.render(&RenderOpt {
                     u_range: ro.u_range.start..ro.u_range.end,
                     u_res: ro.u_res,
                     v_range: ro.v_range.start..ro.v_range.end,
                     v_res: ro.v_res,
                     frame_range: sep..frame_range.end,
-                    framerate: framerate
+                    framerate: *framerate
                 }, &mut buffer[(sep - frame_range.start as i32) as usize * frame_size..]);
             }
         }

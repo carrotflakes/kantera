@@ -7,11 +7,11 @@ impl <T: Copy> Render<T> for Plain<T> {
         self.0
     }
 
-    fn render(&self, ro: RenderOpt, buffer: &mut [T]) {
+    fn render(&self, ro: &RenderOpt, buffer: &mut [T]) {
         let RenderOpt {u_res, v_res, frame_range, framerate, ..} = ro;
         for f in frame_range.start..frame_range.end {
-            for v in 0..v_res {
-                for u in 0..u_res {
+            for v in 0..*v_res {
+                for u in 0..*u_res {
                     buffer[(f - frame_range.start) as usize * u_res * v_res + v * u_res + u] =
                         self.0;
                 }

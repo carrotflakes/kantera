@@ -31,7 +31,7 @@ pub fn render_to_mp4(sec: f64, width: usize, height: usize, framerate: usize, re
         .expect("failed to execute child");
     let child_stdin = child.stdin.as_mut().expect("failed to get stdin");
     for f in 0..frames as i32 {
-        render.render(RenderOpt {
+        render.render(&RenderOpt {
             u_range: 0.0..1.0,
             u_res: width,
             v_range: 0.0..1.0,
@@ -45,10 +45,10 @@ pub fn render_to_mp4(sec: f64, width: usize, height: usize, framerate: usize, re
     child.wait().expect("child process wasn't running");
 }
 
-pub fn render_to_buffer(ro: RenderOpt, render: &Render<Rgba>) -> Buffer<Rgba> {
+pub fn render_to_buffer(ro: &RenderOpt, render: &Render<Rgba>) -> Buffer<Rgba> {
     let frame_num = (ro.frame_range.end - ro.frame_range.start) as usize;
     let mut vec = vec![Rgba::default(); ro.u_res * ro.v_res * frame_num];
-    render.render(ro.clone(), vec.as_mut_slice());
+    render.render(ro, vec.as_mut_slice());
     Buffer {
         width: ro.u_res,
         height: ro.v_res,
