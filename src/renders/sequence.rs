@@ -54,5 +54,16 @@ impl <T: Default> Render<T> for Sequence<T> {
     }
 }
 
-//impl <T: Default> Sequence<T> {
-//}
+impl <T: Default> Sequence<T> {
+    pub fn new() -> Self {
+        Sequence {
+            pages: vec![]
+        }
+    }
+
+    pub fn append(mut self, time: f64, restart: bool, render: Box<Render<T>>) -> Self {
+        self.pages.push((time, restart, render));
+        self
+    }
+
+}

@@ -76,37 +76,34 @@ fn main() {
         640,
         480,
         30,
-        &Sequence {
-            pages: vec![
-                (
-                    0.0,
-                    true,
-                    Box::new(Playback {buffer: Box::new(buffer)})
-                ),
-                (
-                    3.0,
-                    true,
-                    Box::new(Composite {
-                        layers: vec![
-                            (
-                                Box::new(Plain(render::Rgba(0.0, 0.0, 1.0, 1.0))),
-                                CompositeMode::None
-                            ),
-                            (
-                                Box::new(Transform {
-                                    render: Box::new(ImageRender {image: Box::new(image)}),
-                                    transformer: Box::new(|u, v, time| (u, v, time))
-                                }),
-                                CompositeMode::Normal(
-                                    Path::new(0.0)
-                                        .append(1.0, 1.0, PointType::Linear)
-                                )
+        &Sequence::new()
+            .append(
+                0.0,
+                true,
+                Box::new(Playback {buffer: Box::new(buffer)})
+            )
+            .append(
+                3.0,
+                true,
+                Box::new(Composite {
+                    layers: vec![
+                        (
+                            Box::new(Plain(render::Rgba(0.0, 0.0, 1.0, 1.0))),
+                            CompositeMode::None
+                        ),
+                        (
+                            Box::new(Transform {
+                                render: Box::new(ImageRender {image: Box::new(image)}),
+                                transformer: Box::new(|u, v, time| (u, v, time))
+                            }),
+                            CompositeMode::Normal(
+                                Path::new(0.0)
+                                    .append(1.0, 1.0, PointType::Linear)
                             )
-                        ]
-                    })
-                )
-            ]
-        });
+                        )
+                    ]
+                })
+            ));
 
     println!("done!");
 }
