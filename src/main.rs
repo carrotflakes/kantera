@@ -54,7 +54,8 @@ fn main() {
         sequence::Sequence,
         playback::Playback,
         image_render::ImageRender,
-        composite::{Composite, CompositeMode}
+        composite::{Composite, CompositeMode},
+        transform::Transform
     };
     use path::{Path, PointType};
 
@@ -79,10 +80,12 @@ fn main() {
             pages: vec![
                 (
                     0.0,
+                    true,
                     Box::new(Playback {buffer: Box::new(buffer)})
                 ),
                 (
                     3.0,
+                    true,
                     Box::new(Composite {
                         layers: vec![
                             (
@@ -90,11 +93,13 @@ fn main() {
                                 CompositeMode::None
                             ),
                             (
-                                Box::new(ImageRender {image: Box::new(image)}),
+                                Box::new(Transform {
+                                    render: Box::new(ImageRender {image: Box::new(image)}),
+                                    transformer: Box::new(|u, v, time| (u, v, time))
+                                }),
                                 CompositeMode::Normal(
                                     Path::new(0.0)
-                                        .append(3.0, 0.0, PointType::Constant)
-                                        .append(2.0, 1.0, PointType::Linear)
+                                        .append(1.0, 1.0, PointType::Linear)
                                 )
                             )
                         ]
