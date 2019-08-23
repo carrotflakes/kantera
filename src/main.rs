@@ -6,6 +6,7 @@ mod path;
 mod render;
 mod export;
 mod renders;
+mod util;
 
 fn make_image() -> image::Image<render::Rgba> {
     use cairo::{ImageSurface, Format, Context};
@@ -22,11 +23,11 @@ fn make_image() -> image::Image<render::Rgba> {
         ctx.set_source_rgb(1.0, 0.0, 0.0);
         ctx.stroke();
 
-        ctx.set_font_size(30.0);
+        ctx.set_font_size(60.0);
         let text = "kantera";
         let ext = ctx.text_extents(text);
         ctx.move_to((width as f64 - ext.width) / 2.0, (height as f64 + ext.height) / 2.0);
-        ctx.set_source_rgb(0.3, 0.3, 0.3);
+        ctx.set_source_rgb(0.9, 0.9, 0.9);
         ctx.show_text(text);
     }
 
@@ -55,9 +56,11 @@ fn main() {
         playback::Playback,
         image_render::ImageRender,
         composite::{Composite, CompositeMode},
-        transform::Transform
+        transform::Transform,
+        sample::Sample
     };
     use path::{Path, PointType};
+    use util::hsl_to_rgb;
 
     let image = make_image();
     let buffer = render_to_buffer(
@@ -72,7 +75,7 @@ fn main() {
         &render::Dummy());
 
     render_to_mp4(
-        5.0,
+        10.0,
         640,
         480,
         30,
@@ -80,7 +83,19 @@ fn main() {
             .append(
                 0.0,
                 true,
-                Box::new(Playback {buffer: Box::new(buffer)})
+                Box::new(Transform {
+                    render: Box::new(Playback {buffer: Box::new(buffer)}),
+                    transformer: Box::new(|u, v, time| {
+                        //let rad = time * 2.0;
+                        (
+                            //(u - 0.5) * rad.cos() + (v - 0.5) * rad.sin() + 0.5,
+                            //(v - 0.5) * rad.cos() - (u - 0.5) * rad.sin() + 0.5,
+                            u + (time * 15.0 + v * 40.0).sin() * 0.02 * (time - 1.0).max(0.0),
+                            v,
+                            time
+                        )
+                    })
+                })
             )
             .append(
                 3.0,
@@ -88,14 +103,18 @@ fn main() {
                 Box::new(Composite {
                     layers: vec![
                         (
-                            Box::new(Plain(render::Rgba(0.0, 0.0, 1.0, 1.0))),
+                            //Box::new(Plain(render::Rgba(0.0, 0.0, 1.0, 1.0))),
+                            Box::new(Box::new(|u: f64, v: f64, time: f64| {
+                                let (r, g, b) = hsl_to_rgb(
+                                    v * 0.2 + 0.5,
+                                    1.0,
+                                    ((u * 10.0).sin() + (v * 10.0).sin() + time).cos() * 0.25 + 0.5);
+                                render::Rgba(r, g, b, 1.0)
+                            }) as Sample<render::Rgba>),
                             CompositeMode::None
                         ),
                         (
-                            Box::new(Transform {
-                                render: Box::new(ImageRender {image: Box::new(image)}),
-                                transformer: Box::new(|u, v, time| (u, v, time))
-                            }),
+                            Box::new(ImageRender {image: Box::new(image)}),
                             CompositeMode::Normal(
                                 Path::new(0.0)
                                     .append(1.0, 1.0, PointType::Linear)
