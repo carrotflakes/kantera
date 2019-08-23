@@ -76,24 +76,31 @@ fn main() {
         480,
         30,
         &Sequence {
-            first: Box::new(Playback {buffer: Box::new(buffer)}),
-            second: Box::new(Composite {
-                layers: vec![
-                    (
-                        Box::new(Plain(render::Rgba(0.0, 0.0, 1.0, 1.0))),
-                        CompositeMode::None
-                    ),
-                    (
-                        Box::new(ImageRender {image: Box::new(image)}),
-                        CompositeMode::Normal(
-                            Path::new(0.0)
-                                .append(3.0, 0.0, PointType::Constant)
-                                .append(2.0, 1.0, PointType::Linear)
-                        )
-                    )
-                ]
-            }),
-            time: 3.0
+            pages: vec![
+                (
+                    0.0,
+                    Box::new(Playback {buffer: Box::new(buffer)})
+                ),
+                (
+                    3.0,
+                    Box::new(Composite {
+                        layers: vec![
+                            (
+                                Box::new(Plain(render::Rgba(0.0, 0.0, 1.0, 1.0))),
+                                CompositeMode::None
+                            ),
+                            (
+                                Box::new(ImageRender {image: Box::new(image)}),
+                                CompositeMode::Normal(
+                                    Path::new(0.0)
+                                        .append(3.0, 0.0, PointType::Constant)
+                                        .append(2.0, 1.0, PointType::Linear)
+                                )
+                            )
+                        ]
+                    })
+                )
+            ]
         });
 
     println!("done!");
