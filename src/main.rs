@@ -68,6 +68,9 @@ fn main() {
 
     render_to_mp4(
         5.0,
+        640,
+        480,
+        30,
         &renders::sequence::Sequence {
             first: Box::new(renders::playback::Playback {buffer: Box::new(buffer)}),
             //second: Box::new(renders::plain::Plain(render::Rgba(1.0, 0.0, 0.0, 1.0))),
@@ -86,4 +89,6 @@ fn main() {
             }),
             time: 3.0
         });
+
+    println!("done!");
 }

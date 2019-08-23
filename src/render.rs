@@ -31,12 +31,18 @@ pub trait Render<T> {
     fn sample(&self, u: f64, v: f64, time: f64) -> T;
 
     fn render(&self, ro: RenderOpt, buffer: &mut [T]) {
-        let RenderOpt {u_res, v_res, frame_range, framerate, ..} = ro;
+        let RenderOpt {u_range, u_res, v_range, v_res, frame_range, framerate, ..} = ro;
         for f in frame_range.start..frame_range.end {
-            for v in 0..v_res {
-                for u in 0..u_res {
-                    buffer[(f - frame_range.start) as usize * u_res * v_res + v * u_res + u] =
-                        self.sample(u as f64 / u_res as f64, v as f64 / v_res as f64, f as f64 / framerate as f64);
+            let time = f as f64 / framerate as f64;
+            for y in 0..v_res {
+                let v = y as f64 / v_res as f64;
+                for x in 0..u_res {
+                    let u = x as f64 / u_res as f64;
+                    buffer[(f - frame_range.start) as usize * u_res * v_res + y * u_res + x] =
+                        self.sample(
+                            u * (u_range.end - u_range.start) + u_range.start,
+                            v * (v_range.end - v_range.start) + v_range.start,
+                            time);
                 }
             }
         }

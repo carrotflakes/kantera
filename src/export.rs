@@ -13,18 +13,15 @@ pub fn rgbas_to_u8s(block: &[Rgba], u8s: &mut [u8]) {
     }
 }
 
-pub fn render_to_mp4(sec: f64, render: &Render<Rgba>) {
-    let width: usize = 320;
-    let height: usize = 240;
-    let framerate: usize = 30;
+pub fn render_to_mp4(sec: f64, width: usize, height: usize, framerate: usize, render: &Render<Rgba>) {
     let frames: usize = (framerate as f64 * sec).floor() as usize;
-    let mut render_buffer = vec![Rgba(0.0, 0.0, 0.0, 1.0); width * height];
+    let mut render_buffer = vec![Rgba::default(); width * height];
     let mut buffer = vec![0u8; width * height * 4];
     let mut child = Command::new("/bin/sh")
         .args(&[
             "-c",
             format!(
-                "ffmpeg -f rawvideo -pix_fmt bgra -s {width}x{height} -i - -pix_fmt yuv420p -r {framerate} -y {output}",
+                "ffmpeg -f rawvideo -pix_fmt bgra -s {width}x{height} -r {framerate} -i - -pix_fmt yuv420p -y {output}",
                 width = width,
                 height = height,
                 framerate = framerate,
@@ -49,12 +46,13 @@ pub fn render_to_mp4(sec: f64, render: &Render<Rgba>) {
 }
 
 pub fn render_to_buffer(ro: RenderOpt, render: &Render<Rgba>) -> Buffer<Rgba> {
-    let mut vec = vec![Rgba(0.0, 0.0, 0.0, 1.0); ro.u_res * ro.v_res * (ro.frame_range.end - ro.frame_range.start) as usize];
+    let frame_num = (ro.frame_range.end - ro.frame_range.start) as usize;
+    let mut vec = vec![Rgba::default(); ro.u_res * ro.v_res * frame_num];
     render.render(ro.clone(), vec.as_mut_slice());
     Buffer {
         width: ro.u_res,
         height: ro.v_res,
-        frame_num: (ro.frame_range.end - ro.frame_range.start) as usize,
+        frame_num: frame_num,
         framerate: ro.framerate,
         vec: vec
     }

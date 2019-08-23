@@ -16,13 +16,14 @@ impl <T: Default + Clone> Render<T> for Playback<T> {
         //let Buffer {width, height, frame_num, framerate, vec} = self.buffer;
         let frame_num = self.buffer.frame_num;
         let framerate = self.buffer.framerate;
-        if (0.0..=1.0).contains(&u) && (0.0..=1.0).contains(&v) &&
-            (0.0..=frame_num as f64 / framerate as f64).contains(&time) {
-                let width = self.buffer.width;
-                let height = self.buffer.height;
-                let t = time.round() as usize;
-                let x = (u * width as f64).round() as usize;
-                let y = (v * height as f64).round() as usize;
+        let width = self.buffer.width;
+        let height = self.buffer.height;
+        let t = (time * framerate as f64).floor() as usize;
+        let x = (u * width as f64).floor() as usize;
+        let y = (v * height as f64).floor() as usize;
+        if (0..width).contains(&x) &&
+            (0..height).contains(&y) &&
+            (0..frame_num).contains(&t) {
                 self.buffer.vec[t * width * height + y * width + x].clone()
             } else {
                 T::default()

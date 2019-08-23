@@ -1,3 +1,4 @@
+#[derive(Debug)]
 pub struct Buffer<T> {
     pub width: usize,
     pub height: usize,
