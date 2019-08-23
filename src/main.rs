@@ -7,10 +7,9 @@ mod render;
 mod export;
 mod renders;
 
-use cairo::{ImageSurface, Format, Context};
-use export::{render_to_mp4, render_to_buffer};
-
 fn make_image() -> image::Image<render::Rgba> {
+    use cairo::{ImageSurface, Format, Context};
+
     let (width, height) = (320usize, 240usize);
     let mut surface = ImageSurface::create(Format::ARgb32, width as i32, height as i32).unwrap();
     {
@@ -49,6 +48,15 @@ fn make_image() -> image::Image<render::Rgba> {
 }
 
 fn main() {
+    use export::{render_to_mp4, render_to_buffer};
+    use renders::{
+        plain::Plain,
+        sequence::Sequence,
+        playback::Playback,
+        image_render::ImageRender,
+        composite::{Composite, CompositeMode}
+    };
+
     let image = make_image();
     let buffer = render_to_buffer(
         render::RenderOpt {
@@ -61,29 +69,22 @@ fn main() {
         },
         &render::Dummy());
 
-    use renders::{
-        playback::Playback,
-        composite::{Composite, CompositeMode}
-    };
-
     render_to_mp4(
         5.0,
         640,
         480,
         30,
-        &renders::sequence::Sequence {
-            first: Box::new(renders::playback::Playback {buffer: Box::new(buffer)}),
-            //second: Box::new(renders::plain::Plain(render::Rgba(1.0, 0.0, 0.0, 1.0))),
-            //second: Box::new(renders::image_render::ImageRender {image: Box::new(image)}),
-            second: Box::new(renders::composite::Composite {
+        &Sequence {
+            first: Box::new(Playback {buffer: Box::new(buffer)}),
+            second: Box::new(Composite {
                 layers: vec![
                     (
-                        Box::new(renders::plain::Plain(render::Rgba(0.0, 0.0, 1.0, 1.0))),
-                        renders::composite::CompositeMode::None
+                        Box::new(Plain(render::Rgba(0.0, 0.0, 1.0, 1.0))),
+                        CompositeMode::None
                     ),
                     (
-                        Box::new(renders::image_render::ImageRender {image: Box::new(image)}),
-                        renders::composite::CompositeMode::Normal(0.9)
+                        Box::new(ImageRender {image: Box::new(image)}),
+                        CompositeMode::Normal(0.9)
                     )
                 ]
             }),
