@@ -79,6 +79,7 @@ fn main() {
         640,
         480,
         30,
+        1,
         &Sequence::new()
             .append(
                 0.0,
