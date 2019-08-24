@@ -57,7 +57,8 @@ fn main() {
         image_render::ImageRender,
         composite::{Composite, CompositeMode},
         transform::Transform,
-        sample::Sample
+        sample::Sample,
+        bokeh::Bokeh
     };
     use path::{Path, PointType};
     use util::hsl_to_rgb;
@@ -115,7 +116,13 @@ fn main() {
                             CompositeMode::None
                         ),
                         (
-                            Box::new(ImageRender {image: Box::new(image)}),
+                            Box::new(Bokeh {
+                                render: Box::new(ImageRender {image: Box::new(image)}),
+                                max_size: 10,
+                                size_path: Path::new(0.0)
+                                    .append(6.0, 0.0, PointType::Constant)
+                                    .append(1.0, 10.0, PointType::Linear)
+                            }),
                             CompositeMode::Normal(
                                 Path::new(0.0)
                                     .append(1.0, 1.0, PointType::Linear)
