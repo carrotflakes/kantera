@@ -7,3 +7,4 @@ pub mod transform;
 pub mod sample;
 pub mod bokeh;
 pub mod frame;
+pub mod time_extrapolate;
