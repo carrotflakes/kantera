@@ -3,12 +3,8 @@ extern crate kantera;
 use kantera::render::{Rgba, Render, RenderOpt, Dummy};
 
 fn make_image() -> kantera::image::Image<Rgba> {
-    use kantera::cairo::{ImageSurface, Format, Context};
-
-    let (width, height) = (640usize, 480usize);
-    let mut surface = ImageSurface::create(Format::ARgb32, width as i32, height as i32).unwrap();
-    {
-        let ctx = Context::new(&surface);
+    let (width, height) = (320, 240);
+    kantera::cairo::render_image(width, height, &|ctx| {
         //ctx.set_source_rgb(1.0, 1.0, 1.0);
         //ctx.paint();
 
@@ -23,23 +19,7 @@ fn make_image() -> kantera::image::Image<Rgba> {
         ctx.move_to((width as f64 - ext.width) / 2.0, (height as f64 + ext.height) / 2.0);
         ctx.set_source_rgb(0.9, 0.9, 0.9);
         ctx.show_text(text);
-    }
-
-    let data = surface.get_data().unwrap();
-    let mut vec = Vec::with_capacity(width * height);
-    for i in 0..width * height {
-        vec.push(Rgba(
-            data[i * 4 + 2] as f64 / 255.0,
-            data[i * 4 + 1] as f64 / 255.0,
-            data[i * 4 + 0] as f64 / 255.0,
-            data[i * 4 + 3] as f64 / 255.0
-        ));
-    }
-    kantera::image::Image {
-        width: width,
-        height: height,
-        vec: vec
-    }
+    })
 }
 
 fn main() {

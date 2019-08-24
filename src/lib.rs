@@ -1,5 +1,4 @@
-pub extern crate cairo;
-
+pub mod cairo;
 pub mod buffer;
 pub mod image;
 pub mod path;
