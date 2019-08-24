@@ -1,4 +1,4 @@
-use crate::render::{Rgba, Render, RenderOpt};
+use crate::render::{Render, RenderOpt};
 
 #[derive(Debug, Copy, Clone)]
 pub enum ExtrapolationType<T: Copy> {

@@ -2,7 +2,8 @@ use std::io::Write;
 use std::process::{Command, Stdio};
 
 use crate::buffer::Buffer;
-use crate::render::{Rgba, Render, RenderOpt};
+use crate::pixel::Rgba;
+use crate::render::{Render, RenderOpt};
 
 pub fn rgbas_to_u8s(block: &[Rgba], u8s: &mut [u8]) {
     for i in 0..block.len() {

@@ -1,4 +1,4 @@
-use crate::render::{Rgba, Render, RenderOpt};
+use crate::render::{Render, RenderOpt};
 
 pub struct Sequence<T: Default> {
     pub pages: Vec<(f64, bool, Box<Render<T>>)>

@@ -1,7 +1,7 @@
 extern crate cairo;
 
 use cairo::{Context, ImageSurface, Format};
-use crate::render::Rgba;
+use crate::pixel::Rgba;
 use crate::image::Image;
 
 pub fn render_image(width: usize, height: usize, builder: &Fn(Context)) -> Image<Rgba> {

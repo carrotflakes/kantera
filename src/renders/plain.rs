@@ -1,4 +1,4 @@
-use crate::render::{Rgba, Render, RenderOpt};
+use crate::render::{Render, RenderOpt};
 
 pub struct Plain<T: Copy>(pub T);
 

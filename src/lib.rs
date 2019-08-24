@@ -1,4 +1,5 @@
 pub mod cairo;
+pub mod pixel;
 pub mod buffer;
 pub mod image;
 pub mod path;

@@ -1,4 +1,4 @@
-use crate::render::{Rgba, Render, RenderOpt};
+use crate::render::{Render, RenderOpt};
 
 pub type Sample<T: Copy> = Box<Fn(f64, f64, f64) -> T>;
 

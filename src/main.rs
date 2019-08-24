@@ -1,6 +1,7 @@
 extern crate kantera;
 
-use kantera::render::{Rgba, Render, RenderOpt, Dummy};
+use kantera::pixel::Rgba;
+use kantera::render::{Render, RenderOpt, Dummy};
 
 fn make_image() -> kantera::image::Image<Rgba> {
     let (width, height) = (640, 480);

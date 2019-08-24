@@ -1,4 +1,5 @@
-use crate::render::{Rgba, Render, RenderOpt};
+use crate::pixel::Rgba;
+use crate::render::{Render, RenderOpt};
 use crate::path::Path;
 
 pub struct Bokeh {

@@ -1,4 +1,4 @@
-use crate::render::{Rgba, Render, RenderOpt};
+use crate::render::{Render, RenderOpt};
 use crate::buffer::Buffer;
 
 pub enum Interpolation {

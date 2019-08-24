@@ -1,4 +1,4 @@
-use crate::render::{Rgba, Render, RenderOpt};
+use crate::render::{Render, RenderOpt};
 
 pub struct Transform<T> {
     pub render: Box<Render<T>>,
