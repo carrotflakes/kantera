@@ -58,7 +58,8 @@ fn main() {
         composite::{Composite, CompositeMode},
         transform::Transform,
         sample::Sample,
-        bokeh::Bokeh
+        bokeh::Bokeh,
+        frame::{Frame, FrameType}
     };
     use path::{Path, PointType};
     use util::hsl_to_rgb;
@@ -76,7 +77,7 @@ fn main() {
         &render::Dummy());
 
     render_to_mp4(
-        10.0,
+        10.5,
         640,
         480,
         30,
@@ -86,13 +87,16 @@ fn main() {
                 0.0,
                 true,
                 Box::new(Transform {
-                    render: Box::new(Playback {buffer: Box::new(buffer)}),
+                    render: Box::new(Frame {
+                        render: Box::new(Playback {buffer: Box::new(buffer)}),
+                        frame_type: FrameType::Repeat
+                    }),
                     transformer: Box::new(|u, v, time| {
                         //let rad = time * 2.0;
                         (
                             //(u - 0.5) * rad.cos() + (v - 0.5) * rad.sin() + 0.5,
                             //(v - 0.5) * rad.cos() - (u - 0.5) * rad.sin() + 0.5,
-                            u + (time * 15.0 + v * 40.0).sin() * 0.02 * (time - 1.0).max(0.0),
+                            u + (time * 15.0 + v * 40.0).sin() * 0.1 * (time - 1.0).max(0.0),
                             v,
                             time
                         )

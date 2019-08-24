@@ -1,31 +1,40 @@
 use crate::render::{Rgba, Render, RenderOpt};
 
-pub enum FrameType<T> {
+#[derive(Debug, Copy, Clone)]
+pub enum FrameType<T: Copy> {
     Constant(T),
+    Extend,
     Repeat,
     Reflect
 }
 
-pub struct Frame<T> {
-    pub child: Box<Render<T>>,
+pub struct Frame<T: Copy> {
+    pub render: Box<Render<T>>,
     pub frame_type: FrameType<T>
 }
 
-impl <T> Render<T> for Frame<T> {
+impl <T: Copy> Render<T> for Frame<T> {
     fn sample(&self, u: f64, v: f64, time: f64) -> T {
-        if (0.0..=1.0).contains(u) && (0.0..=1.0).contains(v) {
-            self.child.sample(u, v, time)
+        if (0.0..=1.0).contains(&u) && (0.0..=1.0).contains(&v) {
+            self.render.sample(u, v, time)
         } else {
-            match self.frame_type {
-                Constant(t) => t,
-                Repeat => self.child.sample(u, v, time),
-                Reflect => self.child.sample(u, v, time)
+            match &self.frame_type {
+                FrameType::Constant(t) => *t,
+                FrameType::Extend =>
+                    self.render.sample(
+                        u.max(0.0).min(0.9999999),
+                        v.max(0.0).min(0.9999999),
+                        time
+                    ),
+                FrameType::Repeat => self.render.sample(
+                    u - u.floor(),
+                    v - v.floor(),
+                    time),
+                FrameType::Reflect => self.render.sample(
+                    if (u.floor() as i32) % 2 == 0 {u - u.floor()} else {1.0 - u + u.floor()},
+                    if (v.floor() as i32) % 2 == 0 {v - v.floor()} else {1.0 - v + v.floor()},
+                    time)
             }
         }
-    }
-
-    fn render(&self, ro: &RenderOpt, buffer: &mut [T]) {
-        //let RenderOpt {u_res, v_res, frame_range, framerate, ..} = ro;
-        self.child.render(ro, buffer);
     }
 }
