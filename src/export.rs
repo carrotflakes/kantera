@@ -71,9 +71,17 @@ pub fn render_to_mp4(
 }
 
 pub fn render_to_buffer(ro: &RenderOpt, render: &Render<Rgba>) -> Buffer<Rgba> {
+    println!("render start: {:#?}", ro);
+    let start = std::time::Instant::now();
+
     let frame_num = (ro.frame_range.end - ro.frame_range.start) as usize;
     let mut vec = vec![Rgba::default(); ro.u_res * ro.v_res * frame_num];
     render.render(ro, vec.as_mut_slice());
+
+    let duration = start.elapsed();
+    println!("render end, took: {}.{:04} sec",
+             duration.as_secs(), duration.subsec_nanos() / 1_000_000);
+
     Buffer {
         width: ro.u_res,
         height: ro.v_res,

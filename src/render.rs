@@ -20,6 +20,7 @@ impl Rgba {
     }
 }
 
+#[derive(Debug)]
 pub struct RenderOpt {
     pub u_range: std::ops::Range<f64>,
     pub u_res: usize,
