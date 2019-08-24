@@ -56,7 +56,7 @@ fn main() {
         playback::Playback,
         image_render::ImageRender,
         composite::{Composite, CompositeMode},
-        transform::Transform,
+        transform::{Transform, camera_shake},
         sample::Sample,
         bokeh::Bokeh,
         frame::{Frame, FrameType}
@@ -106,33 +106,46 @@ fn main() {
             .append(
                 3.0,
                 true,
-                Box::new(Composite {
-                    layers: vec![
-                        (
-                            //Box::new(Plain(render::Rgba(0.0, 0.0, 1.0, 1.0))),
-                            Box::new(Box::new(|u: f64, v: f64, time: f64| {
-                                let (r, g, b) = hsl_to_rgb(
-                                    v * 0.2 + 0.5,
-                                    1.0,
-                                    ((u * 10.0).sin() + (v * 10.0).sin() + time).cos() * 0.25 + 0.5);
-                                render::Rgba(r, g, b, 1.0)
-                            }) as Sample<render::Rgba>),
-                            CompositeMode::None
-                        ),
-                        (
-                            Box::new(Bokeh {
-                                render: Box::new(ImageRender {image: Box::new(image)}),
-                                max_size: 10,
-                                size_path: Path::new(0.0)
-                                    .append(6.0, 0.0, PointType::Constant)
-                                    .append(1.0, 10.0, PointType::Linear)
-                            }),
-                            CompositeMode::Normal(
-                                Path::new(0.0)
-                                    .append(1.0, 1.0, PointType::Linear)
-                            )
-                        )
-                    ]
+                Box::new(Transform {
+                    render: Box::new(Playback::from(render_to_buffer(
+                        &render::RenderOpt {
+                            u_range: 0.0..1.0,
+                            u_res: 640,
+                            v_range: 0.0..1.0,
+                            v_res: 480,
+                            frame_range: 0..30 * 7,
+                            framerate: 30
+                        },
+                        &Composite {
+                            layers: vec![
+                                (
+                                    //Box::new(Plain(render::Rgba(0.0, 0.0, 1.0, 1.0))),
+                                    Box::new(Box::new(|u: f64, v: f64, time: f64| {
+                                        let (r, g, b) = hsl_to_rgb(
+                                            v * 0.2 + 0.5,
+                                            1.0,
+                                            ((u * 10.0).sin() + (v * 10.0).sin() + time).cos() * 0.25 + 0.5);
+                                        render::Rgba(r, g, b, 1.0)
+                                    }) as Sample<render::Rgba>),
+                                    CompositeMode::None
+                                ),
+                                (
+                                    Box::new(Bokeh {
+                                        render: Box::new(ImageRender {image: Box::new(image)}),
+                                        max_size: 10,
+                                        size_path: Path::new(0.0)
+                                            .append(6.0, 0.0, PointType::Constant)
+                                            .append(1.0, 10.0, PointType::Linear)
+                                    }),
+                                    CompositeMode::Normal(
+                                        Path::new(0.0)
+                                            .append(1.0, 1.0, PointType::Linear)
+                                    )
+                                )
+                            ]
+                        }
+                    ))),
+                    transformer: camera_shake(0.05)
                 })
             ));
 

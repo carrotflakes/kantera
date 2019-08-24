@@ -44,3 +44,9 @@ impl <T: Default + Clone> Render<T> for Playback<T> {
 
    /}*/
 }
+
+impl<T: Default + Clone> From<Buffer<T>> for Playback<T> {
+    fn from(buffer: Buffer<T>) -> Playback<T> {
+        Playback {buffer: Box::new(buffer)}
+    }
+}
