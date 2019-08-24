@@ -5,6 +5,11 @@ Video composition and rendering kit for Rust, depends on FFmpeg and cairo.
 
 ## Usage
 
+For development:
+``` sh
+$ cargo build --release --bin && cargo run --release
+```
+
 ## Installation
 
 - FFmpeg
