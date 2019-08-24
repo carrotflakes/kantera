@@ -1,15 +1,9 @@
-extern crate cairo;
+extern crate kantera;
 
-mod buffer;
-mod image;
-mod path;
-mod render;
-mod export;
-mod renders;
-mod util;
+use kantera::render::{Rgba, Render, RenderOpt, Dummy};
 
-fn make_image() -> image::Image<render::Rgba> {
-    use cairo::{ImageSurface, Format, Context};
+fn make_image() -> kantera::image::Image<Rgba> {
+    use kantera::cairo::{ImageSurface, Format, Context};
 
     let (width, height) = (640usize, 480usize);
     let mut surface = ImageSurface::create(Format::ARgb32, width as i32, height as i32).unwrap();
@@ -34,14 +28,14 @@ fn make_image() -> image::Image<render::Rgba> {
     let data = surface.get_data().unwrap();
     let mut vec = Vec::with_capacity(width * height);
     for i in 0..width * height {
-        vec.push(render::Rgba(
+        vec.push(Rgba(
             data[i * 4 + 2] as f64 / 255.0,
             data[i * 4 + 1] as f64 / 255.0,
             data[i * 4 + 0] as f64 / 255.0,
             data[i * 4 + 3] as f64 / 255.0
         ));
     }
-    image::Image {
+    kantera::image::Image {
         width: width,
         height: height,
         vec: vec
@@ -49,8 +43,8 @@ fn make_image() -> image::Image<render::Rgba> {
 }
 
 fn main() {
-    use export::{render_to_mp4, render_to_buffer};
-    use renders::{
+    use kantera::export::{render_to_mp4, render_to_buffer};
+    use kantera::renders::{
         plain::Plain,
         sequence::Sequence,
         playback::Playback,
@@ -61,12 +55,12 @@ fn main() {
         bokeh::Bokeh,
         frame::{Frame, FrameType}
     };
-    use path::{Path, PointType};
-    use util::hsl_to_rgb;
+    use kantera::path::{Path, PointType};
+    use kantera::util::hsl_to_rgb;
 
     let image = make_image();
     let buffer = render_to_buffer(
-        &render::RenderOpt {
+        &RenderOpt {
             u_range: 0.0..1.0,
             u_res: 20,
             v_range: 0.0..1.0,
@@ -74,7 +68,7 @@ fn main() {
             frame_range: 0..100,
             framerate: 4,
         },
-        &render::Dummy());
+        &Dummy());
 
     render_to_mp4(
         10.5,
@@ -108,7 +102,7 @@ fn main() {
                 true,
                 Box::new(Transform {
                     render: Box::new(Playback::from(render_to_buffer(
-                        &render::RenderOpt {
+                        &RenderOpt {
                             u_range: 0.0..1.0,
                             u_res: 640,
                             v_range: 0.0..1.0,
@@ -119,14 +113,14 @@ fn main() {
                         &Composite {
                             layers: vec![
                                 (
-                                    //Box::new(Plain(render::Rgba(0.0, 0.0, 1.0, 1.0))),
+                                    //Box::new(Plain(Rgba(0.0, 0.0, 1.0, 1.0))),
                                     Box::new(Box::new(|u: f64, v: f64, time: f64| {
                                         let (r, g, b) = hsl_to_rgb(
                                             v * 0.2 + 0.5,
                                             1.0,
                                             ((u * 10.0).sin() + (v * 10.0).sin() + time).cos() * 0.25 + 0.5);
-                                        render::Rgba(r, g, b, 1.0)
-                                    }) as Sample<render::Rgba>),
+                                        Rgba(r, g, b, 1.0)
+                                    }) as Sample<Rgba>),
                                     CompositeMode::None
                                 ),
                                 (
