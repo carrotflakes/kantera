@@ -1,6 +1,8 @@
 # kantera
 Video composition and rendering kit for Rust, depends on FFmpeg and cairo.
 
+![kantera-logo](out.jpg)
+
 ## Usage
 
 ## Installation
