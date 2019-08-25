@@ -1,5 +1,4 @@
-use std::io::Write;
-use std::process::{Command, Stdio};
+use crate::ffmpeg::Exporter;
 
 use crate::buffer::Buffer;
 use crate::pixel::Rgba;
@@ -22,21 +21,8 @@ pub fn render_to_mp4(
     buffer_frame_num: usize,
     render: &Render<Rgba>) {
     let frames: usize = (framerate as f64 * sec).floor() as usize;
-    let mut render_buffer = vec![Rgba::default(); width * height * buffer_frame_num];
-    let mut buffer = vec![0u8; width * height * 4];
-    let mut child = Command::new("/bin/sh")
-        .args(&[
-            "-c",
-            format!(
-                "ffmpeg -f rawvideo -pix_fmt bgra -s {width}x{height} -r {framerate} -i - -pix_fmt yuv420p -y {output}",
-                width = width,
-                height = height,
-                framerate = framerate,
-                output = "out.mp4").as_str()])
-        .stdin(Stdio::piped())
-        .spawn()
-        .expect("failed to execute child");
-    let child_stdin = child.stdin.as_mut().expect("failed to get stdin");
+    let mut buffer = vec![Rgba::default(); width * height * buffer_frame_num];
+    let mut exporter = Exporter::new(width, height, framerate, "out.mp4");
     for f in 0..frames / buffer_frame_num {
         render.render(&RenderOpt {
             u_range: 0.0..1.0,
@@ -45,12 +31,8 @@ pub fn render_to_mp4(
             v_res: height,
             frame_range: (f * buffer_frame_num) as i32..((f + 1) * buffer_frame_num) as i32,
             framerate: framerate
-        }, render_buffer.as_mut_slice());
-        for i in 0..buffer_frame_num {
-            let p = i * width * height;
-            rgbas_to_u8s(&render_buffer[p..p + width * height], buffer.as_mut_slice());
-            child_stdin.write_all(buffer.as_slice()).unwrap();
-        }
+        }, buffer.as_mut_slice());
+        exporter.push(&buffer);
     }
     {
         let start = (frames / buffer_frame_num) * buffer_frame_num;
@@ -61,14 +43,10 @@ pub fn render_to_mp4(
             v_res: height,
             frame_range: start as i32..frames as i32,
             framerate: framerate
-        }, render_buffer.as_mut_slice());
-        for i in 0..frames - start {
-            let p = i * width * height;
-            rgbas_to_u8s(&render_buffer[p..p + width * height], buffer.as_mut_slice());
-            child_stdin.write_all(buffer.as_slice()).unwrap();
-        }
+        }, buffer.as_mut_slice());
+        exporter.push(&buffer);
     }
-    child.wait().expect("child process wasn't running");
+    exporter.close();
 }
 
 pub fn render_to_buffer(ro: &RenderOpt, render: &Render<Rgba>) -> Buffer<Rgba> {
