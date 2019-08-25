@@ -91,6 +91,17 @@ fn main() {
         }
     );
 
+    let buffer3 = kantera::cairo::render_buffer(320, 240, 10, &|mut ctx| {
+        for i in 0..100 {
+            ctx.move_to(160.0, 120.0);
+            ctx.line_to((i as f64 / 10.0).cos() * 100.0 + 160.0,
+                        (i as f64 / 10.0).sin() * 100.0 + 120.0);
+            ctx.set_source_rgb(1.0, 0.0, 0.0);
+            ctx.stroke();
+            ctx.push();
+        }
+    });
+
     render_to_mp4(
         10.5,
         640,
