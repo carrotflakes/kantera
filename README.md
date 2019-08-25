@@ -1,19 +1,30 @@
-# kantera
+# Kantera
 Video composition and rendering kit for Rust, depends on FFmpeg and cairo.
+
+Kantera supports you create simple videos from few Rust code.
 
 ![kantera-logo](out.jpg)
 
-## Usage
+TODO:
 
-For development:
-``` sh
-$ cargo build --release --bin && cargo run --release
-```
+- [ ] Import videos and images
+- [ ] Output video with audio
+- [ ] GUI
 
-## Installation
+## Requirement
+
+You need install them:
 
 - FFmpeg
 - cairo
+
+## Usage (demo)
+
+``` sh
+$ cargo run --release
+```
+
+After a while, a video named `out.mp4` will be output to current directory.
 
 ## Author
 
