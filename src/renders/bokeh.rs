@@ -46,13 +46,14 @@ impl Render<Rgba> for Bokeh {
                     acc.3 += rgba.3;
                 }
                 for x in size..*u_res + size {
+                    let left = sub_buffer[y * (u_res + size * 2) + x - real_size];
+
                     let rgba = &mut sub_buffer[y * (u_res + size * 2) + x - size];
                     rgba.0 = acc.0 / (real_size * 2 + 1) as f64;
                     rgba.1 = acc.1 / (real_size * 2 + 1) as f64;
                     rgba.2 = acc.2 / (real_size * 2 + 1) as f64;
                     rgba.3 = acc.3 / (real_size * 2 + 1) as f64;
 
-                    let left = &sub_buffer[y * (u_res + size * 2) + x - real_size];
                     let right = &sub_buffer[y * (u_res + size * 2) + x + real_size + 1];
                     acc.0 += right.0 - left.0;
                     acc.1 += right.1 - left.1;
@@ -71,13 +72,14 @@ impl Render<Rgba> for Bokeh {
                     acc.3 += rgba.3;
                 }
                 for y in size..*v_res + size {
+                    let left = sub_buffer[(y - real_size) * (u_res + size * 2) + x];
+
                     let rgba = &mut sub_buffer[(y - size) * (u_res + size * 2) + x];
                     rgba.0 = acc.0 / (real_size * 2 + 1) as f64;
                     rgba.1 = acc.1 / (real_size * 2 + 1) as f64;
                     rgba.2 = acc.2 / (real_size * 2 + 1) as f64;
                     rgba.3 = acc.3 / (real_size * 2 + 1) as f64;
 
-                    let left = &sub_buffer[(y - real_size) * (u_res + size * 2) + x];
                     let right = &sub_buffer[(y + real_size + 1) * (u_res + size * 2) + x];
                     acc.0 += right.0 - left.0;
                     acc.1 += right.1 - left.1;
