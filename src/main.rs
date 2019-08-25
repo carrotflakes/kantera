@@ -35,7 +35,8 @@ fn main() {
         sample::Sample,
         bokeh::Bokeh,
         frame::{Frame, FrameType},
-        time_extrapolate::{TimeExtrapolate, ExtrapolationType}
+        time_extrapolate::{TimeExtrapolate, ExtrapolationType},
+        rgb_transform::{RgbTransform}
     };
     use kantera::path::{Path, PointType};
     use kantera::util::hsl_to_rgb;
@@ -132,13 +133,18 @@ fn main() {
             .append(
                 3.0,
                 true,
-                Box::new(Transform {
+                Box::new(RgbTransform {
                     render: Box::new(TimeExtrapolate {
                         duration: buffer2.frame_num as f64 / buffer2.framerate as f64,
                         render: Box::new(Playback::from(buffer2)),
                         extrapolation_type: ExtrapolationType::Extend
                     }),
-                    transformer: camera_shake(0.05)
+                    transformer: Box::new({
+                        let cs = camera_shake(0.05);
+                        move |u, v, t| {
+                            (cs(u, v, t), cs(u, v, t - 0.05), cs(u, v, t - 0.1))
+                        }
+                    })
                 })
             ));
 

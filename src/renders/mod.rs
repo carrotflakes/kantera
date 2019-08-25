@@ -8,3 +8,4 @@ pub mod sample;
 pub mod bokeh;
 pub mod frame;
 pub mod time_extrapolate;
+pub mod rgb_transform;
