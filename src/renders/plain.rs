@@ -1,9 +1,9 @@
-use crate::render::{Render, RenderOpt};
+use crate::render::{Res, Render, RenderOpt};
 
 pub struct Plain<T: Copy>(pub T);
 
 impl <T: Copy> Render<T> for Plain<T> {
-    fn sample(&self, u: f64, v: f64, time: f64) -> T {
+    fn sample(&self, _u: f64, _v: f64, _time: f64, res: Res) -> T {
         self.0
     }
 

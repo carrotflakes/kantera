@@ -63,7 +63,7 @@ fn main() {
             layers: vec![
                 (
                     //Box::new(Plain(Rgba(0.0, 0.0, 1.0, 1.0))),
-                    Box::new(Box::new(|u: f64, v: f64, time: f64| {
+                    Box::new(Box::new(|u: f64, v: f64, time: f64, _: (usize, usize)| {
                         let (r, g, b) = hsl_to_rgb(
                             v * 0.2 + 0.5,
                             1.0,
@@ -105,7 +105,7 @@ fn main() {
                         render: Box::new(Playback {buffer: Box::new(buffer)}),
                         frame_type: FrameType::Repeat
                     }),
-                    transformer: Box::new(|u, v, time| {
+                    transformer: Box::new(|u, v, time, _| {
                         //let rad = time * 2.0;
                         (
                             //(u - 0.5) * rad.cos() + (v - 0.5) * rad.sin() + 0.5,
@@ -128,8 +128,8 @@ fn main() {
                     }),
                     transformer: Box::new({
                         let cs = camera_shake(0.05);
-                        move |u, v, t| {
-                            (cs(u, v, t), cs(u, v, t - 0.05), cs(u, v, t - 0.1))
+                        move |u, v, t, r| {
+                            (cs(u, v, t, r), cs(u, v, t - 0.05, r), cs(u, v, t - 0.1, r))
                         }
                     })
                 })

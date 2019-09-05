@@ -18,6 +18,8 @@ impl Range {
     }
 }
 
+pub type Res = (usize, usize);
+
 #[derive(Debug)]
 pub struct RenderOpt {
     pub u_range: Range,
@@ -29,7 +31,7 @@ pub struct RenderOpt {
 }
 
 pub trait Render<T> {
-    fn sample(&self, u: f64, v: f64, time: f64) -> T;
+    fn sample(&self, u: f64, v: f64, time: f64, res: Res) -> T;
 
     fn render(&self, ro: &RenderOpt, buffer: &mut [T]) {
         let RenderOpt {u_range, u_res, v_range, v_res, frame_range, framerate, ..} = ro;
@@ -40,7 +42,7 @@ pub trait Render<T> {
                 for x in 0..*u_res {
                     let u = x as f64 / *u_res as f64;
                     buffer[(f - frame_range.start) as usize * u_res * v_res + y * u_res + x] =
-                        self.sample(u_range.at(u), v_range.at(v), time);
+                        self.sample(u_range.at(u), v_range.at(v), time, (*u_res, *v_res));
                 }
             }
         }
@@ -50,7 +52,7 @@ pub trait Render<T> {
 pub struct Dummy();
 
 impl Render<Rgba> for Dummy {
-    fn sample(&self, u: f64, v: f64, time: f64) -> Rgba {
+    fn sample(&self, u: f64, v: f64, time: f64, _res: Res) -> Rgba {
         let (r, g, b) = hsl_to_rgb(time * 0.3, u, v);
         Rgba(r, g, b, 1.0)
     }

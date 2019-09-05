@@ -1,4 +1,4 @@
-use crate::render::{Render, RenderOpt};
+use crate::render::{Res, Render};
 use crate::image::Image;
 
 pub enum Size {
@@ -13,7 +13,7 @@ pub struct ImageRender<T> {
 }
 
 impl <T: Default + Clone> Render<T> for ImageRender<T> {
-    fn sample(&self, u: f64, v: f64, time: f64) -> T {
+    fn sample(&self, u: f64, v: f64, _time: f64, _res: Res) -> T {
         let width = self.image.width;
         let height = self.image.height;
         let x = (u * width as f64).floor() as i32;

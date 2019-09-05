@@ -1,4 +1,4 @@
-use crate::render::{Render, RenderOpt};
+use crate::render::{Res, Render};
 use crate::buffer::Buffer;
 
 pub enum Interpolation {
@@ -12,7 +12,7 @@ pub struct Playback<T> {
 }
 
 impl <T: Default + Clone> Render<T> for Playback<T> {
-    fn sample(&self, u: f64, v: f64, time: f64) -> T {
+    fn sample(&self, u: f64, v: f64, time: f64, _res: Res) -> T {
         //let Buffer {width, height, frame_num, framerate, vec} = self.buffer;
         let frame_num = self.buffer.frame_num;
         let framerate = self.buffer.framerate;

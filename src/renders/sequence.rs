@@ -1,4 +1,4 @@
-use crate::render::{Render, RenderOpt};
+use crate::render::{Res, Render, RenderOpt};
 
 pub struct Sequence<T: Default> {
     pub pages: Vec<(f64, bool, Box<Render<T>>)>
@@ -7,7 +7,7 @@ pub struct Sequence<T: Default> {
 const LARGE_F64: f64 = 100000.0;
 
 impl <T: Default> Render<T> for Sequence<T> {
-    fn sample(&self, u: f64, v: f64, time: f64) -> T {
+    fn sample(&self, u: f64, v: f64, time: f64, res: Res) -> T {
         let mut offset_time = 0.0;
         for i in 0..self.pages.len() {
             let (start, restart, ref render) = self.pages[i];
@@ -16,7 +16,7 @@ impl <T: Default> Render<T> for Sequence<T> {
             }
             let end = self.pages.get(i + 1).map_or(LARGE_F64, |t| t.0);
             if (start..end).contains(&time) {
-                return render.sample(u, v, time - offset_time);
+                return render.sample(u, v, time - offset_time, res);
             }
         }
         T::default()

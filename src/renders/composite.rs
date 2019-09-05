@@ -1,5 +1,5 @@
 use crate::pixel::Rgba;
-use crate::render::{Render, RenderOpt};
+use crate::render::{Res, Render, RenderOpt};
 use crate::path::Path;
 
 #[derive(Debug)]
@@ -13,10 +13,10 @@ pub struct Composite {
 }
 
 impl Render<Rgba> for Composite {
-    fn sample(&self, u: f64, v: f64, time: f64) -> Rgba {
+    fn sample(&self, u: f64, v: f64, time: f64, res: Res) -> Rgba {
         let mut value = Rgba::default();
         for (render, cm) in &self.layers {
-            composite(&mut [value], &[render.sample(u, v, time)], time, cm);
+            composite(&mut [value], &[render.sample(u, v, time, res)], time, cm);
         }
         value
     }

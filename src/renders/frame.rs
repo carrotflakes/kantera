@@ -1,4 +1,4 @@
-use crate::render::{Render, RenderOpt};
+use crate::render::{Res, Render};
 
 #[derive(Debug, Copy, Clone)]
 pub enum FrameType<T: Copy> {
@@ -14,9 +14,9 @@ pub struct Frame<T: Copy> {
 }
 
 impl <T: Copy> Render<T> for Frame<T> {
-    fn sample(&self, u: f64, v: f64, time: f64) -> T {
+    fn sample(&self, u: f64, v: f64, time: f64, res: Res) -> T {
         if (0.0..=1.0).contains(&u) && (0.0..=1.0).contains(&v) {
-            self.render.sample(u, v, time)
+            self.render.sample(u, v, time, res)
         } else {
             match &self.frame_type {
                 FrameType::Constant(t) => *t,
@@ -24,17 +24,18 @@ impl <T: Copy> Render<T> for Frame<T> {
                     self.render.sample(
                         u.max(0.0).min(0.9999999),
                         v.max(0.0).min(0.9999999),
-                        time
-                    ),
+                        time, res),
                 FrameType::Repeat => self.render.sample(
                     u - u.floor(),
                     v - v.floor(),
-                    time),
+                    time, res),
                 FrameType::Reflect => self.render.sample(
                     if (u.floor() as i32) % 2 == 0 {u - u.floor()} else {1.0 - u + u.floor()},
                     if (v.floor() as i32) % 2 == 0 {v - v.floor()} else {1.0 - v + v.floor()},
-                    time)
+                    time, res)
             }
         }
     }
+
+    // TODO render?
 }
