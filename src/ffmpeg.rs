@@ -9,7 +9,7 @@ pub struct Exporter {
 }
 
 impl Exporter {
-    pub fn new(width: usize, height: usize, framerate: usize, file_name: &str) -> Self {
+    pub fn new(width: usize, height: usize, framerate: usize, file_name: &str, debug: bool) -> Self {
         let child = Command::new("/bin/sh")
             .args(&[
                 "-c",
@@ -20,6 +20,8 @@ impl Exporter {
                     framerate = framerate,
                     output = file_name).as_str()])
             .stdin(Stdio::piped())
+            .stdout(if debug { Stdio::inherit() } else { Stdio::null() })
+            .stderr(if debug { Stdio::inherit() } else { Stdio::null() })
             .spawn()
             .expect("failed to execute child");
         Exporter {
