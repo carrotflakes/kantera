@@ -19,10 +19,11 @@ pub fn render_to_mp4(
     height: usize,
     framerate: usize,
     buffer_frame_num: usize,
+    file_name: &str,
     render: &Render<Rgba>) {
     let frames: usize = (framerate as f64 * sec).floor() as usize;
     let mut buffer = vec![Rgba::default(); width * height * buffer_frame_num];
-    let mut exporter = Exporter::new(width, height, framerate, "out.mp4");
+    let mut exporter = Exporter::new(width, height, framerate, file_name);
     for f in 0..frames / buffer_frame_num {
         render.render(&RenderOpt {
             u_range: Range::unit(),

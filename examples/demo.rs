@@ -109,6 +109,7 @@ fn main() {
         480,
         30,
         1,
+        "demo.mp4",
         &Sequence::new()
             .append(
                 0.0,
