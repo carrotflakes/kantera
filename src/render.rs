@@ -1,11 +1,28 @@
 use crate::pixel::Rgba;
 use crate::util::hsl_to_rgb;
 
+#[derive(Debug, Copy, Clone)]
+pub struct Range(pub f64, pub f64);
+
+impl Range {
+    pub fn unit() -> Range {
+        Range(0.0, 1.0)
+    }
+
+    pub fn size(&self) -> f64 {
+        self.1 - self.0
+    }
+
+    pub fn at(&self, rate: f64) -> f64 {
+        (self.1 - self.0) * rate + self.0
+    }
+}
+
 #[derive(Debug)]
 pub struct RenderOpt {
-    pub u_range: std::ops::Range<f64>,
+    pub u_range: Range,
     pub u_res: usize,
-    pub v_range: std::ops::Range<f64>,
+    pub v_range: Range,
     pub v_res: usize,
     pub frame_range: std::ops::Range<i32>,
     pub framerate: usize,
@@ -23,10 +40,7 @@ pub trait Render<T> {
                 for x in 0..*u_res {
                     let u = x as f64 / *u_res as f64;
                     buffer[(f - frame_range.start) as usize * u_res * v_res + y * u_res + x] =
-                        self.sample(
-                            u * (u_range.end - u_range.start) + u_range.start,
-                            v * (v_range.end - v_range.start) + v_range.start,
-                            time);
+                        self.sample(u_range.at(u), v_range.at(v), time);
                 }
             }
         }
@@ -55,15 +69,12 @@ impl Render<Rgba> for Dummy {
     }
 }
 
-//impl Copy for RenderOpt {
-//}
-
 impl Clone for RenderOpt {
     fn clone(&self) -> Self {
         RenderOpt {
-            u_range: self.u_range.start..self.u_range.end,
+            u_range: self.u_range.clone(),
             u_res: self.u_res,
-            v_range: self.v_range.start..self.v_range.end,
+            v_range: self.v_range.clone(),
             v_res: self.v_res,
             frame_range: self.frame_range.start..self.frame_range.end,
             framerate: self.framerate

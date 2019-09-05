@@ -2,7 +2,7 @@ use crate::ffmpeg::Exporter;
 
 use crate::buffer::Buffer;
 use crate::pixel::Rgba;
-use crate::render::{Render, RenderOpt};
+use crate::render::{Range, Render, RenderOpt};
 
 pub fn rgbas_to_u8s(block: &[Rgba], u8s: &mut [u8]) {
     for i in 0..block.len() {
@@ -25,9 +25,9 @@ pub fn render_to_mp4(
     let mut exporter = Exporter::new(width, height, framerate, "out.mp4");
     for f in 0..frames / buffer_frame_num {
         render.render(&RenderOpt {
-            u_range: 0.0..1.0,
+            u_range: Range::unit(),
             u_res: width,
-            v_range: 0.0..1.0,
+            v_range: Range::unit(),
             v_res: height,
             frame_range: (f * buffer_frame_num) as i32..((f + 1) * buffer_frame_num) as i32,
             framerate: framerate
@@ -37,9 +37,9 @@ pub fn render_to_mp4(
     {
         let start = (frames / buffer_frame_num) * buffer_frame_num;
         render.render(&RenderOpt {
-            u_range: 0.0..1.0,
+            u_range: Range::unit(),
             u_res: width,
-            v_range: 0.0..1.0,
+            v_range: Range::unit(),
             v_res: height,
             frame_range: start as i32..frames as i32,
             framerate: framerate

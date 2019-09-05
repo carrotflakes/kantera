@@ -42,12 +42,8 @@ impl <T: Default> Render<T> for Sequence<T> {
                 continue;
             }
             render.render(&RenderOpt {
-                u_range: ro.u_range.start..ro.u_range.end,
-                u_res: ro.u_res,
-                v_range: ro.v_range.start..ro.v_range.end,
-                v_res: ro.v_res,
                 frame_range: left - offset_frame..right - offset_frame,
-                framerate: *framerate
+                .. *ro
             }, &mut buffer[(left - frame_range.start as i32) as usize * frame_size..
                            (right - frame_range.start as i32) as usize * frame_size]);
         }

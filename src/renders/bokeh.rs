@@ -1,5 +1,5 @@
 use crate::pixel::Rgba;
-use crate::render::{Render, RenderOpt};
+use crate::render::{Range, Render, RenderOpt};
 use crate::path::Path;
 
 pub struct Bokeh {
@@ -23,11 +23,11 @@ impl Render<Rgba> for Bokeh {
             let time = f as f64 / *framerate as f64;
             self.render.render(
                 &RenderOpt {
-                    u_range: u_range.start - (size as f64 / *u_res as f64)..
-                        u_range.end + (size as f64 / *u_res as f64),
+                    u_range: Range(u_range.0 - (size as f64 / *u_res as f64),
+                                   u_range.1 + (size as f64 / *u_res as f64)),
                     u_res: u_res + size * 2,
-                    v_range: v_range.start - (size as f64 / *v_res as f64)..
-                        v_range.end + (size as f64 / *v_res as f64),
+                    v_range: Range(v_range.0 - (size as f64 / *v_res as f64),
+                                   v_range.1 + (size as f64 / *v_res as f64)),
                     v_res: v_res + size * 2,
                     frame_range: f..f + 1,
                     framerate: *framerate
