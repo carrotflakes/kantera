@@ -1,3 +1,6 @@
+#[macro_use]
+extern crate lazy_static;
+
 pub mod cairo;
 pub mod pixel;
 pub mod buffer;
