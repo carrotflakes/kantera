@@ -21,7 +21,7 @@ You need install them:
 ## Usage (demo)
 
 ``` sh
-$ cargo run --release
+$ cargo run --release --example demo
 ```
 
 After a while, a video named `out.mp4` will be output to current directory.
