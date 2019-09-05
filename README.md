@@ -8,6 +8,7 @@ Kantera supports you create simple videos from few Rust code.
 TODO:
 
 - [ ] Import videos and images
+- [ ] Text rendering with any font
 - [ ] Output video with audio
 - [ ] GUI
 
