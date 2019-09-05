@@ -6,9 +6,6 @@ use kantera::render::{Range, Render, RenderOpt, Dummy};
 fn make_image() -> kantera::image::Image<Rgba> {
     let (width, height) = (640, 480);
     kantera::cairo::render_image(width, height, &|ctx| {
-        //ctx.set_source_rgb(1.0, 1.0, 1.0);
-        //ctx.paint();
-
         ctx.move_to(0.0, 0.0);
         ctx.line_to(width as f64, height as f64);
         ctx.set_source_rgb(1.0, 0.0, 0.0);
@@ -91,17 +88,6 @@ fn main() {
             ]
         }
     );
-
-    let buffer3 = kantera::cairo::render_buffer(320, 240, 10, &|mut ctx| {
-        for i in 0..100 {
-            ctx.move_to(160.0, 120.0);
-            ctx.line_to((i as f64 / 10.0).cos() * 100.0 + 160.0,
-                        (i as f64 / 10.0).sin() * 100.0 + 120.0);
-            ctx.set_source_rgb(1.0, 0.0, 0.0);
-            ctx.stroke();
-            ctx.push();
-        }
-    });
 
     render_to_mp4(
         10.5,

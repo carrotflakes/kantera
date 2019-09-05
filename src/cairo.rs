@@ -1,6 +1,6 @@
 extern crate cairo;
 
-use cairo::{Context, ImageSurface, Format};
+pub use cairo::*;
 use crate::pixel::Rgba;
 use crate::image::Image;
 use crate::buffer::Buffer;
