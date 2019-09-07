@@ -77,4 +77,8 @@ impl Mat {
             )
         })
     }
+
+    pub fn apply(&self, x: f64, y: f64) -> (f64, f64) {
+        ((x * self.0 + y * self.1 + self.2), (x * self.3 + y * self.4 + self.5))
+    }
 }
