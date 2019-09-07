@@ -2,23 +2,48 @@ use std::rc::Rc;
 use crate::render::{Res, Render};
 use crate::image::Image;
 
-pub enum Size {
-    Auto,
+#[derive(Debug, Copy, Clone)]
+pub enum Sizing {
+    Fit,
     Contain,
     Cover,
+    DotByDot,
 }
 
 pub struct ImageRender<T> {
     pub image: Rc<Image<T>>,
-//    pub interpolation: Interpolation
+    pub sizing: Sizing,
+    //pub interpolation: Interpolation
 }
 
 impl <T: Default + Clone> Render<T> for ImageRender<T> {
-    fn sample(&self, u: f64, v: f64, _time: f64, _res: Res) -> T {
+    fn sample(&self, u: f64, v: f64, _time: f64, res: Res) -> T {
         let width = self.image.width;
         let height = self.image.height;
-        let x = (u * width as f64).floor() as i32;
-        let y = (v * height as f64).floor() as i32;
+        let (x, y) = match self.sizing {
+            Sizing::Fit => (
+                (u * width as f64).floor() as i32,
+                (v * height as f64).floor() as i32
+            ),
+            Sizing::Contain => {
+                let scale = (width as f64 / res.0 as f64).max(height as f64 / res.1 as f64);
+                (
+                    ((u - 0.5) * res.0 as f64 * scale).floor() as i32 + (width / 2) as i32,
+                    ((v - 0.5) * res.1 as f64 * scale).floor() as i32 + (height / 2) as i32
+                )
+            },
+            Sizing::Cover => {
+                let scale = (width as f64 / res.0 as f64).min(height as f64 / res.1 as f64);
+                (
+                    ((u - 0.5) * res.0 as f64 * scale).floor() as i32 + (width / 2) as i32,
+                    ((v - 0.5) * res.1 as f64 * scale).floor() as i32 + (height / 2) as i32
+                )
+            },
+            Sizing::DotByDot => (
+                (u * res.0 as f64).floor() as i32,
+                (v * res.1 as f64).floor() as i32
+            )
+        };
         if (0..width as i32).contains(&x) && (0..height as i32).contains(&y) {
             self.image.vec[y as usize * width + x as usize].clone()
         } else {

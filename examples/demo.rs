@@ -27,7 +27,7 @@ fn main() {
         plain::Plain,
         sequence::Sequence,
         playback::Playback,
-        image_render::ImageRender,
+        image_render::{ImageRender, Sizing},
         composite::{Composite, CompositeMode},
         transform::{Transform, camera_shake},
         sample::Sample,
@@ -75,7 +75,7 @@ fn main() {
                 ),
                 (
                     Box::new(Bokeh {
-                        render: Box::new(ImageRender {image: image.clone()}),
+                        render: Box::new(ImageRender {image: image.clone(), sizing: Sizing::Fit}),
                         max_size: 10,
                         size_path: Path::new(0.0)
                             .append(6.0, 0.0, PointType::Constant)

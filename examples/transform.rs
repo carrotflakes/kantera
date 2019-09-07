@@ -6,7 +6,7 @@ use kantera::render::{Range, Render, RenderOpt};
 use kantera::export::render_to_mp4;
 use kantera::renders::{
     sequence::Sequence,
-    image_render::ImageRender,
+    image_render::{ImageRender, Sizing},
     transform::{Transform, Mat}
 };
 use kantera::path::{Path, PointType};
@@ -37,7 +37,7 @@ fn main() {
                 0.0,
                 true,
                 Box::new(Transform {
-                    render: Box::new(ImageRender {image: image.clone()}),
+                    render: Box::new(ImageRender {image: image.clone(), sizing: Sizing::Fit}),
                     transformer: Box::new(Mat::new()
                                           .get_transformer())
                 }))
@@ -45,7 +45,7 @@ fn main() {
                 2.0,
                 true,
                 Box::new(Transform {
-                    render: Box::new(ImageRender {image: image.clone()}),
+                    render: Box::new(ImageRender {image: image.clone(), sizing: Sizing::Fit}),
                     transformer: Box::new(Mat::new()
                                           .scale(0.5, 0.5)
                                           .get_transformer())
@@ -54,7 +54,7 @@ fn main() {
                 4.0,
                 true,
                 Box::new(Transform {
-                    render: Box::new(ImageRender {image: image.clone()}),
+                    render: Box::new(ImageRender {image: image.clone(), sizing: Sizing::Fit}),
                     transformer: Box::new(Mat::new()
                                           .scale(0.5, 0.5)
                                           .translate(160.0, 120.0)
@@ -64,7 +64,7 @@ fn main() {
                 6.0,
                 true,
                 Box::new(Transform {
-                    render: Box::new(ImageRender {image: image.clone()}),
+                    render: Box::new(ImageRender {image: image.clone(), sizing: Sizing::Fit}),
                     transformer: Box::new(Mat::new()
                                           .scale(0.5, 0.5)
                                           .translate(160.0, 120.0)
@@ -75,7 +75,7 @@ fn main() {
                 8.0,
                 true,
                 Box::new(Transform {
-                    render: Box::new(ImageRender {image: image.clone()}),
+                    render: Box::new(ImageRender {image: image.clone(), sizing: Sizing::Fit}),
                     transformer: Box::new(Mat::new()
                                           .translate(-160.0, -120.0)
                                           .rotate(20.0f64.to_radians())
