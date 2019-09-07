@@ -1,3 +1,4 @@
+use std::rc::Rc;
 use crate::render::{Res, Render};
 use crate::image::Image;
 
@@ -8,7 +9,7 @@ pub enum Size {
 }
 
 pub struct ImageRender<T> {
-    pub image: Box<Image<T>>,
+    pub image: Rc<Image<T>>,
 //    pub interpolation: Interpolation
 }
 

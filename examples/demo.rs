@@ -21,6 +21,7 @@ fn make_image() -> kantera::image::Image<Rgba> {
 }
 
 fn main() {
+    use std::rc::Rc;
     use kantera::export::{render_to_mp4, render_to_buffer};
     use kantera::renders::{
         plain::Plain,
@@ -38,7 +39,7 @@ fn main() {
     use kantera::path::{Path, PointType};
     use kantera::util::hsl_to_rgb;
 
-    let image = make_image();
+    let image = Rc::new(make_image());
     let buffer = render_to_buffer(
         &RenderOpt {
             u_range: Range::unit(),
@@ -74,7 +75,7 @@ fn main() {
                 ),
                 (
                     Box::new(Bokeh {
-                        render: Box::new(ImageRender {image: Box::new(image)}),
+                        render: Box::new(ImageRender {image: image.clone()}),
                         max_size: 10,
                         size_path: Path::new(0.0)
                             .append(6.0, 0.0, PointType::Constant)
