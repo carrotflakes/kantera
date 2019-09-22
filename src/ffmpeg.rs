@@ -87,7 +87,7 @@ pub fn import(file_path: &str) -> Buffer<Rgba> {
     let mut reader = BufReader::new(stdout);
     let mut vec = Vec::with_capacity(width * height * frame_num);
     let mut buf = vec![0u8; width * height * 4];
-    for _ in 0..frame_num {
+    for _ in 0..frame_num { // TODO: while let
         if let _ = reader.read_exact(buf.as_mut()) {
             for i in 0..width * height {
                 vec.push(Rgba(
@@ -215,4 +215,31 @@ pub fn probe(file_path: &str) -> VideoInfo {
     VideoInfo {
         streams
     }
+}
+
+use crate::audio_buffer::AudioBuffer;
+
+pub fn export_audio(audio_buffer: &AudioBuffer<u16>, file_name: &str, debug: bool) {
+    let mut child = Command::new("/bin/sh")
+        .args(&[
+            "-c",
+            format!(
+                "ffmpeg -hide_banner -f u16le -ar {sample_rate} -ac {channel_num} -i - {output} -y",
+                sample_rate = audio_buffer.sample_rate,
+                channel_num = audio_buffer.channel_num,
+                output = file_name).as_str()])
+        .stdin(Stdio::piped())
+        .stdout(if debug { Stdio::inherit() } else { Stdio::null() })
+        .stderr(if debug { Stdio::inherit() } else { Stdio::null() })
+        .spawn()
+        .expect("failed to execute child");
+
+    let mut stdin = child.stdin.as_mut().expect("failed to get stdin");
+
+    for i in 0..audio_buffer.sample_num {
+        for j in 0..audio_buffer.channel_num {
+            stdin.write_all(&audio_buffer.vec[j][i].to_le_bytes()).unwrap();
+        }
+    }
+    child.wait().expect("child process wasn't running");
 }
