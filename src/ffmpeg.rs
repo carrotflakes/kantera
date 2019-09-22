@@ -57,33 +57,58 @@ pub fn rgbas_to_u8s(block: &[Rgba], u8s: &mut [u8]) {
         u8s[i * 4 + 3] = (block[i].3.min(1.0).max(0.0) * 255.99).floor() as u8;
     }
 }
-/*
-use crate::buffer::Buffer;
 
-pub fn import(file_path: &str) -> Buffer {
+pub fn u8s_to_rgbas(u8s: &[u8], block: &mut [Rgba]) {
+    for i in 0..block.len() {
+        block[i] = Rgba(
+            u8s[i * 4 + 2] as f64 / 255.0,
+            u8s[i * 4 + 1] as f64 / 255.0,
+            u8s[i * 4 + 0] as f64 / 255.0,
+            u8s[i * 4 + 3] as f64 / 255.0);
+    }
+}
+
+use crate::buffer::Buffer;
+use std::io::Read;
+
+pub fn import(file_path: &str) -> Buffer<Rgba> {
     let vi = probe(file_path);
-    let StreamInfo::Video {width, height, framerate} = vi.get_video_stream().unwrap();
-    let child = Command::new("/bin/sh")
+    let (width, height, frame_num, framerate) = vi.get_video_info().unwrap();
+    let mut child = Command::new("/bin/sh")
         .args(&[
             "-c",
             format!(
                 "ffmpeg -i {input} -f image2pipe -pix_fmt bgra -vcodec rawvideo -",
-                input = file_name).as_str()])
+                input = file_path).as_str()])
         .stdout(Stdio::piped())
         .spawn()
         .expect("failed to execute child");
     let stdout = child.stdout.as_mut().unwrap();
-    let reader = BufReader::new(stdout);
-    let vec = Vec::with_capacity();
-    reader.read;
+    let mut reader = BufReader::new(stdout);
+    let mut vec = Vec::with_capacity(width * height * frame_num);
+    let mut buf = vec![0u8; width * height * 4];
+    for _ in 0..frame_num {
+        if let _ = reader.read_exact(buf.as_mut()) {
+            for i in 0..width * height {
+                vec.push(Rgba(
+                    buf[i * 4 + 2] as f64 / 255.0,
+                    buf[i * 4 + 1] as f64 / 255.0,
+                    buf[i * 4 + 0] as f64 / 255.0,
+                    buf[i * 4 + 3] as f64 / 255.0));
+            }
+        } else {
+            break;
+        }
+    }
+    vec.shrink_to_fit();
     Buffer {
-        width,
-        height,
-        frame_num,
-        framerate,
+        width: width,
+        height: height,
+        frame_num: frame_num,
+        framerate: framerate,
         vec
     }
-}*/
+}
 
 #[derive(Debug)]
 pub struct VideoInfo {
@@ -101,6 +126,14 @@ impl VideoInfo {
             }
         }
         None
+    }
+
+    pub fn get_video_info(&self) -> Option<(usize, usize, usize, usize)> {
+        match self.get_video_stream() {
+            Some(StreamInfo::Video {width, height, frame_num, framerate}) =>
+                Some((*width, *height, *frame_num, *framerate)),
+            _ => None
+        }
     }
 }
 
