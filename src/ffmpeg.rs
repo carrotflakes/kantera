@@ -62,7 +62,7 @@ use crate::buffer::Buffer;
 
 pub fn import(file_path: &str) -> Buffer {
     let vi = probe(file_path);
-    let (width, height) = vi.get_resolution().unwrap();
+    let StreamInfo::Video {width, height, framerate} = vi.get_video_stream().unwrap();
     let child = Command::new("/bin/sh")
         .args(&[
             "-c",
@@ -74,6 +74,7 @@ pub fn import(file_path: &str) -> Buffer {
         .expect("failed to execute child");
     let stdout = child.stdout.as_mut().unwrap();
     let reader = BufReader::new(stdout);
+    let vec = Vec::with_capacity();
     reader.read;
     Buffer {
         width,
@@ -108,6 +109,7 @@ pub enum StreamInfo {
     Video {
         width: usize,
         height: usize,
+        frame_num: usize,
         framerate: usize,
     },
     Unknown {
@@ -136,6 +138,7 @@ pub fn probe(file_path: &str) -> VideoInfo {
     let mut codec_type: Option<String> = None;
     let mut width: Option<usize> = None;
     let mut height: Option<usize> = None;
+    let mut frame_num: Option<usize> = None;
     let mut framerate: Option<usize> = None;
     for line in reader.lines() {
         let line = line.unwrap();
@@ -153,11 +156,15 @@ pub fn probe(file_path: &str) -> VideoInfo {
             let caps = Regex::new(r"(\d+)/1").unwrap().captures(r_frame_rate).unwrap();
             framerate = Some(caps.get(1).unwrap().as_str().parse().unwrap());
         }
+        if line.starts_with("nb_frames=") {
+            frame_num = Some(line[10..].parse().unwrap());
+        }
         if line == "[/STREAM]" {
             if codec_type == Some("video".to_string()) {
                 streams.push(StreamInfo::Video {
                     width: width.unwrap(),
                     height: height.unwrap(),
+                    frame_num: frame_num.unwrap(),
                     framerate: framerate.unwrap(),
                 });
             } else {
@@ -168,6 +175,7 @@ pub fn probe(file_path: &str) -> VideoInfo {
             codec_type = None;
             width = None;
             height = None;
+            frame_num = None;
             framerate = None;
         }
     }
