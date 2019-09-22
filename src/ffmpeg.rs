@@ -14,7 +14,7 @@ impl Exporter {
             .args(&[
                 "-c",
                 format!(
-                    "ffmpeg -f rawvideo -pix_fmt bgra -s {width}x{height} -r {framerate} -i - -pix_fmt yuv420p -y {output}",
+                    "ffmpeg -hide_banner -f rawvideo -pix_fmt bgra -s {width}x{height} -r {framerate} -i - -pix_fmt yuv420p -y {output}",
                     width = width,
                     height = height,
                     framerate = framerate,
@@ -78,7 +78,7 @@ pub fn import(file_path: &str) -> Buffer<Rgba> {
         .args(&[
             "-c",
             format!(
-                "ffmpeg -i {input} -f image2pipe -pix_fmt bgra -vcodec rawvideo -",
+                "ffmpeg -hide_banner -i {input} -f image2pipe -pix_fmt bgra -vcodec rawvideo -",
                 input = file_path).as_str()])
         .stdout(Stdio::piped())
         .spawn()
