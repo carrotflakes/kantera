@@ -14,3 +14,4 @@ readme = "README.md"
 [dependencies]
 cairo-rs = "0.7"
 lazy_static = "1.4"
+regex = "1"
