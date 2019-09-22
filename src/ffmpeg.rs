@@ -243,3 +243,20 @@ pub fn export_audio(audio_buffer: &AudioBuffer<u16>, file_name: &str, debug: boo
     }
     child.wait().expect("child process wasn't running");
 }
+
+pub fn combine(video_file_path: &str, audio_file_path: &str, file_path: &str, debug: bool) {
+    let mut child = Command::new("/bin/sh")
+        .args(&[
+            "-c",
+            format!(
+                "ffmpeg -hide_banner -i {audio} -i {video} -y -strict -2 {output}",
+                audio = audio_file_path,
+                video = video_file_path,
+                output = file_path).as_str()])
+        .stdin(Stdio::null())
+        .stdout(if debug { Stdio::inherit() } else { Stdio::null() })
+        .stderr(if debug { Stdio::inherit() } else { Stdio::null() })
+        .spawn()
+        .expect("failed to execute child");
+    child.wait().expect("child process wasn't running");
+}
