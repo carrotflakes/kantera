@@ -249,7 +249,7 @@ pub fn combine(video_file_path: &str, audio_file_path: &str, file_path: &str, de
         .args(&[
             "-c",
             format!(
-                "ffmpeg -hide_banner -i {audio} -i {video} -y -strict -2 {output}",
+                "ffmpeg -hide_banner -i {audio} -i {video} -c:v copy -c:a copy -y -strict -2 {output}",
                 audio = audio_file_path,
                 video = video_file_path,
                 output = file_path).as_str()])
