@@ -118,11 +118,17 @@ pub struct VideoInfo {
 impl VideoInfo {
     pub fn get_video_stream<'a>(&'a self) -> Option<&'a StreamInfo> {
         for stream in self.streams.iter() {
-            match stream {
-                StreamInfo::Video {..} => {
-                    return Some(stream)
-                },
-                _ => ()
+            if let StreamInfo::Video {..} = stream {
+                return Some(stream);
+            }
+        }
+        None
+    }
+
+    pub fn get_audio_stream<'a>(&'a self) -> Option<&'a StreamInfo> {
+        for stream in self.streams.iter() {
+            if let StreamInfo::Audio {..} = stream {
+                return Some(stream);
             }
         }
         None
