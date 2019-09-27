@@ -145,6 +145,10 @@ pub enum StreamInfo {
         frame_num: usize,
         framerate: usize,
     },
+    Audio {
+        channel_num: usize,
+        sample_rate: usize,
+    },
     Unknown {
         codec_type: String,
     }
@@ -173,6 +177,8 @@ pub fn probe(file_path: &str) -> VideoInfo {
     let mut height: Option<usize> = None;
     let mut frame_num: Option<usize> = None;
     let mut framerate: Option<usize> = None;
+    let mut channel_num: Option<usize> = None;
+    let mut sample_rate: Option<usize> = None;
     for line in reader.lines() {
         let line = line.unwrap();
         if line.starts_with("codec_type=") {
@@ -186,11 +192,20 @@ pub fn probe(file_path: &str) -> VideoInfo {
         }
         if line.starts_with("r_frame_rate=") {
             let r_frame_rate = &line[13..];
-            let caps = Regex::new(r"(\d+)/1").unwrap().captures(r_frame_rate).unwrap();
-            framerate = Some(caps.get(1).unwrap().as_str().parse().unwrap());
+            framerate = Regex::new(r"(\d+)/1").unwrap().captures(r_frame_rate).map(
+                |caps| caps.get(1).unwrap().as_str().parse().unwrap());
         }
         if line.starts_with("nb_frames=") {
-            frame_num = Some(line[10..].parse().unwrap());
+            frame_num = match line[10..].parse() {
+                Ok(x) => Some(x),
+                Err(_) => None
+            };
+        }
+        if line.starts_with("channels=") {
+            channel_num = Some(line[9..].parse().unwrap());
+        }
+        if line.starts_with("sample_rate=") {
+            sample_rate = Some(line[12..].parse().unwrap());
         }
         if line == "[/STREAM]" {
             if codec_type == Some("video".to_string()) {
@@ -199,6 +214,11 @@ pub fn probe(file_path: &str) -> VideoInfo {
                     height: height.unwrap(),
                     frame_num: frame_num.unwrap(),
                     framerate: framerate.unwrap(),
+                });
+            } else if codec_type == Some("audio".to_string()) {
+                streams.push(StreamInfo::Audio {
+                    channel_num: channel_num.unwrap(),
+                    sample_rate: sample_rate.unwrap(),
                 });
             } else {
                 streams.push(StreamInfo::Unknown {
@@ -210,6 +230,8 @@ pub fn probe(file_path: &str) -> VideoInfo {
             height = None;
             frame_num = None;
             framerate = None;
+            channel_num = None;
+            sample_rate = None;
         }
     }
     VideoInfo {
@@ -243,6 +265,45 @@ pub fn export_audio(audio_buffer: &AudioBuffer<u16>, file_name: &str, debug: boo
     }
     child.wait().expect("child process wasn't running");
 }
+/*
+pub fn import_audio(file_path: &str) -> AudioBuffer<u64> {
+    let vi = probe(file_path);
+    let (width, height, frame_num, framerate) = vi.get_audio_info().unwrap();
+    let mut child = Command::new("/bin/sh")
+        .args(&[
+            "-c",
+            format!(
+                "ffmpeg -hide_banner -i {input} -f image2pipe -pix_fmt bgra -vcodec rawvideo -",
+                input = file_path).as_str()])
+        .stdout(Stdio::piped())
+        .spawn()
+        .expect("failed to execute child");
+    let stdout = child.stdout.as_mut().unwrap();
+    let mut reader = BufReader::new(stdout);
+    let mut vec = Vec::with_capacity(width * height * frame_num);
+    let mut buf = vec![0u8; width * height * 4];
+    for _ in 0..frame_num { // TODO: while let
+        if let _ = reader.read_exact(buf.as_mut()) {
+            for i in 0..width * height {
+                vec.push(Rgba(
+                    buf[i * 4 + 2] as f64 / 255.0,
+                    buf[i * 4 + 1] as f64 / 255.0,
+                    buf[i * 4 + 0] as f64 / 255.0,
+                    buf[i * 4 + 3] as f64 / 255.0));
+            }
+        } else {
+            break;
+        }
+    }
+    vec.shrink_to_fit();
+    Buffer {
+        width: width,
+        height: height,
+        frame_num: frame_num,
+        framerate: framerate,
+        vec
+    }
+}*/
 
 pub fn combine(video_file_path: &str, audio_file_path: &str, file_path: &str, debug: bool) {
     let mut child = Command::new("/bin/sh")
