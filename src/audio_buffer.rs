@@ -12,7 +12,7 @@ pub fn make_audio(sec: f64) -> AudioBuffer<u16> {
     for i in 0..(44100.0 * sec) as usize {
         let p = i as f64 / 44100.0 * 440.0 * std::f64::consts::PI * 2.0;
         l.push(((p.sin() + 1.0) / 2.0 * std::u16::MAX as f64) as u16);
-        r.push(((p.sin() + 1.0) / 2.0 * std::u16::MAX as f64) as u16);
+        r.push((((p * 2.0).sin() + 1.0) / 2.0 * std::u16::MAX as f64) as u16);
     }
     l.shrink_to_fit();
     r.shrink_to_fit();

@@ -271,45 +271,44 @@ pub fn export_audio(audio_buffer: &AudioBuffer<u16>, file_name: &str, debug: boo
     }
     child.wait().expect("child process wasn't running");
 }
-/*
-pub fn import_audio(file_path: &str) -> AudioBuffer<u64> {
+
+pub fn import_audio(file_path: &str) -> AudioBuffer<u16> {
     let vi = probe(file_path);
-    let (width, height, frame_num, framerate) = vi.get_audio_info().unwrap();
+    let (channel_num, sample_rate) =
+        if let Some(StreamInfo::Audio {channel_num, sample_rate}) = vi.get_audio_stream() {
+            (*channel_num, *sample_rate)
+        } else {
+            panic!()
+        };
     let mut child = Command::new("/bin/sh")
         .args(&[
             "-c",
             format!(
-                "ffmpeg -hide_banner -i {input} -f image2pipe -pix_fmt bgra -vcodec rawvideo -",
-                input = file_path).as_str()])
+                "ffmpeg -hide_banner -i {input} -f u16le -ar {sample_rate} -ac {channel_num} -vcodec rawaudio -",
+                input = file_path,
+                sample_rate = sample_rate,
+                channel_num = channel_num).as_str()])
         .stdout(Stdio::piped())
         .spawn()
         .expect("failed to execute child");
     let stdout = child.stdout.as_mut().unwrap();
-    let mut reader = BufReader::new(stdout);
-    let mut vec = Vec::with_capacity(width * height * frame_num);
-    let mut buf = vec![0u8; width * height * 4];
-    for _ in 0..frame_num { // TODO: while let
-        if let _ = reader.read_exact(buf.as_mut()) {
-            for i in 0..width * height {
-                vec.push(Rgba(
-                    buf[i * 4 + 2] as f64 / 255.0,
-                    buf[i * 4 + 1] as f64 / 255.0,
-                    buf[i * 4 + 0] as f64 / 255.0,
-                    buf[i * 4 + 3] as f64 / 255.0));
-            }
-        } else {
-            break;
-        }
+    let mut vec: Vec<Vec<u16>> = (0..channel_num).map(|_| Vec::new()).collect();
+    let mut i = 0;
+    let mut buf = [0u8; 2];
+    while let Ok(_) = stdout.read_exact(&mut buf) {
+        vec[i % channel_num].push(u16::from_le_bytes(buf));
+        i += 1;
     }
-    vec.shrink_to_fit();
-    Buffer {
-        width: width,
-        height: height,
-        frame_num: frame_num,
-        framerate: framerate,
+    for v in vec.iter_mut() {
+        v.shrink_to_fit();
+    }
+    AudioBuffer {
+        channel_num,
+        sample_rate,
+        sample_num: vec[0].len(),
         vec
     }
-}*/
+}
 
 pub fn combine(video_file_path: &str, audio_file_path: &str, file_path: &str, debug: bool) {
     let mut child = Command::new("/bin/sh")
