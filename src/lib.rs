@@ -12,3 +12,4 @@ pub mod ffmpeg;
 pub mod export;
 pub mod renders;
 pub mod util;
+pub mod text;
