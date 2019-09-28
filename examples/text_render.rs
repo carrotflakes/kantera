@@ -14,12 +14,12 @@ use kantera::{
 };
 
 fn main() {
-    let font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf";
+    let font_path = "./IPAexfont00401/ipaexg.ttf";
     let bytes = std::fs::read(font_path).unwrap();
     let font = Font::from_bytes(&bytes).unwrap();
     let (width, height) = (320, 240);
 
-    let image = Rc::new(render(&font, "nyahaha"));
+    let image = Rc::new(render(&font, "にゃはは"));
 
     render_to_mp4(
         10.0, width, height, 30, 1,
