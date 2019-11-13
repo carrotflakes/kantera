@@ -13,6 +13,12 @@ pub fn hsl_to_rgb(h: f64, s: f64, l: f64) -> (f64, f64, f64) {
     }
 }
 
+pub fn u32_noise(x: u32, y: u32, z: u32) -> u32 {
+    // This is experimental implement.
+    let w = x * 2777 + y * 2999 + z * 3252 + 0xa241ee91;
+    (((x ^ w) + z) * ((y ^ w) + z) ^ (x + w) * (y + w) * (z + w)) + 0x9a6246f3
+}
+
 // https://mrl.nyu.edu/~perlin/noise/
 pub fn noise(x: f64, y: f64, z: f64) -> f64 {
     let xx = x.floor() as usize & 255;
