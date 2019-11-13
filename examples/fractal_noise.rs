@@ -8,7 +8,7 @@ use kantera::util::u32_noise;
 fn fractal_noise(n: usize, x: u32, y: u32, z: u32) -> u32 {
     let mut v = 0;
     for i in 0..n {
-        v += u32_noise(x >> i, y >> i, z) / 10;
+        v += u32_noise(x >> i, y >> i, z) / n as u32;
     }
     v
 }
