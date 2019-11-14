@@ -4,13 +4,13 @@ use kantera::pixel::Rgba;
 use kantera::export::render_to_mp4;
 use kantera::renders::{
     sample::Sample,
-    filter::Filter
+    filter::{Filter, make_gaussian_filter}
 };
 use kantera::image::Image;
 use kantera::util::u32_noise;
 
 fn main() {
-    let filter = Image {
+    let _filter = Image {
         width: 3,
         height: 3,
         // vec: vec![Rgba(0.0, 0.0, 0.0, 0.0), Rgba(0.0, 0.0, 0.0, 0.0), Rgba(0.0, 0.0, 0.0, 0.0),
@@ -35,7 +35,7 @@ fn main() {
                 let v = u32_noise(x, y, 0) as f64 / std::u32::MAX as f64;
                 Rgba(v, v, v, 1.0)
             }) as Sample<Rgba>),
-            filter: filter
+            filter: make_gaussian_filter(10, 10, 3.0)
         });
 
     println!("done!");
