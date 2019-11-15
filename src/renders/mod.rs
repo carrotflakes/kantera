@@ -5,6 +5,7 @@ pub mod image_render;
 pub mod composite;
 pub mod transform;
 pub mod sample;
+pub mod map;
 pub mod filter;
 pub mod bokeh;
 pub mod frame;
