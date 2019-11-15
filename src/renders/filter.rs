@@ -62,9 +62,9 @@ pub fn make_gaussian_filter(w: usize, h: usize, d: f64) -> Image<Rgba> {
     let dd = 2.0 * d.powi(2);
     let ddpi = std::f64::consts::PI * dd;
     for y in 0..dh {
-        let fy = (y - h) as f64;
+        let fy = y as f64 - h as f64;
         for x in 0..dw {
-            let fx = (x - w) as f64;
+            let fx = x as f64 - w as f64;
             let v = (-(fx.powi(2) + fy.powi(2)) / dd).exp() / ddpi;
             vec[y * dw + x] = Rgba(v, v, v, v);
         }
