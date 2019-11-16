@@ -4,6 +4,7 @@ pub mod playback;
 pub mod image_render;
 pub mod composite;
 pub mod transform;
+pub mod functional_render;
 pub mod sample;
 pub mod map;
 pub mod filter;
