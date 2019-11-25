@@ -46,23 +46,18 @@ fn main() {
                     let cu = -(x as f64 - w as f64 / 2.0) as f64 / (h / 2) as f64;
                     let theta = cv.atan2(cu);
                     let r = cv.hypot(cu);
-                    let a = r * (n + 1) as f64 * 2.0 + (theta / DPI).fract();
+                    let a = r * (n + 1) as f64 + (theta / DPI).fract();
                     let b = (a.floor() - (theta / DPI).fract()) / n as f64;
                     let c = 2.0f64.powf(b * n as f64 - 2.0) * 1.049 / res;
                     let d = if 0.001 < c && c < 1.0 {
                         ((output[((c * fs as f64 * 0.5).round() as i32) as usize].norm() as f64)
-                         .log10() * 0.15 + 0.2).max(0.0)
+                         .log10() * 0.2 + 0.2).max(0.0)
                     } else {
                         0.0
                     };
-                    buffer[y * w + x] = Rgba(d, d, d, 1.0);
-                    /*
-                    let i = (((10.0f64).powf(theta / DPI) * fs as f64 / 20.0).floor() as usize).min(fs / 2);
-                    let pow = ((output[i].norm() as f64).log10() * 0.15 + 0.2).max(0.0);
-                    let v1 = (pow * 50.0 + 1.0 - (r - 0.5).abs() * h as f64).max(0.0) / 30.0;
-                    let v2 = 1.0 - (0.5 - (r * 4.0 + theta / DPI) % 1.0).abs() * 2.0;
-                    let (r, g, b) = hsl_to_rgb(0.4 - v1, 0.5, v1.max(v2));
-                    buffer[y * w + x] = Rgba(r, g, b, 1.0);*/
+                    //let e = (1.0 - (0.5 - a.fract()).abs() * 2.0).sqrt();
+                    let (r, g, b) = hsl_to_rgb(0.8 - d * 1.2, 0.5, d.powi(3));
+                    buffer[y * w + x] = Rgba(r, g, b, 1.0);
                 }
             }
         }))));
