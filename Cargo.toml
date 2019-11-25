@@ -12,6 +12,7 @@ readme = "README.md"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+num-traits = "0.2"
 cairo-rs = "0.7"
 lazy_static = "1.4"
 regex = "1"

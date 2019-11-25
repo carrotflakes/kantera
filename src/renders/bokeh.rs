@@ -5,7 +5,7 @@ use crate::path::Path;
 pub struct Bokeh {
     pub render: Box<Render<Rgba>>,
     pub max_size: usize,
-    pub size_path: Path
+    pub size_path: Path<f64>
 }
 
 impl Render<Rgba> for Bokeh {

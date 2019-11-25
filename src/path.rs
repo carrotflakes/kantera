@@ -1,29 +1,31 @@
-#[derive(Debug, Copy, Clone)]
-pub enum PointType {
+use crate::v::V;
+
+#[derive(Debug, Clone, Copy)]
+pub enum PointType<T: Clone> { // -> Point
     Constant,
     Linear,
-    Bezier,
+    Bezier(T, T)
 }
 
-#[derive(Debug)]
-pub struct Path {
-    pub points: Vec<(f64, f64, PointType)>
+#[derive(Debug, Clone)]
+pub struct Path<T: V> {
+    pub points: Vec<(f64, T, PointType<T>)>
 }
 
-impl Path {
-    pub fn new(first_value: f64) -> Self {
+impl<T: V> Path<T> {
+    pub fn new(first_value: T) -> Self {
         Path {
             points: vec![(0.0, first_value, PointType::Constant)]
         }
     }
 
-    pub fn append(mut self, d_time: f64, value: f64, point_type: PointType) -> Self {
+    pub fn append(mut self, d_time: f64, value: T, point_type: PointType<T>) -> Self {
         assert!(0.0 <= d_time);
         self.points.push((self.points.last().unwrap().0 + d_time, value, point_type));
         self
     }
 
-    pub fn get_value(&self, time: f64) -> f64 {
+    pub fn get_value(&self, time: f64) -> T {
         if time < self.points[0].0 {
             return self.points[0].1;
         }
@@ -34,9 +36,19 @@ impl Path {
                     PointType::Constant => left.1,
                     PointType::Linear => {
                         let v = (time - left.0) / (right.0 - left.0);
-                        left.1 * (1.0 - v) + right.1 * v
+                        left.1 * (1.0 - v).into() + right.1 * v.into()
                     },
-                    PointType::Bezier => right.1 // TODO
+                    PointType::Bezier(right_handle, _) => {
+                        let left_handle = match left.2 {
+                            PointType::Bezier(_, h) => h,
+                            _ => left.1
+                        };
+                        let v = (time - left.0) / (right.0 - left.0);
+                        let v1 = (1.0 - v).into();
+                        let v2 = v.into();
+                        (left.1 + left_handle * v2) * v1 +
+                            (right_handle * v1 + right.1) * v2
+                    }
                 };
             }
         }
@@ -44,13 +56,21 @@ impl Path {
     }
 }
 
+// trait Timed
+
 #[test]
 fn path_test () {
-    let mut path = Path::new(0.0);
-    path.append(1.0, 1.0, PointType::Constant)
+    let path = Path::new(0.0)
+        .append(1.0, 1.0, PointType::Constant)
         .append(1.0, 2.0, PointType::Linear);
     assert_eq!(path.get_value(-0.5), 0.0);
     assert_eq!(path.get_value(0.5), 0.0);
     assert_eq!(path.get_value(1.5), 1.5);
     assert_eq!(path.get_value(2.5), 2.0);
+
+    use crate::v::Vec2;
+    let path = Path::new(Vec2(0.0, 2.0))
+        .append(1.0, Vec2(1.0, 0.0), PointType::Constant)
+        .append(1.0, Vec2(1.0, 2.0), PointType::Linear);
+    assert_eq!(path.get_value(1.5), Vec2(1.0, 1.0));
 }

@@ -5,7 +5,7 @@ use crate::path::Path;
 #[derive(Debug)]
 pub enum CompositeMode {
     None,
-    Normal(Path)
+    Normal(Path<f64>)
 }
 
 pub struct Composite {
