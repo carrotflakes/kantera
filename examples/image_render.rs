@@ -8,7 +8,6 @@ use kantera::renders::{
     sequence::Sequence,
     image_render::{ImageRender, Sizing}
 };
-use kantera::path::{Path, PointType};
 use kantera::util::hsl_to_rgb;
 
 fn main() {

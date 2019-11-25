@@ -36,7 +36,7 @@ fn main() {
         time_extrapolate::{TimeExtrapolate, ExtrapolationType},
         rgb_transform::{RgbTransform}
     };
-    use kantera::path::{Path, PointType};
+    use kantera::path::{Path, Point};
     use kantera::util::hsl_to_rgb;
 
     let image = Rc::new(make_image());
@@ -78,12 +78,12 @@ fn main() {
                         render: Box::new(ImageRender {image: image.clone(), sizing: Sizing::Fit}),
                         max_size: 10,
                         size_path: Path::new(0.0)
-                            .append(6.0, 0.0, PointType::Constant)
-                            .append(1.0, 10.0, PointType::Linear)
+                            .append(6.0, 0.0, Point::Constant)
+                            .append(1.0, 10.0, Point::Linear)
                     }),
                     CompositeMode::Normal(
                         Path::new(0.0)
-                            .append(1.0, 1.0, PointType::Linear)
+                            .append(1.0, 1.0, Point::Linear)
                     )
                 )
             ]
