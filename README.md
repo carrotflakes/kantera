@@ -3,6 +3,11 @@ Video composition and rendering kit for Rust, depends on FFmpeg and cairo.
 
 Kantera supports you create simple videos from few Rust code.
 
+Process for make video:
+1. Prepare assets (images, videos) on memory if you need.
+1. Build renderer with `render` trait.
+1. Render it use `render_to_mp4` function.
+
 ![kantera-logo](out.jpg)
 
 TODO:
