@@ -1,6 +1,6 @@
 [package]
 name = "kantera"
-description = "Video composition and rednering kit"
+description = "Video composition and rendering kit"
 version = "0.0.1"
 authors = ["carrotflakes <carrotflakes@gmail.com>"]
 edition = "2018"
