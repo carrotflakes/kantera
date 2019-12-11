@@ -1,8 +1,8 @@
 use crate::render::{Res, Render, RenderOpt};
 
 pub struct Map<T: Copy> {
-    pub render: Box<Render<T>>,
-    pub map: Box<Fn(usize, usize, &mut [T])>
+    pub render: Box<dyn Render<T>>,
+    pub map: Box<dyn Fn(usize, usize, &mut [T])>
 }
 
 impl <T: Copy> Render<T> for Map<T> {

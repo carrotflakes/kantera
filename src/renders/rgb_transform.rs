@@ -4,8 +4,8 @@ use crate::pixel::Rgba;
 type Uvt = (f64, f64, f64);
 
 pub struct RgbTransform {
-    pub render: Box<Render<Rgba>>,
-    pub transformer: Box<Fn(f64, f64, f64, Res) -> (Uvt, Uvt, Uvt)>
+    pub render: Box<dyn Render<Rgba>>,
+    pub transformer: Box<dyn Fn(f64, f64, f64, Res) -> (Uvt, Uvt, Uvt)>
 }
 
 impl Render<Rgba> for RgbTransform {

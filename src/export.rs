@@ -20,7 +20,7 @@ pub fn render_to_mp4(
     framerate: usize,
     buffer_frame_num: usize,
     file_name: &str,
-    render: &Render<Rgba>) {
+    render: &dyn Render<Rgba>) {
     let frames: usize = (framerate as f64 * sec).floor() as usize;
     let mut buffer = vec![Rgba::default(); width * height * buffer_frame_num];
     let mut exporter = Exporter::new(width, height, framerate, file_name, true);
@@ -50,7 +50,7 @@ pub fn render_to_mp4(
     exporter.close();
 }
 
-pub fn render_to_buffer(ro: &RenderOpt, render: &Render<Rgba>) -> Buffer<Rgba> {
+pub fn render_to_buffer(ro: &RenderOpt, render: &dyn Render<Rgba>) -> Buffer<Rgba> {
     println!("render start: {:#?}", ro);
     let start = std::time::Instant::now();
 

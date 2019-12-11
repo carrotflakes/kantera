@@ -1,6 +1,6 @@
 use crate::render::{Res, Render, RenderOpt};
 
-pub struct FunctionalRender<T: Copy>(pub Box<Fn(&RenderOpt, f64, &mut [T])>);
+pub struct FunctionalRender<T: Copy>(pub Box<dyn Fn(&RenderOpt, f64, &mut [T])>);
 
 impl <T: Copy> Render<T> for FunctionalRender<T> {
     fn sample(&self, _u: f64, _v: f64, _time: f64, _res: Res) -> T {

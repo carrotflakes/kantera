@@ -5,7 +5,7 @@ use crate::pixel::Rgba;
 use crate::image::Image;
 use crate::buffer::Buffer;
 
-pub fn render_image(width: usize, height: usize, builder: &Fn(Context)) -> Image<Rgba> {
+pub fn render_image(width: usize, height: usize, builder: &dyn Fn(Context)) -> Image<Rgba> {
     let mut surface =
         ImageSurface::create(Format::ARgb32, width as i32, height as i32).unwrap();
     builder(Context::new(&surface));
@@ -16,7 +16,7 @@ pub fn render_buffer(
     width: usize,
     height: usize,
     framerate: usize,
-    builder: &Fn(WrapedContext)) -> Buffer<Rgba> {
+    builder: &dyn Fn(WrapedContext)) -> Buffer<Rgba> {
     let surface = ImageSurface::create(Format::ARgb32, width as i32, height as i32).unwrap();
     let mut images: Vec<Image<Rgba>> = vec![];
 

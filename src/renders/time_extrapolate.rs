@@ -10,7 +10,7 @@ pub enum ExtrapolationType<T: Copy> {
 }
 
 pub struct TimeExtrapolate<T: Copy> {
-    pub render: Box<Render<T>>,
+    pub render: Box<dyn Render<T>>,
     pub duration: f64,
     pub extrapolation_type: ExtrapolationType<T>
 }

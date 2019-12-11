@@ -3,7 +3,7 @@ use crate::image::Image;
 use crate::render::{Res, Range, Render, RenderOpt};
 
 pub struct Filter {
-    pub render: Box<Render<Rgba>>,
+    pub render: Box<dyn Render<Rgba>>,
     pub filter: Image<Rgba>
 }
 

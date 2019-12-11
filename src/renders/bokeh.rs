@@ -3,7 +3,7 @@ use crate::render::{Range, Res, Render, RenderOpt};
 use crate::path::Path;
 
 pub struct Bokeh {
-    pub render: Box<Render<Rgba>>,
+    pub render: Box<dyn Render<Rgba>>,
     pub max_size: usize,
     pub size_path: Path<f64>
 }

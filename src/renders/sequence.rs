@@ -1,7 +1,7 @@
 use crate::render::{Res, Render, RenderOpt};
 
 pub struct Sequence<T: Default> {
-    pub pages: Vec<(f64, bool, Box<Render<T>>)>
+    pub pages: Vec<(f64, bool, Box<dyn Render<T>>)>
 }
 
 const LARGE_F64: f64 = 100000.0;
@@ -57,7 +57,7 @@ impl <T: Default> Sequence<T> {
         }
     }
 
-    pub fn append(mut self, time: f64, restart: bool, render: Box<Render<T>>) -> Self {
+    pub fn append(mut self, time: f64, restart: bool, render: Box<dyn Render<T>>) -> Self {
         self.pages.push((time, restart, render));
         self
     }

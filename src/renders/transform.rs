@@ -1,10 +1,10 @@
 use crate::render::{Res, Render};
 use crate::util::noise;
 
-pub type TransformFn = Fn(f64, f64, f64, Res) -> (f64, f64, f64);
+pub type TransformFn = dyn Fn(f64, f64, f64, Res) -> (f64, f64, f64);
 
 pub struct Transform<T> {
-    pub render: Box<Render<T>>,
+    pub render: Box<dyn Render<T>>,
     pub transformer: Box<TransformFn>
 }
 

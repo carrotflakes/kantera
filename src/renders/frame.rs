@@ -9,7 +9,7 @@ pub enum FrameType<T: Copy> {
 }
 
 pub struct Frame<T: Copy> {
-    pub render: Box<Render<T>>,
+    pub render: Box<dyn Render<T>>,
     pub frame_type: FrameType<T>
 }
 

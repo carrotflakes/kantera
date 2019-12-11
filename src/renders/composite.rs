@@ -9,7 +9,7 @@ pub enum CompositeMode {
 }
 
 pub struct Composite {
-    pub layers: Vec<(Box<Render<Rgba>>, CompositeMode)>
+    pub layers: Vec<(Box<dyn Render<Rgba>>, CompositeMode)>
 }
 
 impl Render<Rgba> for Composite {
