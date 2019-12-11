@@ -19,7 +19,6 @@ impl Render<Rgba> for Filter {
         let mut sub_buffer = vec![Rgba::default(); (u_res + width) * (v_res + height)];
 
         for f in frame_range.start..frame_range.end {
-            let time = f as f64 / *framerate as f64;
             self.render.render(
                 &RenderOpt {
                     u_range: Range(u_range.0 - ((width / 2) as f64 / *u_res as f64),

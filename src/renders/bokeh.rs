@@ -16,7 +16,6 @@ impl Render<Rgba> for Bokeh {
     fn render(&self, ro: &RenderOpt, buffer: &mut [Rgba]) {
         let RenderOpt {u_range, u_res, v_range, v_res, frame_range, framerate, ..} = ro;
         let size = self.max_size;
-        let frame_size = u_res * v_res;
         let mut sub_buffer = vec![Rgba::default(); (u_res + size * 2 + 1) * (v_res + size * 2 + 1)];
 
         for f in frame_range.start..frame_range.end {

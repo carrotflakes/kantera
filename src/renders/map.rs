@@ -6,7 +6,7 @@ pub struct Map<T: Copy> {
 }
 
 impl <T: Copy> Render<T> for Map<T> {
-    fn sample(&self, u: f64, v: f64, time: f64, res: Res) -> T {
+    fn sample(&self, _u: f64, _v: f64, _time: f64, _res: Res) -> T {
         unimplemented!();
     }
 

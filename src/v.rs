@@ -75,7 +75,7 @@ impl<T: Num + From<f64>> From<f64> for Vec2<T> {
 }
 impl<T: Num + From<f64>> Num for Vec2<T> {
     type FromStrRadixErr = ::std::num::ParseIntError;
-    fn from_str_radix(str: &str, radix: u32) -> Result<Self, Self::FromStrRadixErr> {
+    fn from_str_radix(_str: &str, _radix: u32) -> Result<Self, Self::FromStrRadixErr> {
         unimplemented!()
     }
 }

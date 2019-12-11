@@ -14,11 +14,11 @@ pub struct Composite {
 
 impl Render<Rgba> for Composite {
     fn sample(&self, u: f64, v: f64, time: f64, res: Res) -> Rgba {
-        let mut value = Rgba::default();
+        let mut values = [Rgba::default()];
         for (render, cm) in &self.layers {
-            composite(&mut [value], &[render.sample(u, v, time, res)], time, cm);
+            composite(&mut values, &[render.sample(u, v, time, res)], time, cm);
         }
-        value
+        values[0]
     }
 
     fn render(&self, ro: &RenderOpt, buffer: &mut [Rgba]) {

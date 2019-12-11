@@ -1,5 +1,5 @@
 use std::io::Write;
-use std::process::{Command, Child, Stdio, ChildStdin};
+use std::process::{Command, Child, Stdio};
 use crate::pixel::Rgba;
 
 pub struct Exporter {
@@ -88,7 +88,7 @@ pub fn import(file_path: &str) -> Buffer<Rgba> {
     let mut vec = Vec::with_capacity(width * height * frame_num);
     let mut buf = vec![0u8; width * height * 4];
     for _ in 0..frame_num { // TODO: while let
-        if let _ = reader.read_exact(buf.as_mut()) {
+        if let Ok(_) = reader.read_exact(buf.as_mut()) {
             for i in 0..width * height {
                 vec.push(Rgba(
                     buf[i * 4 + 2] as f64 / 255.0,
@@ -262,7 +262,7 @@ pub fn export_audio(audio_buffer: &AudioBuffer<u16>, file_name: &str, debug: boo
         .spawn()
         .expect("failed to execute child");
 
-    let mut stdin = child.stdin.as_mut().expect("failed to get stdin");
+    let stdin = child.stdin.as_mut().expect("failed to get stdin");
 
     for i in 0..audio_buffer.sample_num {
         for j in 0..audio_buffer.channel_num {

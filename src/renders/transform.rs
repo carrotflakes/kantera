@@ -28,7 +28,6 @@ pub fn camera_shake(size: f64) -> Box<TransformFn> {
 
 pub fn camera_shake2(size: f64, time_scale: f64) -> Box<TransformFn> {
     Box::new(move |u, v, time, res| {
-        let r = time;
         (
             u + noise(0.0, 0.0, time * time_scale) / res.0 as f64 * size,
             v + noise(0.5, 2.0, time * time_scale) / res.1 as f64 * size,
