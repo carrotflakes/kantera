@@ -60,6 +60,17 @@ impl<T> Render<T> for Box<dyn Render<T>> {
         self.as_ref().render(ro, buffer);
     }
 }
+impl<T> Render<T> for std::rc::Rc<dyn Render<T>> {
+    #[inline(always)]
+    fn sample(&self, u: f64, v: f64, time: f64, res: Res) -> T {
+        self.as_ref().sample(u, v, time, res)
+    }
+
+    #[inline(always)]
+    fn render(&self, ro: &RenderOpt, buffer: &mut [T]) {
+        self.as_ref().render(ro, buffer);
+    }
+}
 
 pub struct Dummy();
 
