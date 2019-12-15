@@ -19,4 +19,4 @@ regex = "1"
 rusttype = "0.8"
 image = "0.22"
 rustfft = "3.0"
-gluten = { path = "../gluten", version = "*" }
+gluten = { git = "https://github.com/carrotflakes/gluten.git", branch = "kantera", version = "*" }
