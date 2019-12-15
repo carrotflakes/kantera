@@ -3,12 +3,12 @@ use crate::pixel::Rgba;
 
 type Uvt = (f64, f64, f64);
 
-pub struct RgbTransform {
-    pub render: Box<dyn Render<Rgba>>,
+pub struct RgbTransform<R: Render<Rgba>> {
+    pub render: R,
     pub transformer: Box<dyn Fn(f64, f64, f64, Res) -> (Uvt, Uvt, Uvt)>
 }
 
-impl Render<Rgba> for RgbTransform {
+impl<R: Render<Rgba>> Render<Rgba> for RgbTransform<R> {
     fn sample(&self, u: f64, v: f64, time: f64, res: Res) -> Rgba {
         let (r, g, b) = (self.transformer)(u, v, time, res);
         let r = self.render.sample(r.0, r.1, r.2, res).0;

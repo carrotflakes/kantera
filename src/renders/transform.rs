@@ -3,12 +3,19 @@ use crate::util::noise;
 
 pub type TransformFn = dyn Fn(f64, f64, f64, Res) -> (f64, f64, f64);
 
-pub struct Transform<T> {
-    pub render: Box<dyn Render<T>>,
-    pub transformer: Box<TransformFn>
+pub struct Transform<T, R: Render<T>> {
+    pub render: R,
+    pub transformer: Box<TransformFn>,
+    t: std::marker::PhantomData<T>
 }
 
-impl <T> Render<T> for Transform<T> {
+impl<T, R: Render<T>> Transform<T, R> {
+    pub fn new(render: R, transformer: Box<TransformFn>) -> Transform<T, R> {
+        Transform {render, transformer, t: std::marker::PhantomData}
+    }
+}
+
+impl<T, R: Render<T>> Render<T> for Transform<T, R> {
     fn sample(&self, u: f64, v: f64, time: f64, res: Res) -> T {
         let (u, v, time) = (self.transformer)(u, v, time, res);
         self.render.sample(u, v, time, res)

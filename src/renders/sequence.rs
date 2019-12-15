@@ -1,12 +1,13 @@
 use crate::render::{Res, Render, RenderOpt};
 
-pub struct Sequence<T: Default> {
-    pub pages: Vec<(f64, bool, Box<dyn Render<T>>)>
+pub struct Sequence<T: Default, R: Render<T>> {
+    pub pages: Vec<(f64, bool, R)>,
+    t: std::marker::PhantomData<T>
 }
 
 const LARGE_F64: f64 = 100000.0;
 
-impl <T: Default> Render<T> for Sequence<T> {
+impl<T: Default, R: Render<T>> Render<T> for Sequence<T, R> {
     fn sample(&self, u: f64, v: f64, time: f64, res: Res) -> T {
         let mut offset_time = 0.0;
         for i in 0..self.pages.len() {
@@ -50,14 +51,15 @@ impl <T: Default> Render<T> for Sequence<T> {
     }
 }
 
-impl <T: Default> Sequence<T> {
+impl<T: Default, R: Render<T>> Sequence<T, R> {
     pub fn new() -> Self {
         Sequence {
-            pages: vec![]
+            pages: vec![],
+            t: std::marker::PhantomData
         }
     }
 
-    pub fn append(mut self, time: f64, restart: bool, render: Box<dyn Render<T>>) -> Self {
+    pub fn append(mut self, time: f64, restart: bool, render: R) -> Self {
         self.pages.push((time, restart, render));
         self
     }

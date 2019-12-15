@@ -2,12 +2,12 @@ use crate::pixel::Rgba;
 use crate::image::Image;
 use crate::render::{Res, Range, Render, RenderOpt};
 
-pub struct Filter {
-    pub render: Box<dyn Render<Rgba>>,
+pub struct Filter<R: Render<Rgba>> {
+    pub render: R,
     pub filter: Image<Rgba>
 }
 
-impl Render<Rgba> for Filter {
+impl<R: Render<Rgba>> Render<Rgba> for Filter<R> {
     fn sample(&self, _u: f64, _v: f64, _time: f64, _res: Res) -> Rgba {
         unimplemented!();
     }

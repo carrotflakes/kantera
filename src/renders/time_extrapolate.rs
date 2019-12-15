@@ -9,13 +9,13 @@ pub enum ExtrapolationType<T: Copy> {
     Reflect
 }
 
-pub struct TimeExtrapolate<T: Copy> {
-    pub render: Box<dyn Render<T>>,
+pub struct TimeExtrapolate<T: Copy, R: Render<T>> {
+    pub render: R,
     pub duration: f64,
     pub extrapolation_type: ExtrapolationType<T>
 }
 
-impl <T: Copy> Render<T> for TimeExtrapolate<T> {
+impl <T: Copy, R: Render<T>> Render<T> for TimeExtrapolate<T, R> {
     fn sample(&self, u: f64, v: f64, time: f64, res: Res) -> T {
         match &self.extrapolation_type {
             ExtrapolationType::None => self.render.sample(u, v, time, res),

@@ -2,6 +2,7 @@ extern crate kantera;
 
 use kantera::pixel::Rgba;
 use kantera::export::render_to_mp4;
+use kantera::render::Render;
 use kantera::renders::{
     sample::Sample,
     filter::{Filter, make_gaussian_filter}
@@ -34,7 +35,7 @@ fn main() {
                 let y = (v / 10.0 * h as f64).floor() as u32;
                 let v = u32_noise(x, y, 0) as f64 / std::u32::MAX as f64;
                 Rgba(v, v, v, 1.0)
-            }) as Sample<Rgba>),
+            }) as Sample<Rgba>) as Box<dyn Render<Rgba>>,
             filter: make_gaussian_filter(10, 10, 3.0)
         });
 

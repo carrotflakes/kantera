@@ -2,13 +2,13 @@ use crate::pixel::Rgba;
 use crate::render::{Range, Res, Render, RenderOpt};
 use crate::path::Path;
 
-pub struct Bokeh {
-    pub render: Box<dyn Render<Rgba>>,
+pub struct Bokeh<R: Render<Rgba>> {
+    pub render: R,
     pub max_size: usize,
     pub size_path: Path<f64>
 }
 
-impl Render<Rgba> for Bokeh {
+impl<R: Render<Rgba>> Render<Rgba> for Bokeh<R> {
     fn sample(&self, _u: f64, _v: f64, _time: f64, _res: Res) -> Rgba {
         panic!("Bokeh cannot sample");
     }

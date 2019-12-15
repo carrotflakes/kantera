@@ -8,11 +8,11 @@ pub enum CompositeMode {
     Normal(Path<f64>)
 }
 
-pub struct Composite {
-    pub layers: Vec<(Box<dyn Render<Rgba>>, CompositeMode)>
+pub struct Composite<R: Render<Rgba>> {
+    pub layers: Vec<(R, CompositeMode)>
 }
 
-impl Render<Rgba> for Composite {
+impl<R: Render<Rgba>> Render<Rgba> for Composite<R> {
     fn sample(&self, u: f64, v: f64, time: f64, res: Res) -> Rgba {
         let mut values = [Rgba::default()];
         for (render, cm) in &self.layers {

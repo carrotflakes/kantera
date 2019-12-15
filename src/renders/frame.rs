@@ -8,12 +8,12 @@ pub enum FrameType<T: Copy> {
     Reflect
 }
 
-pub struct Frame<T: Copy> {
-    pub render: Box<dyn Render<T>>,
+pub struct Frame<T: Copy, R: Render<T>> {
+    pub render: R,
     pub frame_type: FrameType<T>
 }
 
-impl <T: Copy> Render<T> for Frame<T> {
+impl <T: Copy, R: Render<T>> Render<T> for Frame<T, R> {
     fn sample(&self, u: f64, v: f64, time: f64, res: Res) -> T {
         if (0.0..=1.0).contains(&u) && (0.0..=1.0).contains(&v) {
             self.render.sample(u, v, time, res)
