@@ -30,7 +30,7 @@ fn main() {
     render_to_mp4(
         10.0, width, height, 30, 1,
         "image_render.mp4",
-        &Sequence::new()
+        &Sequence::<Rgba, Box<dyn Render<Rgba>>>::new()
             .append(
                 0.0,
                 true,

@@ -3,6 +3,7 @@ use kantera::{
     pixel::Rgba,
     v::Vec2,
     path::{Path, Point},
+    render::Render,
     renders::{
         image_render::{ImageRender, Sizing},
         composite::{Composite, CompositeMode},
@@ -63,7 +64,7 @@ fn main() {
     render_to_mp4(
         10.0, 320, 240, 30, 1,
         "path_anim.mp4",
-        &Composite {
+        &Composite::<Box<dyn Render<Rgba>>> {
             layers: vec![
                 (
                     Box::new(ImageRender {image: image.clone(), sizing: Sizing::Fit}),

@@ -4,6 +4,7 @@ use std::rc::Rc;
 use kantera::{
     pixel::Rgba,
     export::render_to_mp4,
+    render::Render,
     renders::{
         plain::Plain,
         composite::{Composite, CompositeMode},
@@ -24,7 +25,7 @@ fn main() {
     render_to_mp4(
         10.0, width, height, 30, 1,
         "text_render.mp4",
-        &Composite {
+        &Composite::<Box<dyn Render<Rgba>>> {
             layers: vec![
                 (
                     Box::new(Plain(Rgba(0.1, 0.1, 0.1, 1.0))),

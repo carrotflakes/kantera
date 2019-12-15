@@ -24,7 +24,6 @@ fn main() {
     use std::rc::Rc;
     use kantera::export::{render_to_mp4, render_to_buffer};
     use kantera::renders::{
-        plain::Plain,
         sequence::Sequence,
         playback::Playback,
         image_render::{ImageRender, Sizing},
@@ -60,7 +59,7 @@ fn main() {
             frame_range: 0..30 * 7,
             framerate: 30
         },
-        &Composite {
+        &Composite::<Box<dyn Render<Rgba>>> {
             layers: vec![
                 (
                     //Box::new(Plain(Rgba(0.0, 0.0, 1.0, 1.0))),
@@ -74,7 +73,7 @@ fn main() {
                     CompositeMode::None
                 ),
                 (
-                    Box::new(Bokeh {
+                    Box::new(Bokeh::<Box<dyn Render<Rgba>>> {
                         render: Box::new(ImageRender {image: image.clone(), sizing: Sizing::Fit}),
                         max_size: 10,
                         size_path: Path::new(0.0)
@@ -97,16 +96,16 @@ fn main() {
         30,
         1,
         "demo.mp4",
-        &Sequence::new()
+        &Sequence::<Rgba, Box<dyn Render<Rgba>>>::new()
             .append(
                 0.0,
                 true,
-                Box::new(Transform {
-                    render: Box::new(Frame {
+                Box::new(Transform::<Rgba, Box<dyn Render<Rgba>>>::new(
+                    Box::new(Frame::<Rgba, Box<dyn Render<Rgba>>> {
                         render: Box::new(Playback {buffer: Box::new(buffer)}),
                         frame_type: FrameType::Repeat
                     }),
-                    transformer: Box::new(|u, v, time, _| {
+                    Box::new(|u, v, time, _| {
                         //let rad = time * 2.0;
                         (
                             //(u - 0.5) * rad.cos() + (v - 0.5) * rad.sin() + 0.5,
@@ -116,13 +115,13 @@ fn main() {
                             time
                         )
                     })
-                })
+                ))
             )
             .append(
                 3.0,
                 true,
-                Box::new(RgbTransform {
-                    render: Box::new(TimeExtrapolate {
+                Box::new(RgbTransform::<Box<dyn Render<Rgba>>> {
+                    render: Box::new(TimeExtrapolate::<Rgba, Box<dyn Render<Rgba>>> {
                         duration: buffer2.frame_num as f64 / buffer2.framerate as f64,
                         render: Box::new(Playback::from(buffer2)),
                         extrapolation_type: ExtrapolationType::Extend

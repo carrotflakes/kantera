@@ -31,56 +31,55 @@ fn main() {
     render_to_mp4(
         10.0, width, height, 30, 1,
         "transform.mp4",
-        &Sequence::new()
+        &Sequence::<Rgba, Box<dyn Render<Rgba>>>::new()
             .append(
                 0.0,
                 true,
-                Box::new(Transform {
-                    render: Box::new(ImageRender {image: image.clone(), sizing: Sizing::Fit}),
-                    transformer: Box::new(Mat::new()
-                                          .get_transformer())
-                }))
+                Box::new(Transform::<Rgba, Box<dyn Render<Rgba>>>::new(
+                    Box::new(ImageRender {image: image.clone(), sizing: Sizing::Fit}),
+                    Box::new(Mat::new().get_transformer())
+                )))
             .append(
                 2.0,
                 true,
-                Box::new(Transform {
-                    render: Box::new(ImageRender {image: image.clone(), sizing: Sizing::Fit}),
-                    transformer: Box::new(Mat::new()
-                                          .scale(0.5, 0.5)
-                                          .get_transformer())
-                }))
+                Box::new(Transform::<Rgba, Box<dyn Render<Rgba>>>::new(
+                    Box::new(ImageRender {image: image.clone(), sizing: Sizing::Fit}),
+                    Box::new(Mat::new()
+                        .scale(0.5, 0.5)
+                        .get_transformer())
+                )))
             .append(
                 4.0,
                 true,
-                Box::new(Transform {
-                    render: Box::new(ImageRender {image: image.clone(), sizing: Sizing::Fit}),
-                    transformer: Box::new(Mat::new()
-                                          .scale(0.5, 0.5)
-                                          .translate(160.0, 120.0)
-                                          .get_transformer())
-                }))
+                Box::new(Transform::<Rgba, Box<dyn Render<Rgba>>>::new(
+                    Box::new(ImageRender {image: image.clone(), sizing: Sizing::Fit}),
+                    Box::new(Mat::new()
+                        .scale(0.5, 0.5)
+                        .translate(160.0, 120.0)
+                        .get_transformer())
+                )))
             .append(
                 6.0,
                 true,
-                Box::new(Transform {
-                    render: Box::new(ImageRender {image: image.clone(), sizing: Sizing::Fit}),
-                    transformer: Box::new(Mat::new()
-                                          .scale(0.5, 0.5)
-                                          .translate(160.0, 120.0)
-                                          .rotate(20.0f64.to_radians())
-                                          .get_transformer())
-                }))
+                Box::new(Transform::<Rgba, Box<dyn Render<Rgba>>>::new(
+                    Box::new(ImageRender {image: image.clone(), sizing: Sizing::Fit}),
+                    Box::new(Mat::new()
+                        .scale(0.5, 0.5)
+                        .translate(160.0, 120.0)
+                        .rotate(20.0f64.to_radians())
+                        .get_transformer())
+                )))
             .append(
                 8.0,
                 true,
-                Box::new(Transform {
-                    render: Box::new(ImageRender {image: image.clone(), sizing: Sizing::Fit}),
-                    transformer: Box::new(Mat::new()
-                                          .translate(-160.0, -120.0)
-                                          .rotate(20.0f64.to_radians())
-                                          .translate(160.0, 120.0)
-                                          .get_transformer())
-                }))
+                Box::new(Transform::<Rgba, Box<dyn Render<Rgba>>>::new(
+                    Box::new(ImageRender {image: image.clone(), sizing: Sizing::Fit}),
+                    Box::new(Mat::new()
+                        .translate(-160.0, -120.0)
+                        .rotate(20.0f64.to_radians())
+                        .translate(160.0, 120.0)
+                        .get_transformer())
+                )))
             );
 
     println!("done!");

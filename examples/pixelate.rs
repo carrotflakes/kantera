@@ -2,6 +2,7 @@ extern crate kantera;
 
 use kantera::pixel::Rgba;
 use kantera::export::render_to_mp4;
+use kantera::render::Render;
 use kantera::renders::{
     sample::Sample,
     map::Map
@@ -12,7 +13,7 @@ fn main() {
     render_to_mp4(
         5.0, 320, 240, 30, 1,
         "pixelate.mp4",
-        &Map {
+        &Map::<Rgba, Box<dyn Render<Rgba>>> {
             render: Box::new(Box::new(|u: f64, v: f64, time: f64, (w, h): (usize, usize)| {
                 let d = ((u - 0.5).powi(2) + (v - 0.5).powi(2)).powf(0.5);
                 let (u, v) = ((u - 0.5) * (0.5 + d * 2.0) + 0.5, (v - 0.5) * (0.5 + d * 2.0) + 0.5);

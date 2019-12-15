@@ -44,8 +44,8 @@ fn main() {
     render_to_mp4(
         5.0, width, height, 30, 1,
         "glitch00.mp4",
-        &RgbTransform {
-            render: Box::new(Frame {
+        &RgbTransform::<Box<dyn Render<Rgba>>> {
+            render: Box::new(Frame::<Rgba, Box<dyn Render<Rgba>>> {
                 render: Box::new(ImageRender {
                     image: img.clone(),
                     sizing: Sizing::Contain
