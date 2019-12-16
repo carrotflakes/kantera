@@ -24,6 +24,34 @@ pub fn make_env() -> Env {
         r(vec) as R<V>
     }) as MyFn));
     env.insert("parse_f64".to_string(), fun!(parse_f64(&String)));
+    env.insert("add_f64".to_string(), r(Box::new(|vec: Vec<R<V>>| -> R<V> {
+        let mut acc = 0.0;
+        for rv in vec {
+            acc += *rv.borrow().downcast_ref::<f64>().unwrap();
+        }
+        r(acc)
+    }) as MyFn));
+    env.insert("sub_f64".to_string(), r(Box::new(|vec: Vec<R<V>>| -> R<V> {
+        let mut acc = *vec[0].borrow().downcast_ref::<f64>().unwrap();
+        for rv in vec.iter().skip(1) {
+            acc -= *rv.borrow().downcast_ref::<f64>().unwrap();
+        }
+        r(acc)
+    }) as MyFn));
+    env.insert("mul_f64".to_string(), r(Box::new(|vec: Vec<R<V>>| -> R<V> {
+        let mut acc = 1.0;
+        for rv in vec {
+            acc *= *rv.borrow().downcast_ref::<f64>().unwrap();
+        }
+        r(acc)
+    }) as MyFn));
+    env.insert("div_f64".to_string(), r(Box::new(|vec: Vec<R<V>>| -> R<V> {
+        let mut acc = *vec[0].borrow().downcast_ref::<f64>().unwrap();
+        for rv in vec.iter().skip(1) {
+            acc /= *rv.borrow().downcast_ref::<f64>().unwrap();
+        }
+        r(acc)
+    }) as MyFn));
     env.insert("rgba".to_string(), r(Box::new(|vec: Vec<R<V>>| {
         r(Rgba(
             *vec[0].borrow().downcast_ref::<f64>().unwrap(),
