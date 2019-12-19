@@ -17,57 +17,57 @@ pub fn make_env() -> Env {
     let mut env = Env::new();
     env.insert("true".to_string(), r(true));
     env.insert("false".to_string(), r(false));
-    env.insert("first".to_string(), r(Box::new(|vec: Vec<R<V>>| {
+    env.insert("first".to_string(), r(Box::new(|vec: Vec<Val>| {
         vec[0].clone()
     }) as MyFn));
-    env.insert("vec".to_string(), r(Box::new(|vec: Vec<R<V>>| {
-        r(vec) as R<V>
+    env.insert("vec".to_string(), r(Box::new(|vec: Vec<Val>| {
+        r(vec)
     }) as MyFn));
     env.insert("parse_f64".to_string(), fun!(parse_f64(&String)));
-    env.insert("add_f64".to_string(), r(Box::new(|vec: Vec<R<V>>| -> R<V> {
+    env.insert("add_f64".to_string(), r(Box::new(|vec: Vec<Val>| -> Val {
         let mut acc = 0.0;
         for rv in vec {
             acc += *rv.borrow().downcast_ref::<f64>().unwrap();
         }
         r(acc)
     }) as MyFn));
-    env.insert("sub_f64".to_string(), r(Box::new(|vec: Vec<R<V>>| -> R<V> {
+    env.insert("sub_f64".to_string(), r(Box::new(|vec: Vec<Val>| -> Val {
         let mut acc = *vec[0].borrow().downcast_ref::<f64>().unwrap();
         for rv in vec.iter().skip(1) {
             acc -= *rv.borrow().downcast_ref::<f64>().unwrap();
         }
         r(acc)
     }) as MyFn));
-    env.insert("mul_f64".to_string(), r(Box::new(|vec: Vec<R<V>>| -> R<V> {
+    env.insert("mul_f64".to_string(), r(Box::new(|vec: Vec<Val>| -> Val {
         let mut acc = 1.0;
         for rv in vec {
             acc *= *rv.borrow().downcast_ref::<f64>().unwrap();
         }
         r(acc)
     }) as MyFn));
-    env.insert("div_f64".to_string(), r(Box::new(|vec: Vec<R<V>>| -> R<V> {
+    env.insert("div_f64".to_string(), r(Box::new(|vec: Vec<Val>| -> Val {
         let mut acc = *vec[0].borrow().downcast_ref::<f64>().unwrap();
         for rv in vec.iter().skip(1) {
             acc /= *rv.borrow().downcast_ref::<f64>().unwrap();
         }
         r(acc)
     }) as MyFn));
-    env.insert("rgba".to_string(), r(Box::new(|vec: Vec<R<V>>| {
+    env.insert("rgba".to_string(), r(Box::new(|vec: Vec<Val>| {
         r(Rgba(
             *vec[0].borrow().downcast_ref::<f64>().unwrap(),
             *vec[1].borrow().downcast_ref::<f64>().unwrap(),
             *vec[2].borrow().downcast_ref::<f64>().unwrap(),
             *vec[3].borrow().downcast_ref::<f64>().unwrap()
-        )) as R<V>
+        ))
     }) as MyFn));
-    env.insert("plain".to_string(), r(Box::new(|vec: Vec<R<V>>| {
+    env.insert("plain".to_string(), r(Box::new(|vec: Vec<Val>| {
         let p = *vec[0].borrow().downcast_ref::<Rgba>().unwrap();
-        r(Some(Rc::new(crate::renders::plain::Plain(p)) as Rc<dyn Render<Rgba>>)) as R<V>
+        r(Some(Rc::new(crate::renders::plain::Plain(p)) as Rc<dyn Render<Rgba>>))
     }) as MyFn));
-    env.insert("sequence".to_string(), r(Box::new(|vec: Vec<R<V>>| {
+    env.insert("sequence".to_string(), r(Box::new(|vec: Vec<Val>| {
         let mut sequence = crate::renders::sequence::Sequence::new();
         for p in vec.into_iter() {
-            let p = p.borrow().downcast_ref::<Vec<R<V>>>().unwrap().clone();
+            let p = p.borrow().downcast_ref::<Vec<Val>>().unwrap().clone();
             let time = *p[0].borrow().downcast_ref::<f64>().unwrap();
             let restart = *p[1].borrow().downcast_ref::<bool>().unwrap();
             //let render = p[2].borrow().downcast_ref::<Box<dyn Render<Rgba>>>().unwrap();
@@ -81,7 +81,7 @@ pub fn make_env() -> Env {
             let render = p[2].borrow_mut().downcast_mut::<Option<Rc<dyn Render<Rgba>>>>().unwrap().take().unwrap();
             sequence = sequence.append(time, restart, render);
         }
-        r(Some(Rc::new(sequence) as Rc<dyn Render<Rgba>>)) as R<V>
+        r(Some(Rc::new(sequence) as Rc<dyn Render<Rgba>>))
     }) as MyFn));
     env
 }
