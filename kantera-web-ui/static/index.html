@@ -15,6 +15,7 @@
       const codeEl = document.getElementById('code');
       const statusEl = document.getElementById('status');
       let ws = null;
+      let syncObj = {frame: 0};
 
       function connect() {
         if (ws) {
@@ -32,10 +33,15 @@
             document.getElementById('img').src = (window.URL || window.webkitURL).createObjectURL(e.data);
             history.push(Date.now());
             if (history.length > 30) history.shift();
-            statusEl.textContent = (history.length / (history[history.length - 1] - history[0]) * 1000) + ' fps';
+          } else if (typeof e.data === 'string') {
+            const data = JSON.parse(e.data);
+            if (data.type === 'sync') {
+              syncObj = {...syncObj, ...data, type: undefined};
+            }
           } else {
             console.log(e.data);
           }
+          statusEl.textContent = (history.length / Math.max(1, history[history.length - 1] - history[0]) * 1000) + ' fps, ' + syncObj.frame + ' frame';
         };
         ws.onclose = () => {
           console.log('closed');

@@ -23,7 +23,7 @@ const CLIENT_TIMEOUT: Duration = Duration::from_secs(10);
 
 struct MyWebSocket {
     hb: Instant,
-    count: Mutex<i32>,
+    frame: Mutex<i32>,
     render: Rc<dyn Render<Rgba>>
 }
 
@@ -55,7 +55,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWebSocket {
                 if let Ok(ast) = parse(&text) {
                     let res = eval(make_env(), ast);
                     self.render = res.borrow().downcast_ref::<Option<Rc<dyn Render<Rgba>>>>().unwrap().as_ref().unwrap().clone();
-                    *self.count.lock().unwrap() = 0;
+                    *self.frame.lock().unwrap() = 0;
                 } else {
                     ctx.text("parse failed");
                 }
@@ -71,7 +71,7 @@ impl MyWebSocket {
     fn new() -> Self {
         Self {
             hb: Instant::now(),
-            count: Mutex::new(0),
+            frame: Mutex::new(0),
             render: Rc::new(Dummy())
         }
     }
@@ -88,10 +88,10 @@ impl MyWebSocket {
         let framerate = 30usize;
         ctx.run_interval(Duration::from_millis(1000 / framerate as u64), move |act, ctx| {
             let (width, height) = (600usize, 400usize);
-            let i = {
-                let mut count = act.count.lock().unwrap();
-                *count += 1;
-                *count - 1
+            let frame = {
+                let mut frame = act.frame.lock().unwrap();
+                *frame += 1;
+                *frame - 1
             };
             // let img: RgbImage = ImageBuffer::from_fn(width, height, |x, y| {
             //     image::Rgb([((x + i) % 64) as u8, (x % 128) as u8, (y % 64) as u8])
@@ -103,13 +103,14 @@ impl MyWebSocket {
                 u_res: width,
                 v_range: Range::unit(),
                 v_res: height,
-                frame_range: i..i+1,
+                frame_range: frame..frame+1,
                 framerate: framerate
             }, &act.render);
             let buffer: Vec<u8> = buffer.vec.iter().flat_map(|p| vec![p.0, p.1, p.2, p.3]).map(|x| (x * 255.0).floor() as u8).collect();
             let mut vec = Vec::new();
             image::png::PNGEncoder::new(&mut vec).encode(&buffer, width as u32, height as u32, image::RGBA(8)).unwrap();
             ctx.binary(vec);
+            ctx.text(format!(r#"{{"type":"sync","frame":{}}}"#, frame));
         });
     }
 }
@@ -133,11 +134,11 @@ async fn main() -> io::Result<()> {
     std::env::set_var("RUST_LOG", "actix_web=info");
     env_logger::init();
 
-    let counter = web::Data::new(Mutex::new(0usize));
+    let data = web::Data::new(Mutex::new(0usize));
 
     HttpServer::new(move || {
         App::new()
-        .app_data(counter.clone())
+        .app_data(data.clone())
         .wrap(middleware::Logger::default())
         .service(web::resource("/").to(index))
         .service(web::resource("/ws/").route(web::get().to(ws_index)))
