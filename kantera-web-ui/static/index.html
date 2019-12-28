@@ -41,7 +41,7 @@
           } else {
             console.log(e.data);
           }
-          statusEl.textContent = (history.length / Math.max(1, history[history.length - 1] - history[0]) * 1000) + ' fps, ' + syncObj.frame + ' frame';
+          statusEl.textContent = (history.length / Math.max(1, history[history.length - 1] - history[0]) * 1000 + '').substr(0, 5) + ' fps, ' + syncObj.frame + ' frame';
         };
         ws.onclose = () => {
           console.log('closed');
