@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>kantera</title>
+    <style>
+    </style>
+  </head>
+  <body>
+    <button onClick="connect()">connect</button>
+    <button onClick="apply()">apply</button>
+    <div id="status"></div>
+    <textarea id="code" rows="50" cols="40"></textarea>
+    <img id="img"/>
+    <script>
+      const codeEl = document.getElementById('code');
+      const statusEl = document.getElementById('status');
+      let ws = null;
+
+      function connect() {
+        if (ws) {
+          ws.close();
+          ws = null;
+          return;
+        }
+        ws = new WebSocket('ws://' + location.host + '/ws/');
+        const history = [Date.now()];
+        ws.onopen = () => {
+          console.log('connected');
+        };
+        ws.onmessage = async e => {
+          if (e.data instanceof Blob) {
+            document.getElementById('img').src = (window.URL || window.webkitURL).createObjectURL(e.data);
+            history.push(Date.now());
+            if (history.length > 30) history.shift();
+            statusEl.textContent = (history.length / (history[history.length - 1] - history[0]) * 1000) + ' fps';
+          } else {
+            console.log(e.data);
+          }
+        };
+        ws.onclose = () => {
+          console.log('closed');
+        };
+      }
+
+      function apply() {
+        if (!ws) return;
+        ws.send(codeEl.value);
+      }
+    </script>
+  </body>
+</html>
