@@ -5,6 +5,7 @@ pub use gluten::{
     core::{eval, Env}
 };
 use crate::{
+    image::Image,
     pixel::Rgba,
     render::Render
 };
@@ -70,18 +71,43 @@ pub fn make_env() -> Env {
             let p = p.borrow().downcast_ref::<Vec<Val>>().unwrap().clone();
             let time = *p[0].borrow().downcast_ref::<f64>().unwrap();
             let restart = *p[1].borrow().downcast_ref::<bool>().unwrap();
-            //let render = p[2].borrow().downcast_ref::<Box<dyn Render<Rgba>>>().unwrap();
-            //let render = std::cell::RefCell::new(() as V);
-            //std::mem::replace(p[2].get_mut(), render);
-            //let mut rv = p[2].clone();
-            //let render = std::mem::replace(std::rc::Rc::make_mut(&mut rv), std::cell::RefCell::new(() as V));
-            //let render = unsafe {Box::from_raw(p[2].as_ptr() as *mut Box<dyn Render<Rgba>>)};
-            //let ba: Box<dyn std::any::Any> = unsafe {Box::from_raw(p[2].as_ptr())};
-            //let render:Box<dyn Render<Rgba>>  = *ba.downcast::<Box<dyn Render<Rgba>>>().unwrap();
             let render = p[2].borrow_mut().downcast_mut::<Option<Rc<dyn Render<Rgba>>>>().unwrap().take().unwrap();
             sequence = sequence.append(time, restart, render);
         }
         r(Some(Rc::new(sequence) as Rc<dyn Render<Rgba>>))
+    }) as MyFn));
+    env.insert("image_render".to_string(), r(Box::new(|vec: Vec<Val>| {
+        let image = vec[0].borrow().downcast_ref::<Rc<Image<Rgba>>>().unwrap().clone();
+        r(Some(Rc::new(crate::renders::image_render::ImageRender {
+            image: image,
+            sizing: crate::renders::image_render::Sizing::Contain
+        }) as Rc<dyn Render<Rgba>>))
+    }) as MyFn));
+    env.insert("text_to_image".to_string(), r(Box::new(|vec: Vec<Val>| {
+        let string = vec[0].borrow().downcast_ref::<String>().unwrap().clone();
+        use crate::{text::{Font, render}};
+        let font_path = "../IPAexfont00401/ipaexg.ttf"; // TODO
+        let bytes = std::fs::read(font_path).unwrap();
+        let font = Font::from_bytes(&bytes).unwrap();
+        // TODO: font size
+        r(Rc::new(render(&font, &string)))
+    }) as MyFn));
+    env.insert("composite".to_string(), r(Box::new(|vec: Vec<Val>| {
+        use crate::{renders::composite::{Composite, CompositeMode}, path::Path};
+        let layers = vec.into_iter().map(|p| {
+            let p = p.borrow().downcast_ref::<Vec<Val>>().unwrap().clone();
+            let render = p[0].borrow_mut().downcast_mut::<Option<Rc<dyn Render<Rgba>>>>().unwrap().take().unwrap();
+            let mode = p[1].borrow().downcast_ref::<String>().unwrap().to_owned();
+            let mode = match mode.as_str() {
+                "none" => CompositeMode::None,
+                "normal" => CompositeMode::Normal(Path::new(1.0)),
+                _ => panic!("illegal CompositeMode")
+            };
+            (render, mode)
+        }).collect();
+        r(Some(Rc::new(Composite {
+            layers: layers
+        }) as Rc<dyn Render<Rgba>>))
     }) as MyFn));
     env
 }
