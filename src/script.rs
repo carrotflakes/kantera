@@ -53,13 +53,59 @@ pub fn make_env() -> Env {
         }
         r(acc)
     }) as MyFn));
+    env.insert("rgb".to_string(), r(Box::new(|vec: Vec<Val>| {
+        use regex::Regex;
+        if let Some(string) = vec[0].borrow().downcast_ref::<String>() {
+            let re = Regex::new(r"#([\da-fA-F]{2})([\da-fA-F]{2})([\da-fA-F]{2})").unwrap();
+            if let Some(cap) = re.captures(string) {
+                fn f(s: &str) -> f64 {
+                    let mut cs = s.chars();
+                    (cs.next().unwrap().to_digit(16).unwrap() * 16 + cs.next().unwrap().to_digit(16).unwrap()) as f64 / 255.0
+                }
+                r(Rgba(
+                    f(&cap[1]),
+                    f(&cap[2]),
+                    f(&cap[3]),
+                    1.0,
+                ))
+            } else {
+                panic!("invalid RGB string");
+            }
+        } else {
+            r(Rgba(
+                *vec[0].borrow().downcast_ref::<f64>().unwrap(),
+                *vec[1].borrow().downcast_ref::<f64>().unwrap(),
+                *vec[2].borrow().downcast_ref::<f64>().unwrap(),
+                1.0
+            ))
+        }
+    }) as MyFn));
     env.insert("rgba".to_string(), r(Box::new(|vec: Vec<Val>| {
-        r(Rgba(
-            *vec[0].borrow().downcast_ref::<f64>().unwrap(),
-            *vec[1].borrow().downcast_ref::<f64>().unwrap(),
-            *vec[2].borrow().downcast_ref::<f64>().unwrap(),
-            *vec[3].borrow().downcast_ref::<f64>().unwrap()
-        ))
+        use regex::Regex;
+        if let Some(string) = vec[0].borrow().downcast_ref::<String>() {
+            let re = Regex::new(r"#([\da-fA-F]{2})([\da-fA-F]{2})([\da-fA-F]{2})([\da-fA-F]{2})").unwrap();
+            if let Some(cap) = re.captures(string) {
+                fn f(s: &str) -> f64 {
+                    let mut cs = s.chars();
+                    (cs.next().unwrap().to_digit(16).unwrap() * 16 + cs.next().unwrap().to_digit(16).unwrap()) as f64 / 255.0
+                }
+                r(Rgba(
+                    f(&cap[1]),
+                    f(&cap[2]),
+                    f(&cap[3]),
+                    f(&cap[4]),
+                ))
+            } else {
+                panic!("invalid RGBA string");
+            }
+        } else {
+            r(Rgba(
+                *vec[0].borrow().downcast_ref::<f64>().unwrap(),
+                *vec[1].borrow().downcast_ref::<f64>().unwrap(),
+                *vec[2].borrow().downcast_ref::<f64>().unwrap(),
+                *vec[3].borrow().downcast_ref::<f64>().unwrap()
+            ))
+        }
     }) as MyFn));
     env.insert("plain".to_string(), r(Box::new(|vec: Vec<Val>| {
         let p = *vec[0].borrow().downcast_ref::<Rgba>().unwrap();
