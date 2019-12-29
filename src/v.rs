@@ -11,8 +11,8 @@ impl<T> V for T
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Vec2<T: Num>(pub T, pub T);
-//#[derive(Debug, Clone, Copy)]
-//pub struct Vec3<T: Num>(pub T, pub T, pub T);
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Vec3<T: Num>(pub T, pub T, pub T);
 
 impl<T: Num> Add for Vec2<T> {
     type Output = Self;
@@ -80,9 +80,81 @@ impl<T: Num + From<f64>> Num for Vec2<T> {
     }
 }
 
+impl<T: Num> Add for Vec3<T> {
+    type Output = Self;
+    fn add(self, rhs: Self) -> Self {
+        Vec3(self.0 + rhs.0, self.1 + rhs.1, self.2 + rhs.2)
+    }
+}
+impl<T: Num> Sub for Vec3<T> {
+    type Output = Self;
+    fn sub(self, rhs: Self) -> Self {
+        Vec3(self.0 - rhs.0, self.1 - rhs.1, self.2 - rhs.2)
+    }
+}
+impl<T: Num> Mul for Vec3<T> {
+    type Output = Self;
+    fn mul(self, rhs: Self) -> Self {
+        Vec3(self.0 * rhs.0, self.1 * rhs.1, self.2 * rhs.2)
+    }
+}
+impl<T: Num> Div for Vec3<T> {
+    type Output = Self;
+    fn div(self, rhs: Self) -> Self {
+        Vec3(self.0 / rhs.0, self.1 / rhs.1, self.2 / rhs.2)
+    }
+}
+impl<T: Num> Rem for Vec3<T> {
+    type Output = Self;
+    fn rem(self, rhs: Self) -> Self {
+        Vec3(self.0 % rhs.0, self.1 % rhs.1, self.2 % rhs.2)
+    }
+}
+impl<T: Num + From<f64>> Zero for Vec3<T> {
+    fn zero() -> Self {
+        0.0.into()
+    }
+    fn is_zero(&self) -> bool {
+        self.0.is_zero() && self.1.is_zero() && self.2.is_zero()
+    }
+    fn set_zero(&mut self) {
+        T::set_zero(&mut self.0);
+        T::set_zero(&mut self.1);
+        T::set_zero(&mut self.2);
+    }
+}
+impl<T: Num + From<f64>> One for Vec3<T> {
+    fn one() -> Self {
+        1.0.into()
+    }
+    fn is_one(&self) -> bool {
+        self.0.is_one() && self.1.is_one() && self.2.is_one()
+    }
+    fn set_one(&mut self) {
+        T::set_one(&mut self.0);
+        T::set_one(&mut self.1);
+        T::set_one(&mut self.2);
+    }
+}
+impl<T: Num + From<f64>> From<f64> for Vec3<T> {
+    fn from(v: f64) -> Self {
+        Vec3(v.into(), v.into(), v.into())
+    }
+}
+impl<T: Num + From<f64>> Num for Vec3<T> {
+    type FromStrRadixErr = ::std::num::ParseIntError;
+    fn from_str_radix(_str: &str, _radix: u32) -> Result<Self, Self::FromStrRadixErr> {
+        unimplemented!()
+    }
+}
+
 #[test]
 fn test() {
     let v = Vec2(1.0, 2.0);
     assert_eq!(v, Vec2(1.0, 2.0));
     assert_eq!(v, Vec2(2.0, 4.0) / 2.0.into());
+
+    let v = Vec3(0.0, 1.0, 2.0);
+    assert_eq!(v, Vec3(0.0, 1.0, 2.0));
+    assert_eq!(v + Vec3(0.5, 0.5, 0.5), Vec3(0.5, 1.5, 2.5));
 }
