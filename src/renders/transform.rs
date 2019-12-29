@@ -68,9 +68,6 @@ impl Mat {
             self.5)
     }
 
-    //pub fn skew(&self, x: f64, y: f64) -> Mat {
-    //}
-
     pub fn get_transformer(&self) -> Box<TransformFn> {
         let mat = self.clone();
         Box::new(move |u, v, time, res| {
@@ -87,4 +84,27 @@ impl Mat {
     pub fn apply(&self, x: f64, y: f64) -> (f64, f64) {
         ((x * self.0 + y * self.1 + self.2), (x * self.3 + y * self.4 + self.5))
     }
+}
+
+use crate::{path::Path, v::Vec2};
+pub fn path_to_transformer(
+    translation_path: Path<Vec2<f64>>,
+    scale_path: Path<Vec2<f64>>,
+    rotation_path: Path<f64>
+) -> Box<TransformFn> {
+    Box::new(move |u, v, time, res| {
+        let t = translation_path.get_value(time);
+        let (u, v) = (u - t.0, v - t.1);
+        let x = (u - 0.5) * res.0 as f64;
+        let y = (v - 0.5) * res.1 as f64;
+        let (sin, cos) = (-rotation_path.get_value(time)).sin_cos();
+        let (x, y) = (x * cos - y * sin, x * sin + y * cos);
+        let s = scale_path.get_value(time);
+        let (x, y) = (x / s.0, y / s.1);
+        (
+            x / res.0 as f64 + 0.5,
+            y / res.1 as f64 + 0.5,
+            time
+        )
+    })
 }

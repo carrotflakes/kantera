@@ -2,14 +2,15 @@ extern crate kantera;
 
 use std::rc::Rc;
 use kantera::pixel::Rgba;
-use kantera::render::{Range, Render, RenderOpt};
+use kantera::render::Render;
 use kantera::export::render_to_mp4;
 use kantera::renders::{
     sequence::Sequence,
     image_render::{ImageRender, Sizing},
-    transform::{Transform, Mat}
+    transform::{Transform, Mat, path_to_transformer}
 };
-use kantera::util::hsl_to_rgb;
+use kantera::path::{Path, Point};
+use kantera::v::Vec2;
 
 fn main() {
     let (width, height) = (320, 240);
@@ -40,12 +41,33 @@ fn main() {
                     Box::new(Mat::new().get_transformer())
                 )))
             .append(
+                1.0,
+                true,
+                Box::new(Transform::<Rgba, Box<dyn Render<Rgba>>>::new(
+                    Box::new(ImageRender {image: image.clone(), sizing: Sizing::Fit}),
+                    Box::new(Mat::new()
+                        .scale(0.5, 0.5)
+                        .get_transformer())
+                )))
+            .append(
                 2.0,
                 true,
                 Box::new(Transform::<Rgba, Box<dyn Render<Rgba>>>::new(
                     Box::new(ImageRender {image: image.clone(), sizing: Sizing::Fit}),
                     Box::new(Mat::new()
                         .scale(0.5, 0.5)
+                        .translate(160.0, 120.0)
+                        .get_transformer())
+                )))
+            .append(
+                3.0,
+                true,
+                Box::new(Transform::<Rgba, Box<dyn Render<Rgba>>>::new(
+                    Box::new(ImageRender {image: image.clone(), sizing: Sizing::Fit}),
+                    Box::new(Mat::new()
+                        .scale(0.5, 0.5)
+                        .translate(160.0, 120.0)
+                        .rotate(20.0f64.to_radians())
                         .get_transformer())
                 )))
             .append(
@@ -54,31 +76,30 @@ fn main() {
                 Box::new(Transform::<Rgba, Box<dyn Render<Rgba>>>::new(
                     Box::new(ImageRender {image: image.clone(), sizing: Sizing::Fit}),
                     Box::new(Mat::new()
-                        .scale(0.5, 0.5)
-                        .translate(160.0, 120.0)
-                        .get_transformer())
-                )))
-            .append(
-                6.0,
-                true,
-                Box::new(Transform::<Rgba, Box<dyn Render<Rgba>>>::new(
-                    Box::new(ImageRender {image: image.clone(), sizing: Sizing::Fit}),
-                    Box::new(Mat::new()
-                        .scale(0.5, 0.5)
-                        .translate(160.0, 120.0)
-                        .rotate(20.0f64.to_radians())
-                        .get_transformer())
-                )))
-            .append(
-                8.0,
-                true,
-                Box::new(Transform::<Rgba, Box<dyn Render<Rgba>>>::new(
-                    Box::new(ImageRender {image: image.clone(), sizing: Sizing::Fit}),
-                    Box::new(Mat::new()
                         .translate(-160.0, -120.0)
                         .rotate(20.0f64.to_radians())
                         .translate(160.0, 120.0)
                         .get_transformer())
+                )))
+            .append(
+                5.0,
+                true,
+                Box::new(Transform::<Rgba, Box<dyn Render<Rgba>>>::new(
+                    Box::new(ImageRender {image: image.clone(), sizing: Sizing::Fit}),
+                    path_to_transformer(
+                        Path::new(Vec2(0.0, 0.0))
+                        .append(0.5, Vec2(0.0, 0.0), Point::Constant)
+                        .append(0.5, Vec2(0.25, 0.0), Point::Linear)
+                        .append(1.0, Vec2(-0.25, 0.0), Point::Linear),
+                        Path::new(Vec2(1.0, 1.0))
+                        .append(0.5, Vec2(0.25, 0.25), Point::Linear)
+                        .append(1.0, Vec2(0.25, 0.25), Point::Linear)
+                        .append(0.5, Vec2(0.5, 0.5), Point::Linear),
+                        Path::new(0.0)
+                        .append(1.0, 0.0, Point::Constant)
+                        .append(1.0, std::f64::consts::PI, Point::Linear)
+                        .append(1.0, 0.0, Point::Linear)
+                    )
                 )))
             );
 
