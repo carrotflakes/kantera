@@ -52,12 +52,14 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWebSocket {
             }
             Ok(ws::Message::Text(text)) => {
                 println!("{:?}", text);
-                if let Ok(ast) = parse(&text) {
-                    let res = eval(make_env(), ast);
-                    self.render = res.borrow().downcast_ref::<Option<Rc<dyn Render<Rgba>>>>().unwrap().as_ref().unwrap().clone();
-                    *self.frame.lock().unwrap() = 0;
-                } else {
-                    ctx.text("parse failed");
+                let mut reader = make_reader();
+                match reader.parse(&text) {
+                    Ok(ast) => {
+                        let res = eval(make_env(), ast);
+                        self.render = res.borrow().downcast_ref::<Option<Rc<dyn Render<Rgba>>>>().unwrap().as_ref().unwrap().clone();
+                        *self.frame.lock().unwrap() = 0;
+                    },
+                    Err(mes) => ctx.text(format!(r#"{{"type":"parseFailed","error":{:?}}}"#, mes))
                 }
             },
             Ok(ws::Message::Binary(bin)) => ctx.binary(bin),
