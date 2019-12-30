@@ -3,16 +3,23 @@
   <head>
     <title>kantera</title>
     <style>
+      #editor {
+        height: 20em;
+      }
     </style>
   </head>
   <body>
     <button onClick="connect()">connect</button>
     <button onClick="apply()">apply</button>
     <div id="status"></div>
-    <textarea id="code" rows="50" cols="40"></textarea>
+    <div id="editor">hello</div>
     <img id="img"/>
+    <script src="https://pagecdn.io/lib/ace/1.4.6/ace.js" integrity="sha256-CVkji/u32aj2TeC+D13f7scFSIfphw2pmu4LaKWMSY8=" crossorigin="anonymous"></script>
     <script>
-      const codeEl = document.getElementById('code');
+      const editor = ace.edit("editor");
+      editor.setTheme("ace/theme/Chrome");
+      editor.session.setMode("ace/mode/lisp");
+
       const statusEl = document.getElementById('status');
       let ws = null;
       let syncObj = {frame: 0};
@@ -50,7 +57,7 @@
 
       function apply() {
         if (!ws) return;
-        ws.send(codeEl.value);
+        ws.send(editor.getValue());
       }
     </script>
   </body>
