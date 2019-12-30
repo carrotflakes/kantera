@@ -1,9 +1,10 @@
 use std::rc::Rc;
 pub use gluten::{
     data::*,
-    parse::parse,
+    reader::Reader,
     core::{eval, Env}
 };
+use gluten::reader::make_default_atom_reader;
 use crate::{
     image::Image,
     pixel::Rgba,
@@ -14,6 +15,19 @@ use crate::{
 
 fn parse_f64(s: &String) -> f64 {
     s.parse().unwrap()
+}
+
+pub fn make_reader() -> Reader {
+    let mut default_atom_reader = make_default_atom_reader();
+    Reader::new(Box::new(move |s: String| -> Result<Val, String> {
+        if let Ok(v) = s.parse::<f64>() {
+            return Ok(r(v));
+        }
+        if let Ok(v) = s.parse::<i32>() {
+            return Ok(r(v));
+        }
+        default_atom_reader(s)
+    }))
 }
 
 pub fn make_env() -> Env {
