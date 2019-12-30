@@ -13,7 +13,7 @@ use image::{ImageBuffer, RgbImage};
 use kantera::{
     pixel::Rgba,
     render::{Render, Dummy, RenderOpt, Range},
-    export::render_to_buffer,
+    export::{render_to_buffer, DEBUG_PRINT},
     script::*
 };
 use std::rc::Rc;
@@ -131,6 +131,9 @@ async fn ws_index(r: HttpRequest, stream: web::Payload) -> Result<HttpResponse, 
 
 #[actix_rt::main]
 async fn main() -> io::Result<()> {
+    unsafe {
+        DEBUG_PRINT = false;
+    }
     std::env::set_var("RUST_LOG", "actix_web=info");
     env_logger::init();
 
