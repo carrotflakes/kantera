@@ -7,7 +7,9 @@ pub use gluten::{
 use crate::{
     image::Image,
     pixel::Rgba,
-    render::Render
+    render::Render,
+    path::{Path, Point},
+    v::{V, Vec2, Vec3}
 };
 
 fn parse_f64(s: &String) -> f64 {
@@ -139,7 +141,7 @@ pub fn make_env() -> Env {
         r(Rc::new(render(&font, &string)))
     }) as MyFn));
     env.insert("composite".to_string(), r(Box::new(|vec: Vec<Val>| {
-        use crate::{renders::composite::{Composite, CompositeMode}, path::Path};
+        use crate::renders::composite::{Composite, CompositeMode};
         let layers = vec.into_iter().map(|p| {
             let p = p.borrow().downcast_ref::<Vec<Val>>().unwrap().clone();
             let render = p[0].borrow_mut().downcast_mut::<Option<Rc<dyn Render<Rgba>>>>().unwrap().take().unwrap();
@@ -154,6 +156,71 @@ pub fn make_env() -> Env {
         r(Some(Rc::new(Composite {
             layers: layers
         }) as Rc<dyn Render<Rgba>>))
+    }) as MyFn));
+    fn vec_to_vec2<T: 'static + V>(val: &Val) -> crate::v::Vec2<T> {
+        let val = val.borrow();
+        let vec = val.downcast_ref::<Vec<Val>>().unwrap();
+        let a = *vec[0].borrow().downcast_ref::<T>().unwrap();
+        let b = *vec[1].borrow().downcast_ref::<T>().unwrap();
+        crate::v::Vec2(a, b)
+    }
+    fn vec_to_vec3<T: 'static + V>(val: &Val) -> crate::v::Vec3<T> {
+        let val = val.borrow();
+        let vec = val.downcast_ref::<Vec<Val>>().unwrap();
+        let a = *vec[0].borrow().downcast_ref::<T>().unwrap();
+        let b = *vec[1].borrow().downcast_ref::<T>().unwrap();
+        let c = *vec[2].borrow().downcast_ref::<T>().unwrap();
+        crate::v::Vec3(a, b, c)
+    }
+    env.insert("path".to_string(), r(Box::new(|vec: Vec<Val>| {
+        let mut it = vec.into_iter();
+        fn build_path<T: 'static + V>(first_value: T, it: impl Iterator<Item = Val>, vectorize: &impl Fn(&Val) -> T) -> Val {
+            let mut path = Path::new(first_value);
+            for rp in it {
+                let rp = rp.borrow();
+                let p = rp.downcast_ref::<Vec<Val>>().unwrap();
+                let d_time = *p[0].borrow().downcast_ref::<f64>().unwrap();
+                let vec = vectorize(&p[1]);
+                let point = match p[2].borrow().downcast_ref::<String>().unwrap().as_str() {
+                    "constant" => Point::Constant,
+                    "linear" => Point::Linear,
+                    "bezier" => Point::Bezier(vectorize(&p[3]), vectorize(&p[4])),
+                    _ => panic!("invalid point type")
+                };
+                path = path.append(d_time, vec, point);
+            }
+            r(path)
+        }
+        if let Some(first_value) = it.next() {
+            let v = first_value.borrow();
+            if let Some(v) = v.downcast_ref::<f64>() {
+                return build_path(*v, it, &|val| *val.borrow().downcast_ref::<f64>().unwrap());
+            } else if let Some(vec) = v.downcast_ref::<Vec<Val>>() {
+                match vec.len() {
+                    2 => {
+                        return build_path(vec_to_vec2::<f64>(&first_value), it, &vec_to_vec2);
+                    },
+                    3 => {
+                        return build_path(vec_to_vec3::<f64>(&first_value), it, &vec_to_vec3);
+                    },
+                    _ => {}
+                }
+            }
+            panic!("illegal path arguments")
+        } else {
+            panic!("path requires at least one argument")
+        }
+    }) as MyFn));
+    env.insert("transform".to_string(), r(Box::new(|vec: Vec<Val>| {
+        use crate::{renders::transform::{Transform, path_to_transformer}};
+        let render = vec[0].borrow_mut().downcast_mut::<Option<Rc<dyn Render<Rgba>>>>().unwrap().take().unwrap();
+        let translation_path = vec[1].borrow_mut().downcast_mut::<Path<Vec2<f64>>>().unwrap().clone();
+        let scale_path = vec[2].borrow_mut().downcast_mut::<Path<Vec2<f64>>>().unwrap().clone();
+        let rotation_path = vec[3].borrow_mut().downcast_mut::<Path<f64>>().unwrap().clone();
+        r(Some(Rc::new(Transform::new(
+            render,
+            path_to_transformer(translation_path, scale_path, rotation_path)
+        )) as Rc<dyn Render<Rgba>>))
     }) as MyFn));
     env
 }
