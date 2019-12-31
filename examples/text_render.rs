@@ -20,7 +20,7 @@ fn main() {
     let font = Font::from_bytes(&bytes).unwrap();
     let (width, height) = (320, 240);
 
-    let image = Rc::new(render(&font, "にゃはは"));
+    let image = Rc::new(render(&font, "にゃはは").map(|v| Rgba(0.1, 0.1, 0.1, *v)));
 
     render_to_mp4(
         10.0, width, height, 30, 1,
@@ -28,7 +28,7 @@ fn main() {
         &Composite::<Box<dyn Render<Rgba>>> {
             layers: vec![
                 (
-                    Box::new(Plain(Rgba(0.1, 0.1, 0.1, 1.0))),
+                    Box::new(Plain(Rgba(1.0, 1.0, 1.0, 1.0))),
                     CompositeMode::None
                 ),
                 (

@@ -1,10 +1,9 @@
 extern crate rusttype;
 
 pub use rusttype::*;
-use crate::pixel::Rgba;
 use crate::image::Image;
 
-pub fn render(font: &Font, text: &str) -> Image<Rgba> {
+pub fn render(font: &Font, text: &str) -> Image<f64> {
     let scale = Scale::uniform(32.0);
     let v_metrics = font.v_metrics(scale);
 
@@ -24,14 +23,15 @@ pub fn render(font: &Font, text: &str) -> Image<Rgba> {
     };
 
     let (width, height) = (glyphs_width as usize + 40, glyphs_height as usize + 40);
-    let mut vec = vec![Rgba(1.0, 1.0, 1.0, 0.0); width * height];
+    let mut vec = vec![0.0; width * height];
 
     for glyph in glyphs {
         if let Some(bounding_box) = glyph.pixel_bounding_box() {
             glyph.draw(|x, y, v| {
                 let x = x as usize + bounding_box.min.x as usize;
                 let y = y as usize + bounding_box.min.y as usize;
-                vec[x + width * y] = Rgba(1.0, 1.0, 1.0, v as f64);
+                let v = v.min(1.0); // MEMO: v could exceeds 1.0
+                vec[x + width * y] = v as f64;
             });
         }
     }

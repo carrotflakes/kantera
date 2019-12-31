@@ -154,7 +154,7 @@ pub fn make_env() -> Env {
         let bytes = std::fs::read(font_path).unwrap();
         let font = Font::from_bytes(&bytes).unwrap();
         // TODO: font size
-        r(Rc::new(render(&font, &string)))
+        r(Rc::new(render(&font, &string).map(|v| Rgba(0.0, 0.0, 0.0, *v))))
     }) as MyFn));
     env.insert("composite".to_string(), r(Box::new(|vec: Vec<Val>| {
         use crate::renders::composite::{Composite, CompositeMode};
