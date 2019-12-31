@@ -34,19 +34,19 @@ fn main() {
             .append(
                 0.0,
                 true,
-                Box::new(ImageRender {image: image.clone(), sizing: Sizing::Fit}))
+                Box::new(ImageRender {image: image.clone(), sizing: Sizing::Fit, default: Rgba(0.0, 0.0, 0.0, 0.0)}))
             .append(
                 2.0,
                 true,
-                Box::new(ImageRender {image: image.clone(), sizing: Sizing::Contain}))
+                Box::new(ImageRender {image: image.clone(), sizing: Sizing::Contain, default: Rgba(0.0, 0.0, 0.0, 0.0)}))
             .append(
                 4.0,
                 true,
-                Box::new(ImageRender {image: image.clone(), sizing: Sizing::Cover}))
+                Box::new(ImageRender {image: image.clone(), sizing: Sizing::Cover, default: Rgba(0.0, 0.0, 0.0, 0.0)}))
             .append(
                 6.0,
                 true,
-                Box::new(ImageRender {image: image.clone(), sizing: Sizing::DotByDot}))
+                Box::new(ImageRender {image: image.clone(), sizing: Sizing::DotByDot, default: Rgba(0.0, 0.0, 0.0, 0.0)}))
             );
 
     println!("done!");

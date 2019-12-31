@@ -74,7 +74,7 @@ fn main() {
                 ),
                 (
                     Box::new(Bokeh::<Box<dyn Render<Rgba>>> {
-                        render: Box::new(ImageRender {image: image.clone(), sizing: Sizing::Fit}),
+                        render: Box::new(ImageRender {image: image.clone(), sizing: Sizing::Fit, default: Rgba(0.0, 0.0, 0.0, 0.0)}),
                         max_size: 10,
                         size_path: Path::new(0.0)
                             .append(6.0, 0.0, Point::Constant)

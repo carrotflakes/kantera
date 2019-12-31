@@ -48,7 +48,8 @@ fn main() {
             render: Box::new(Frame::<Rgba, Box<dyn Render<Rgba>>> {
                 render: Box::new(ImageRender {
                     image: img.clone(),
-                    sizing: Sizing::Contain
+                    sizing: Sizing::Contain,
+                    default: Rgba(0.0, 0.0, 0.0, 0.0)
                 }),
                 frame_type: FrameType::Repeat
             }),

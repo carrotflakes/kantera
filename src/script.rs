@@ -140,9 +140,11 @@ pub fn make_env() -> Env {
     }) as MyFn));
     env.insert("image_render".to_string(), r(Box::new(|vec: Vec<Val>| {
         let image = vec[0].borrow().downcast_ref::<Rc<Image<Rgba>>>().unwrap().clone();
+        let default = *vec[1].borrow().downcast_ref::<Rgba>().unwrap();
         r(Some(Rc::new(crate::renders::image_render::ImageRender {
             image: image,
-            sizing: crate::renders::image_render::Sizing::Contain
+            sizing: crate::renders::image_render::Sizing::Contain,
+            default: default
         }) as Rc<dyn Render<Rgba>>))
     }) as MyFn));
     env.insert("text_to_image".to_string(), r(Box::new(|vec: Vec<Val>| {
@@ -171,20 +173,20 @@ pub fn make_env() -> Env {
             layers: layers
         }) as Rc<dyn Render<Rgba>>))
     }) as MyFn));
-    fn vec_to_vec2<T: 'static + V>(val: &Val) -> crate::v::Vec2<T> {
+    fn vec_to_vec2<T: 'static + V>(val: &Val) -> Vec2<T> {
         let val = val.borrow();
         let vec = val.downcast_ref::<Vec<Val>>().unwrap();
         let a = *vec[0].borrow().downcast_ref::<T>().unwrap();
         let b = *vec[1].borrow().downcast_ref::<T>().unwrap();
-        crate::v::Vec2(a, b)
+        Vec2(a, b)
     }
-    fn vec_to_vec3<T: 'static + V>(val: &Val) -> crate::v::Vec3<T> {
+    fn vec_to_vec3<T: 'static + V>(val: &Val) -> Vec3<T> {
         let val = val.borrow();
         let vec = val.downcast_ref::<Vec<Val>>().unwrap();
         let a = *vec[0].borrow().downcast_ref::<T>().unwrap();
         let b = *vec[1].borrow().downcast_ref::<T>().unwrap();
         let c = *vec[2].borrow().downcast_ref::<T>().unwrap();
-        crate::v::Vec3(a, b, c)
+        Vec3(a, b, c)
     }
     env.insert("path".to_string(), r(Box::new(|vec: Vec<Val>| {
         let mut it = vec.into_iter();

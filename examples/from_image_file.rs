@@ -31,7 +31,7 @@ fn main() {
     render_to_mp4(
         5.0, width, height, 30, 1,
         "from_image_file.mp4",
-        &ImageRender {image: img.clone(), sizing: Sizing::Contain});
+        &ImageRender {image: img.clone(), sizing: Sizing::Contain, default: Rgba(0.0, 0.0, 0.0, 0.0)});
 
     println!("done!");
 }

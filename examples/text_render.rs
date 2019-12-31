@@ -32,7 +32,7 @@ fn main() {
                     CompositeMode::None
                 ),
                 (
-                    Box::new(ImageRender {image: image.clone(), sizing: Sizing::Contain}),
+                    Box::new(ImageRender {image: image.clone(), sizing: Sizing::Contain, default: Rgba(0.0, 0.0, 0.0, 0.0)}),
                     CompositeMode::Normal(Path::new(1.0))
                 )
             ]

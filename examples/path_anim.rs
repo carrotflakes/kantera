@@ -67,7 +67,7 @@ fn main() {
         &Composite::<Box<dyn Render<Rgba>>> {
             layers: vec![
                 (
-                    Box::new(ImageRender {image: image.clone(), sizing: Sizing::Fit}),
+                    Box::new(ImageRender {image: image.clone(), sizing: Sizing::Fit, default: Rgba(0.0, 0.0, 0.0, 0.0)}),
                     CompositeMode::None
                 ),
                 (

@@ -10,13 +10,14 @@ pub enum Sizing {
     DotByDot,
 }
 
-pub struct ImageRender<T> {
+pub struct ImageRender<T: Copy> {
     pub image: Rc<Image<T>>,
     pub sizing: Sizing,
+    pub default: T,
     //pub interpolation: Interpolation
 }
 
-impl <T: Default + Clone> Render<T> for ImageRender<T> {
+impl <T: Copy> Render<T> for ImageRender<T> {
     fn sample(&self, u: f64, v: f64, _time: f64, res: Res) -> T {
         let width = self.image.width;
         let height = self.image.height;
@@ -47,7 +48,7 @@ impl <T: Default + Clone> Render<T> for ImageRender<T> {
         if (0..width as i32).contains(&x) && (0..height as i32).contains(&y) {
             self.image.vec[y as usize * width + x as usize].clone()
         } else {
-            T::default()
+            self.default
         }
     }
 
