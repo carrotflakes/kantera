@@ -39,18 +39,16 @@ impl<T: V> Timed<T> for Path<T> {
                     Point::Constant => left.1,
                     Point::Linear => {
                         let v = (time - left.0) / (right.0 - left.0);
-                        left.1 * (1.0 - v).into() + right.1 * v.into()
+                        left.1.lerp(&right.1, v)
                     },
                     Point::Bezier(right_handle, _) => {
                         let left_handle = match left.2 {
                             Point::Bezier(_, h) => h,
                             _ => left.1
                         };
+
                         let v = (time - left.0) / (right.0 - left.0);
-                        let v1 = (1.0 - v).into();
-                        let v2 = v.into();
-                        (left.1 + left_handle * v2) * v1 +
-                            (right_handle * v1 + right.1) * v2
+                        V::bezier(&left.1, &left_handle, &right.1, &right_handle, v)
                     }
                 };
             }

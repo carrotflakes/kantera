@@ -189,14 +189,14 @@ pub fn make_env() -> Env {
             layers: layers
         }) as Rc<dyn Render<Rgba>>))
     }) as MyFn));
-    fn vec_to_vec2<T: 'static + V>(val: &Val) -> Vec2<T> {
+    fn vec_to_vec2<T: 'static + num_traits::Num + Copy + From<f64>>(val: &Val) -> Vec2<T> {
         let val = val.borrow();
         let vec = val.downcast_ref::<Vec<Val>>().unwrap();
         let a = *vec[0].borrow().downcast_ref::<T>().unwrap();
         let b = *vec[1].borrow().downcast_ref::<T>().unwrap();
         Vec2(a, b)
     }
-    fn vec_to_vec3<T: 'static + V>(val: &Val) -> Vec3<T> {
+    fn vec_to_vec3<T: 'static + num_traits::Num + Copy + From<f64>>(val: &Val) -> Vec3<T> {
         let val = val.borrow();
         let vec = val.downcast_ref::<Vec<Val>>().unwrap();
         let a = *vec[0].borrow().downcast_ref::<T>().unwrap();
