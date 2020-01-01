@@ -13,17 +13,13 @@ use crate::{
     v::{V, Vec2, Vec3}
 };
 
-fn parse_f64(s: &String) -> f64 {
-    s.parse().unwrap()
-}
-
 pub fn make_reader() -> Reader {
     let mut default_atom_reader = make_default_atom_reader();
     Reader::new(Box::new(move |s: String| -> Result<Val, String> {
-        if let Ok(v) = s.parse::<f64>() {
+        if let Ok(v) = s.parse::<i32>() {
             return Ok(r(v));
         }
-        if let Ok(v) = s.parse::<i32>() {
+        if let Ok(v) = s.parse::<f64>() {
             return Ok(r(v));
         }
         default_atom_reader(s)
@@ -40,34 +36,54 @@ pub fn make_env() -> Env {
     env.insert("vec".to_string(), r(Box::new(|vec: Vec<Val>| {
         r(vec)
     }) as MyFn));
-    env.insert("parse_f64".to_string(), fun!(parse_f64(&String)));
-    env.insert("add_f64".to_string(), r(Box::new(|vec: Vec<Val>| -> Val {
-        let mut acc = 0.0;
-        for rv in vec {
-            acc += *rv.borrow().downcast_ref::<f64>().unwrap();
+    env.insert("+".to_string(), r(Box::new(|vec: Vec<Val>| -> Val {
+        fn f<T: num_traits::Num + Copy + 'static>(vec: &Vec<Val>) -> Option<Val> {
+            let mut acc = T::zero();
+            for rv in vec.iter() {
+                acc = acc + *rv.borrow().downcast_ref::<T>()?;
+            }
+            Some(r(acc))
         }
-        r(acc)
+        f::<f64>(&vec).or_else(|| f::<i32>(&vec)).or_else(|| f::<Vec2<f64>>(&vec)).or_else(|| f::<Vec3<f64>>(&vec)).unwrap()
     }) as MyFn));
-    env.insert("sub_f64".to_string(), r(Box::new(|vec: Vec<Val>| -> Val {
-        let mut acc = *vec[0].borrow().downcast_ref::<f64>().unwrap();
-        for rv in vec.iter().skip(1) {
-            acc -= *rv.borrow().downcast_ref::<f64>().unwrap();
+    env.insert("-".to_string(), r(Box::new(|vec: Vec<Val>| -> Val {
+        fn f<T: num_traits::Num + Copy + 'static>(vec: &Vec<Val>) -> Option<Val> {
+            let mut acc = *vec[0].borrow().downcast_ref::<T>()?;
+            for rv in vec.iter().skip(1) {
+                acc = acc - *rv.borrow().downcast_ref::<T>()?;
+            }
+            Some(r(acc))
         }
-        r(acc)
+        f::<f64>(&vec).or_else(|| f::<i32>(&vec)).or_else(|| f::<Vec2<f64>>(&vec)).or_else(|| f::<Vec3<f64>>(&vec)).unwrap()
     }) as MyFn));
-    env.insert("mul_f64".to_string(), r(Box::new(|vec: Vec<Val>| -> Val {
-        let mut acc = 1.0;
-        for rv in vec {
-            acc *= *rv.borrow().downcast_ref::<f64>().unwrap();
+    env.insert("*".to_string(), r(Box::new(|vec: Vec<Val>| -> Val {
+        fn f<T: num_traits::Num + Copy + 'static>(vec: &Vec<Val>) -> Option<Val> {
+            let mut acc = T::one();
+            for rv in vec.iter() {
+                acc = acc * *rv.borrow().downcast_ref::<T>()?;
+            }
+            Some(r(acc))
         }
-        r(acc)
+        f::<f64>(&vec).or_else(|| f::<i32>(&vec)).or_else(|| f::<Vec2<f64>>(&vec)).or_else(|| f::<Vec3<f64>>(&vec)).unwrap()
     }) as MyFn));
-    env.insert("div_f64".to_string(), r(Box::new(|vec: Vec<Val>| -> Val {
-        let mut acc = *vec[0].borrow().downcast_ref::<f64>().unwrap();
-        for rv in vec.iter().skip(1) {
-            acc /= *rv.borrow().downcast_ref::<f64>().unwrap();
+    env.insert("/".to_string(), r(Box::new(|vec: Vec<Val>| -> Val {
+        fn f<T: num_traits::Num + Copy + 'static>(vec: &Vec<Val>) -> Option<Val> {
+            let mut acc = *vec[0].borrow().downcast_ref::<T>()?;
+            for rv in vec.iter().skip(1) {
+                acc = acc / *rv.borrow().downcast_ref::<T>()?;
+            }
+            Some(r(acc))
         }
-        r(acc)
+        f::<f64>(&vec).or_else(|| f::<i32>(&vec)).or_else(|| f::<Vec2<f64>>(&vec)).or_else(|| f::<Vec3<f64>>(&vec)).unwrap()
+    }) as MyFn));
+    env.insert("stringify".to_string(), r(Box::new(|vec: Vec<Val>| -> Val {
+        fn f<T: std::fmt::Debug + 'static>(vec: &Vec<Val>) -> Option<Val> {
+            Some(r(format!("{:?}", vec[0].borrow().downcast_ref::<T>()?)))
+        }
+        f::<String>(&vec).or_else(|| f::<Symbol>(&vec))
+        .or_else(|| f::<f64>(&vec)).or_else(|| f::<i32>(&vec)).or_else(|| f::<Vec2<f64>>(&vec)).or_else(|| f::<Vec3<f64>>(&vec))
+        .or_else(|| f::<Rgba>(&vec))
+        .unwrap()
     }) as MyFn));
     env.insert("rgb".to_string(), r(Box::new(|vec: Vec<Val>| {
         use regex::Regex;
