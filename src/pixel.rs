@@ -1,4 +1,4 @@
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct Rgba(pub f64, pub f64, pub f64, pub f64);
 
 impl Default for Rgba {
