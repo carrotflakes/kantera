@@ -19,8 +19,17 @@
       const editor = ace.edit("editor");
       editor.setTheme("ace/theme/Chrome");
       editor.session.setMode("ace/mode/lisp");
+      editor.commands.addCommand({
+        name: 'apply',
+        bindKey: {win: 'Ctrl-Return',  mac: 'Command-Return'},
+        exec: function(editor) {
+            apply();
+        },
+        readOnly: true
+      });
 
       const statusEl = document.getElementById('status');
+      const imgEl = document.getElementById('img');
       let ws = null;
       let syncObj = {frame: 0};
 
@@ -32,14 +41,23 @@
         }
         ws = new WebSocket('ws://' + location.host + '/ws/');
         const history = [Date.now()];
+        let readyToDraw = true;
+        imgEl.onload = () => {
+          readyToDraw = true;
+        };
         ws.onopen = () => {
           console.log('connected');
         };
-        ws.onmessage = async e => {
+        ws.onmessage = e => {
           if (e.data instanceof Blob) {
-            document.getElementById('img').src = (window.URL || window.webkitURL).createObjectURL(e.data);
-            history.push(Date.now());
-            if (history.length > 30) history.shift();
+            if (readyToDraw) {
+              imgEl.src = (window.URL || window.webkitURL).createObjectURL(e.data);
+              readyToDraw = false;
+              history.push(Date.now());
+              if (history.length > 30) history.shift();
+            } else {
+              console.log('frame skipped');
+            }
           } else if (typeof e.data === 'string') {
             const data = JSON.parse(e.data);
             if (data.type === 'sync') {
