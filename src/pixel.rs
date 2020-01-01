@@ -1,4 +1,6 @@
-#[derive(Debug, Copy, Clone)]
+use crate::lerp::Lerp;
+
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Rgba(pub f64, pub f64, pub f64, pub f64);
 
 impl Default for Rgba {
@@ -17,3 +19,22 @@ impl Rgba {
             1.0 - (1.0 - self.3) * (1.0 - alpha))
     }
 }
+
+impl Lerp for Rgba {
+    #[inline(always)]
+    fn lerp(&self, other: &Self, v: f64) -> Self {
+        let iv = 1.0 - v;
+        Rgba(self.0 * iv + other.0 * v, self.1 * iv + other.1 * v, self.2 * iv + other.2 * v, self.3 * iv + other.3 * v)
+    }
+    fn bezier(left: &Self, left_handle: &Self, right: &Self, right_handle: &Self, v: f64) -> Self {
+        let iv = 1.0 - v;
+        Rgba(
+            (left.0 + left_handle.0 * v) * iv + (right.0 + right_handle.0 * iv) * v,
+            (left.1 + left_handle.1 * v) * iv + (right.1 + right_handle.1 * iv) * v,
+            (left.2 + left_handle.2 * v) * iv + (right.2 + right_handle.2 * iv) * v,
+            (left.3 + left_handle.3 * v) * iv + (right.3 + right_handle.3 * iv) * v
+        )
+    }
+}
+
+// TODO: HSV
