@@ -1,6 +1,6 @@
 use crate::pixel::Rgba;
 use crate::render::{Range, Res, Render, RenderOpt};
-use crate::path::Path;
+use crate::path::{Path, Timed};
 
 pub struct Bokeh<R: Render<Rgba>> {
     pub render: R,

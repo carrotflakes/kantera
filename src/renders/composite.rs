@@ -1,6 +1,6 @@
 use crate::pixel::Rgba;
 use crate::render::{Res, Render, RenderOpt};
-use crate::path::Path;
+use crate::path::{Path, Timed};
 
 #[derive(Debug)]
 pub enum CompositeMode {

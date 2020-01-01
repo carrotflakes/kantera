@@ -4,6 +4,7 @@ extern crate lazy_static;
 extern crate gluten;
 
 pub mod v;
+pub mod timed;
 pub mod cairo;
 pub mod pixel;
 pub mod buffer;

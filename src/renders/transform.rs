@@ -86,7 +86,7 @@ impl Mat {
     }
 }
 
-use crate::{path::Path, v::Vec2};
+use crate::{path::{Path, Timed}, v::Vec2};
 pub fn path_to_transformer(
     translation_path: Path<Vec2<f64>>,
     scale_path: Path<Vec2<f64>>,

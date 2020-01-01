@@ -1,4 +1,5 @@
 use crate::v::V;
+pub use crate::timed::Timed;
 
 #[derive(Debug, Clone, Copy)]
 pub enum Point<T: Clone> {
@@ -24,8 +25,10 @@ impl<T: V> Path<T> {
         self.points.push((self.points.last().unwrap().0 + d_time, value, point_type));
         self
     }
+}
 
-    pub fn get_value(&self, time: f64) -> T {
+impl<T: V> Timed<T> for Path<T> {
+    fn get_value(&self, time: f64) -> T {
         if time < self.points[0].0 {
             return self.points[0].1;
         }
@@ -56,11 +59,9 @@ impl<T: V> Path<T> {
     }
 }
 
-// trait Timed
-
 #[test]
 fn path_test () {
-    let path = Path::new(0.0)
+    let path = Path::<f64>::new(0.0)
         .append(1.0, 1.0, Point::Constant)
         .append(1.0, 2.0, Point::Linear);
     assert_eq!(path.get_value(-0.5), 0.0);

@@ -2,7 +2,7 @@ use std::rc::Rc;
 use kantera::{
     pixel::Rgba,
     v::Vec2,
-    path::{Path, Point},
+    path::{Path, Point, Timed},
     render::Render,
     renders::{
         image_render::{ImageRender, Sizing},
