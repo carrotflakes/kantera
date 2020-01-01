@@ -10,7 +10,7 @@ use crate::{
     pixel::Rgba,
     render::Render,
     path::{Path, Point},
-    v::{V, Vec2, Vec3}
+    v::{Vec2, Vec3}
 };
 
 pub fn make_reader() -> Reader {
@@ -206,7 +206,7 @@ pub fn make_env() -> Env {
     }
     env.insert("path".to_string(), r(Box::new(|vec: Vec<Val>| {
         let mut it = vec.into_iter();
-        fn build_path<T: 'static + V>(first_value: T, it: impl Iterator<Item = Val>, vectorize: &impl Fn(&Val) -> T) -> Val {
+        fn build_path<T: 'static + crate::lerp::Lerp>(first_value: T, it: impl Iterator<Item = Val>, vectorize: &impl Fn(&Val) -> T) -> Val {
             let mut path = Path::new(first_value);
             for rp in it {
                 let rp = rp.borrow();

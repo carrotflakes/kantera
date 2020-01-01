@@ -1,22 +1,7 @@
+use crate::lerp::Lerp;
 use std::ops::{Add, Sub, Mul, Div, Rem};
 use num_traits::Num;
 use num_traits::identities::{Zero, One};
-
-pub trait V: Copy + Num {
-    fn lerp(&self, other: &Self, v: f64) -> Self;
-    fn bezier(left: &Self, left_handle: &Self, right: &Self, right_handle: &Self, v: f64) -> Self;
-}
-
-impl V for f64  {
-    #[inline(always)]
-    fn lerp(&self, other: &Self, v: f64) -> Self {
-        self * (1.0 - v) + other * v
-    }
-    fn bezier(left: &Self, left_handle: &Self, right: &Self, right_handle: &Self, v: f64) -> Self {
-        let iv = 1.0 - v;
-        (left + left_handle * v) * iv + (right + right_handle * iv) * v
-    }
-}
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Vec2<T: Num + Copy + From<f64>>(pub T, pub T);
@@ -83,7 +68,7 @@ impl<T: Num + Copy + From<f64>> Num for Vec2<T> {
         unimplemented!()
     }
 }
-impl<T: Num + Copy + From<f64>> V for Vec2<T> {
+impl<T: Num + Copy + From<f64>> Lerp for Vec2<T> {
     #[inline(always)]
     fn lerp(&self, other: &Self, v: f64) -> Self {
         let iv = (1.0 - v).into();
@@ -162,7 +147,7 @@ impl<T: Num + Copy + From<f64>> Num for Vec3<T> {
         unimplemented!()
     }
 }
-impl<T: Num + Copy + From<f64>> V for Vec3<T> {
+impl<T: Num + Copy + From<f64>> Lerp for Vec3<T> {
     #[inline(always)]
     fn lerp(&self, other: &Self, v: f64) -> Self {
         let iv = (1.0 - v).into();

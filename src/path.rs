@@ -1,4 +1,4 @@
-use crate::v::V;
+use crate::lerp::Lerp;
 pub use crate::timed::Timed;
 
 #[derive(Debug, Clone, Copy)]
@@ -9,11 +9,11 @@ pub enum Point<T: Clone> {
 }
 
 #[derive(Debug, Clone)]
-pub struct Path<T: V> {
+pub struct Path<T: Lerp> {
     pub points: Vec<(f64, T, Point<T>)>
 }
 
-impl<T: V> Path<T> {
+impl<T: Lerp> Path<T> {
     pub fn new(first_value: T) -> Self {
         Path {
             points: vec![(0.0, first_value, Point::Constant)]
@@ -27,7 +27,7 @@ impl<T: V> Path<T> {
     }
 }
 
-impl<T: V> Timed<T> for Path<T> {
+impl<T: Lerp> Timed<T> for Path<T> {
     fn get_value(&self, time: f64) -> T {
         if time < self.points[0].0 {
             return self.points[0].1;
@@ -48,7 +48,7 @@ impl<T: V> Timed<T> for Path<T> {
                         };
 
                         let v = (time - left.0) / (right.0 - left.0);
-                        V::bezier(&left.1, &left_handle, &right.1, &right_handle, v)
+                        Lerp::bezier(&left.1, &left_handle, &right.1, &right_handle, v)
                     }
                 };
             }

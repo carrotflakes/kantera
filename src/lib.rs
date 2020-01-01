@@ -3,6 +3,7 @@ extern crate lazy_static;
 #[macro_use]
 extern crate gluten;
 
+pub mod lerp;
 pub mod v;
 pub mod timed;
 pub mod cairo;
