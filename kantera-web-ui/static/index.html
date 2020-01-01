@@ -12,7 +12,7 @@
     <button onClick="connect()">connect</button>
     <button onClick="apply()">apply</button>
     <div id="status"></div>
-    <div id="editor">hello</div>
+    <div id="editor"></div>
     <img id="img"/>
     <script src="https://pagecdn.io/lib/ace/1.4.6/ace.js" integrity="sha256-CVkji/u32aj2TeC+D13f7scFSIfphw2pmu4LaKWMSY8=" crossorigin="anonymous"></script>
     <script>
@@ -26,6 +26,10 @@
             apply();
         },
         readOnly: true
+      });
+      editor.setValue(localStorage.getItem('kantera-web-ui/code') || '');
+      window.addEventListener('unload', e => {
+        localStorage.setItem('kantera-web-ui/code', editor.getValue());
       });
 
       const statusEl = document.getElementById('status');
