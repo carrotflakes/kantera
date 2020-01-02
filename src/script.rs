@@ -141,9 +141,9 @@ pub fn make_env() -> Env {
     }) as MyFn));
     env.insert("plain".to_string(), r(Box::new(|vec: Vec<Val>| {
         if let Some(p) = vec[0].borrow().downcast_ref::<Rgba>() {
-            r(Some(Rc::new(crate::renders::plain::Plain::new(*p)) as Rc<dyn Render<Rgba>>))
+            r(Rc::new(crate::renders::plain::Plain::new(*p)) as Rc<dyn Render<Rgba>>)
         } else if let Some(p) = vec[0].borrow().downcast_ref::<Path<Rgba>>() {
-            r(Some(Rc::new(crate::renders::plain::Plain::new(p.clone())) as Rc<dyn Render<Rgba>>))
+            r(Rc::new(crate::renders::plain::Plain::new(p.clone())) as Rc<dyn Render<Rgba>>)
         } else {
             panic!()
         }
@@ -154,19 +154,19 @@ pub fn make_env() -> Env {
             let p = p.borrow().downcast_ref::<Vec<Val>>().unwrap().clone();
             let time = *p[0].borrow().downcast_ref::<f64>().unwrap();
             let restart = *p[1].borrow().downcast_ref::<bool>().unwrap();
-            let render = p[2].borrow_mut().downcast_mut::<Option<Rc<dyn Render<Rgba>>>>().unwrap().take().unwrap();
+            let render = p[2].borrow_mut().downcast_mut::<Rc<dyn Render<Rgba>>>().unwrap().clone();
             sequence = sequence.append(time, restart, render);
         }
-        r(Some(Rc::new(sequence) as Rc<dyn Render<Rgba>>))
+        r(Rc::new(sequence) as Rc<dyn Render<Rgba>>)
     }) as MyFn));
     env.insert("image_render".to_string(), r(Box::new(|vec: Vec<Val>| {
         let image = vec[0].borrow().downcast_ref::<Rc<Image<Rgba>>>().unwrap().clone();
         let default = *vec[1].borrow().downcast_ref::<Rgba>().unwrap();
-        r(Some(Rc::new(crate::renders::image_render::ImageRender {
+        r(Rc::new(crate::renders::image_render::ImageRender {
             image: image,
             sizing: crate::renders::image_render::Sizing::Contain,
             default: default
-        }) as Rc<dyn Render<Rgba>>))
+        }) as Rc<dyn Render<Rgba>>)
     }) as MyFn));
     env.insert("text_to_image".to_string(), r(Box::new(|vec: Vec<Val>| {
         let string = vec[0].borrow().downcast_ref::<String>().unwrap().clone();
@@ -181,7 +181,7 @@ pub fn make_env() -> Env {
         use crate::renders::composite::{Composite, CompositeMode};
         let layers = vec.into_iter().map(|p| {
             let p = p.borrow().downcast_ref::<Vec<Val>>().unwrap().clone();
-            let render = p[0].borrow_mut().downcast_mut::<Option<Rc<dyn Render<Rgba>>>>().unwrap().take().unwrap();
+            let render = p[0].borrow_mut().downcast_mut::<Rc<dyn Render<Rgba>>>().unwrap().clone();
             let mode = p[1].borrow().downcast_ref::<String>().unwrap().to_owned();
             let mode = match mode.as_str() {
                 "none" => CompositeMode::None,
@@ -190,9 +190,9 @@ pub fn make_env() -> Env {
             };
             (render, mode)
         }).collect();
-        r(Some(Rc::new(Composite {
+        r(Rc::new(Composite {
             layers: layers
-        }) as Rc<dyn Render<Rgba>>))
+        }) as Rc<dyn Render<Rgba>>)
     }) as MyFn));
     fn vec_to_vec2<T: 'static + num_traits::Num + Copy + From<f64>>(val: &Val) -> Vec2<T> {
         let val = val.borrow();
@@ -252,14 +252,14 @@ pub fn make_env() -> Env {
     }) as MyFn));
     env.insert("transform".to_string(), r(Box::new(|vec: Vec<Val>| {
         use crate::{renders::transform::{Transform, path_to_transformer}};
-        let render = vec[0].borrow_mut().downcast_mut::<Option<Rc<dyn Render<Rgba>>>>().unwrap().take().unwrap();
+        let render = vec[0].borrow_mut().downcast_mut::<Rc<dyn Render<Rgba>>>().unwrap().clone();
         let translation_path = vec[1].borrow_mut().downcast_mut::<Path<Vec2<f64>>>().unwrap().clone();
         let scale_path = vec[2].borrow_mut().downcast_mut::<Path<Vec2<f64>>>().unwrap().clone();
         let rotation_path = vec[3].borrow_mut().downcast_mut::<Path<f64>>().unwrap().clone();
-        r(Some(Rc::new(Transform::new(
+        r(Rc::new(Transform::new(
             render,
             path_to_transformer(translation_path, scale_path, rotation_path)
-        )) as Rc<dyn Render<Rgba>>))
+        )) as Rc<dyn Render<Rgba>>)
     }) as MyFn));
     env
 }

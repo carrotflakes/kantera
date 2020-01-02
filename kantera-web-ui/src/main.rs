@@ -58,7 +58,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWebSocket {
                     Ok(mut forms) => {
                         forms.insert(0, reader.parse("do").unwrap());
                         let res = eval(make_env(), r(forms));
-                        self.render = res.borrow().downcast_ref::<Option<Rc<dyn Render<Rgba>>>>().unwrap().as_ref().unwrap().clone();
+                        self.render = res.borrow().downcast_ref::<Rc<dyn Render<Rgba>>>().unwrap().clone();
                         *self.frame.lock().unwrap() = 0;
                     },
                     Err(mes) => ctx.text(format!(r#"{{"type":"parseFailed","error":{:?}}}"#, mes))
