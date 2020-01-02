@@ -2,11 +2,14 @@ extern crate image;
 use std::io;
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
+use std::io::Write;
 
 use actix::prelude::*;
 use actix_web::{middleware, web, App, Error, HttpRequest, HttpResponse, HttpServer};
 use actix_files as fs;
 use actix_web_actors::ws;
+use actix_multipart::Multipart;
+use futures::StreamExt;
 
 use kantera::{
     pixel::Rgba,
@@ -144,6 +147,29 @@ async fn ws_index(r: HttpRequest, stream: web::Payload) -> Result<HttpResponse, 
     res
 }
 
+async fn save_file(mut payload: Multipart) -> Result<HttpResponse, Error> {
+    let mut filepathes = Vec::new();
+    // iterate over multipart stream
+    while let Some(item) = payload.next().await {
+        let mut field = item?;
+        let content_type = field.content_disposition().unwrap();
+        let filename = content_type.get_filename().unwrap();
+        let filepath = format!("./tmp/{}", filename);
+        filepathes.push(format!("{:?}", filepath.clone()));
+        // File::create is blocking operation, use threadpool
+        let mut f = web::block(|| std::fs::File::create(filepath))
+            .await
+            .unwrap();
+        // Field in turn is stream of *Bytes* object
+        while let Some(chunk) = field.next().await {
+            let data = chunk.unwrap();
+            // filesystem operations are blocking, we have to use threadpool
+            f = web::block(move || f.write_all(&data).map(|_| f)).await?;
+        }
+    }
+    Ok(HttpResponse::Ok().body(format!("[{}]", filepathes.join(","))))
+}
+
 #[actix_rt::main]
 async fn main() -> io::Result<()> {
     unsafe {
@@ -151,6 +177,7 @@ async fn main() -> io::Result<()> {
     }
     std::env::set_var("RUST_LOG", "actix_web=info");
     env_logger::init();
+    std::fs::create_dir_all("./tmp").unwrap();
 
     let data = web::Data::new(Mutex::new(0usize));
 
@@ -160,6 +187,7 @@ async fn main() -> io::Result<()> {
         .wrap(middleware::Logger::default())
         .service(web::resource("/").to(index))
         .service(web::resource("/ws/").route(web::get().to(ws_index)))
+        .service(web::resource("/upload").route(web::post().to(save_file)))
         .service(fs::Files::new("/", "static/").index_file("index.html"))
     })
     .bind("127.0.0.1:8080")?

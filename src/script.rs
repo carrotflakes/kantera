@@ -182,7 +182,7 @@ pub fn make_env() -> Env {
         let layers = vec.into_iter().map(|p| {
             let p = p.borrow().downcast_ref::<Vec<Val>>().unwrap().clone();
             let render = p[0].borrow_mut().downcast_mut::<Rc<dyn Render<Rgba>>>().unwrap().clone();
-            let mode = p[1].borrow().downcast_ref::<String>().unwrap().to_owned();
+            let mode = p[1].borrow().downcast_ref::<Symbol>().unwrap().0.to_owned();
             let mode = match mode.as_str() {
                 "none" => CompositeMode::None,
                 "normal" => CompositeMode::Normal(Path::new(1.0)),
@@ -218,7 +218,7 @@ pub fn make_env() -> Env {
                 let p = rp.downcast_ref::<Vec<Val>>().unwrap();
                 let d_time = *p[0].borrow().downcast_ref::<f64>().unwrap();
                 let vec = vectorize(&p[1]);
-                let point = match p[2].borrow().downcast_ref::<String>().unwrap().as_str() {
+                let point = match p[2].borrow().downcast_ref::<Symbol>().unwrap().0.as_str() {
                     "constant" => Point::Constant,
                     "linear" => Point::Linear,
                     "bezier" => Point::Bezier(vectorize(&p[3]), vectorize(&p[4])),
@@ -260,6 +260,10 @@ pub fn make_env() -> Env {
             render,
             path_to_transformer(translation_path, scale_path, rotation_path)
         )) as Rc<dyn Render<Rgba>>)
+    }) as MyFn));
+    env.insert("import_image".to_string(), r(Box::new(|vec: Vec<Val>| {
+        let filepath = vec[0].borrow().downcast_ref::<String>().unwrap().clone();
+        r(Rc::new(crate::image_import::load_image(&filepath)))
     }) as MyFn));
     env
 }

@@ -8,12 +8,13 @@ edition = "2018"
 
 [dependencies]
 kantera = {path = "../"}
+futures = "0.3.1"
 actix = "0.9"
 actix-codec = "0.2"
 actix-web = "2.0"
 actix-web-actors = "2.0.0"
 actix-files = "0.2.0"
+actix-multipart = "0.2.0"
 actix-rt = "1.0"
 env_logger = "0.6"
 image = "0.22"
-

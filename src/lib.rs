@@ -16,4 +16,5 @@ pub mod export;
 pub mod renders;
 pub mod util;
 pub mod text;
+pub mod image_import;
 pub mod script;
