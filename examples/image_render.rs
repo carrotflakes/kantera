@@ -2,13 +2,12 @@ extern crate kantera;
 
 use std::rc::Rc;
 use kantera::pixel::Rgba;
-use kantera::render::{Range, Render, RenderOpt};
+use kantera::render::Render;
 use kantera::export::render_to_mp4;
 use kantera::renders::{
     sequence::Sequence,
     image_render::{ImageRender, Sizing}
 };
-use kantera::util::hsl_to_rgb;
 
 fn main() {
     let (width, height) = (320, 240);

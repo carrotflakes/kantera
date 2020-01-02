@@ -25,8 +25,6 @@ fn main() {
         .append(1.0, Vec2(130.0, 150.0), Point::Bezier(Vec2(0.0, -80.0), Vec2(0.0, -40.0)));
 
     let image = Rc::new(kantera::cairo::render_image(320, 240, &|ctx| {
-        let (width, height) = (320, 240);
-
         for w in path.points.windows(2) {
             let (left, right) = (w[0], w[1]);
             ctx.move_to((left.1).0, (left.1).1);

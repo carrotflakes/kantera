@@ -35,7 +35,7 @@ fn main() {
             let mut output = vec![Complex::zero(); fs];
             fft.process(&mut input[0..fs], &mut output);
 
-            let DPI = std::f64::consts::PI * 2.0;
+            const DPI: f64 = std::f64::consts::PI * 2.0;
             let res = 24.0;
             let n = 9;
             let w = ro.u_res;

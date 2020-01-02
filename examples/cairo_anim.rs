@@ -3,12 +3,7 @@ extern crate kantera;
 use std::f64::consts::PI;
 use kantera::export::render_to_mp4;
 use kantera::renders::playback::Playback;
-use kantera::cairo::{
-    render_buffer,
-    FontFace,
-    FontSlant,
-    FontWeight
-};
+use kantera::cairo::render_buffer;
 
 
 fn main() {

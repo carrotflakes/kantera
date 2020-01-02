@@ -30,8 +30,8 @@ fn main() {
             render: Box::new(Box::new(|u: f64, v: f64, time: f64, (w, h): (usize, usize)| {
                 let d = ((u - 0.5).powi(2) + (v - 0.5).powi(2)).powf(0.5);
                 let (u, v) = ((u - 0.5) * (0.5 + d * 2.0) + 0.5, (v - 0.5) * (0.5 + d * 2.0) + 0.5);
-                let x = (u / 20.0 * w as f64);
-                let y = (v / 20.0 * h as f64);
+                let x = u / 20.0 * w as f64;
+                let y = v / 20.0 * h as f64;
                 Rgba(
                     noise(x + time * 5.0, y, 0.0) * 0.5 + 0.5,
                     noise(x + time * 3.0, y, 1.0) * 0.5 + 0.5,

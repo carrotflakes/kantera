@@ -5,7 +5,7 @@ use std::rc::Rc;
 use kantera::{
     pixel::Rgba,
     image::Image,
-    render::{Range, Render, RenderOpt},
+    render::Render,
     export::render_to_mp4,
     renders::{
         image_render::{ImageRender, Sizing},

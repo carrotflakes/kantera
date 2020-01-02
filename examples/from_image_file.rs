@@ -4,7 +4,6 @@ extern crate image;
 use std::rc::Rc;
 use kantera::pixel::Rgba;
 use kantera::image::Image;
-use kantera::render::{Range, Render, RenderOpt};
 use kantera::export::render_to_mp4;
 use kantera::renders::{
     image_render::{ImageRender, Sizing}
