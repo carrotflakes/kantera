@@ -108,8 +108,13 @@ impl MyWebSocket {
             frame_range: frame..frame+1,
             framerate: self.framerate
         }, &self.render);
-        let mut buf: Vec<u8> = vec![0; buffer.vec.len() * 4];
-        kantera::export::rgbas_to_u8s(&buffer.vec, &mut buf);
+        let mut buf: Vec<u8> = vec![0; buffer.vec.len() * 4]; 
+        for i in 0..buffer.vec.len() {
+            buf[i * 4 + 0] = (buffer.vec[i].0.min(1.0).max(0.0) * 255.99).floor() as u8;
+            buf[i * 4 + 1] = (buffer.vec[i].1.min(1.0).max(0.0) * 255.99).floor() as u8;
+            buf[i * 4 + 2] = (buffer.vec[i].2.min(1.0).max(0.0) * 255.99).floor() as u8;
+            buf[i * 4 + 3] = (buffer.vec[i].3.min(1.0).max(0.0) * 255.99).floor() as u8;
+        }
         let mut vec = Vec::new();
         image::png::PNGEncoder::new(&mut vec).encode(&buf, width as u32, height as u32, image::RGBA(8)).unwrap();
         ctx.binary(vec);
