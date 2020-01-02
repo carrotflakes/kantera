@@ -9,10 +9,10 @@
     </style>
   </head>
   <body>
-    <button onClick="connect()">connect</button>
+    <button id="connectButton"onClick="connect()">connect</button>
     <button onClick="apply()">apply</button>
-    <div id="status"></div>
     <div id="editor"></div>
+    <div id="status"></div>
     <img id="img"/>
     <script src="https://pagecdn.io/lib/ace/1.4.6/ace.js" integrity="sha256-CVkji/u32aj2TeC+D13f7scFSIfphw2pmu4LaKWMSY8=" crossorigin="anonymous"></script>
     <script>
@@ -27,6 +27,8 @@
         },
         readOnly: true
       });
+      editor.session.on('change', delta => {
+      });
       editor.setValue(localStorage.getItem('kantera-web-ui/code') || '');
       window.addEventListener('unload', e => {
         localStorage.setItem('kantera-web-ui/code', editor.getValue());
@@ -40,7 +42,6 @@
       function connect() {
         if (ws) {
           ws.close();
-          ws = null;
           return;
         }
         ws = new WebSocket('ws://' + location.host + '/ws/');
@@ -51,6 +52,7 @@
         };
         ws.onopen = () => {
           console.log('connected');
+          document.getElementById('connectButton').textContent = 'disconnect';
         };
         ws.onmessage = e => {
           if (e.data instanceof Blob) {
@@ -73,7 +75,9 @@
           statusEl.textContent = (history.length / Math.max(1, history[history.length - 1] - history[0]) * 1000 + '').substr(0, 5) + ' fps, ' + syncObj.frame + ' frame';
         };
         ws.onclose = () => {
+          ws = null;
           console.log('closed');
+          document.getElementById('connectButton').textContent = 'connect';
         };
       }
 
