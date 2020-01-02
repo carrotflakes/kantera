@@ -141,7 +141,7 @@ pub fn make_env() -> Env {
     }) as MyFn));
     env.insert("plain".to_string(), r(Box::new(|vec: Vec<Val>| {
         let p = *vec[0].borrow().downcast_ref::<Rgba>().unwrap();
-        r(Some(Rc::new(crate::renders::plain::Plain(p)) as Rc<dyn Render<Rgba>>))
+        r(Some(Rc::new(crate::renders::plain::Plain::new(p)) as Rc<dyn Render<Rgba>>))
     }) as MyFn));
     env.insert("sequence".to_string(), r(Box::new(|vec: Vec<Val>| {
         let mut sequence = crate::renders::sequence::Sequence::new();

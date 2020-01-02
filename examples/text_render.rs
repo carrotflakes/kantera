@@ -28,7 +28,7 @@ fn main() {
         &Composite::<Box<dyn Render<Rgba>>> {
             layers: vec![
                 (
-                    Box::new(Plain(Rgba(1.0, 1.0, 1.0, 1.0))),
+                    Box::new(Plain::new(Rgba(1.0, 1.0, 1.0, 1.0))),
                     CompositeMode::None
                 ),
                 (
