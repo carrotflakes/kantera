@@ -140,8 +140,13 @@ pub fn make_env() -> Env {
         }
     }) as MyFn));
     env.insert("plain".to_string(), r(Box::new(|vec: Vec<Val>| {
-        let p = *vec[0].borrow().downcast_ref::<Rgba>().unwrap();
-        r(Some(Rc::new(crate::renders::plain::Plain::new(p)) as Rc<dyn Render<Rgba>>))
+        if let Some(p) = vec[0].borrow().downcast_ref::<Rgba>() {
+            r(Some(Rc::new(crate::renders::plain::Plain::new(*p)) as Rc<dyn Render<Rgba>>))
+        } else if let Some(p) = vec[0].borrow().downcast_ref::<Path<Rgba>>() {
+            r(Some(Rc::new(crate::renders::plain::Plain::new(p.clone())) as Rc<dyn Render<Rgba>>))
+        } else {
+            panic!()
+        }
     }) as MyFn));
     env.insert("sequence".to_string(), r(Box::new(|vec: Vec<Val>| {
         let mut sequence = crate::renders::sequence::Sequence::new();
@@ -227,6 +232,8 @@ pub fn make_env() -> Env {
             let v = first_value.borrow();
             if let Some(v) = v.downcast_ref::<f64>() {
                 return build_path(*v, it, &|val| *val.borrow().downcast_ref::<f64>().unwrap());
+            } else if let Some(v) = v.downcast_ref::<Rgba>() {
+                return build_path(*v, it, &|val| *val.borrow().downcast_ref::<Rgba>().unwrap());
             } else if let Some(vec) = v.downcast_ref::<Vec<Val>>() {
                 match vec.len() {
                     2 => {

@@ -8,8 +8,6 @@ use actix_web::{middleware, web, App, Error, HttpRequest, HttpResponse, HttpServ
 use actix_files as fs;
 use actix_web_actors::ws;
 
-use image::{ImageBuffer, RgbImage};
-
 use kantera::{
     pixel::Rgba,
     render::{Render, Dummy, RenderOpt, Range},
@@ -24,7 +22,9 @@ const CLIENT_TIMEOUT: Duration = Duration::from_secs(10);
 struct MyWebSocket {
     hb: Instant,
     frame: Mutex<i32>,
-    render: Rc<dyn Render<Rgba>>
+    render: Rc<dyn Render<Rgba>>,
+    framerate: usize,
+    render_at: Instant
 }
 
 impl Actor for MyWebSocket {
@@ -32,6 +32,7 @@ impl Actor for MyWebSocket {
 
     fn started(&mut self, ctx: &mut Self::Context) {
         self.haertbeat(ctx);
+        self.render_loop(ctx);
     }
 }
 
@@ -75,7 +76,9 @@ impl MyWebSocket {
         Self {
             hb: Instant::now(),
             frame: Mutex::new(0),
-            render: Rc::new(Dummy())
+            render: Rc::new(Dummy()),
+            framerate: 30,
+            render_at: Instant::now()
         }
     }
 
@@ -88,32 +91,36 @@ impl MyWebSocket {
             }
             ctx.ping(b"");
         });
-        let framerate = 30usize;
-        ctx.run_interval(Duration::from_millis(1000 / framerate as u64), move |act, ctx| {
-            let (width, height) = (600usize, 400usize);
-            let frame = {
-                let mut frame = act.frame.lock().unwrap();
-                *frame += 1;
-                *frame - 1
-            };
-            // let img: RgbImage = ImageBuffer::from_fn(width, height, |x, y| {
-            //     image::Rgb([((x + i) % 64) as u8, (x % 128) as u8, (y % 64) as u8])
-            // });
-            // let mut vec = Vec::new();
-            // image::png::PNGEncoder::new(&mut vec).encode(&img.into_raw(), width, height, image::RGB(8)).unwrap();
-            let buffer = render_to_buffer(&RenderOpt {
-                u_range: Range::unit(),
-                u_res: width,
-                v_range: Range::unit(),
-                v_res: height,
-                frame_range: frame..frame+1,
-                framerate: framerate
-            }, &act.render);
-            let buffer: Vec<u8> = buffer.vec.iter().flat_map(|p| vec![p.0, p.1, p.2, p.3]).map(|x| (x * 255.0).floor() as u8).collect();
-            let mut vec = Vec::new();
-            image::png::PNGEncoder::new(&mut vec).encode(&buffer, width as u32, height as u32, image::RGBA(8)).unwrap();
-            ctx.binary(vec);
-            ctx.text(format!(r#"{{"type":"sync","frame":{}}}"#, frame));
+    }
+
+    fn render_loop(&mut self, ctx: &mut <Self as Actor>::Context) {
+        let (width, height) = (600usize, 400usize);
+        let frame = {
+            let mut frame = self.frame.lock().unwrap();
+            *frame += 1;
+            *frame - 1
+        };
+        let buffer = render_to_buffer(&RenderOpt {
+            u_range: Range::unit(),
+            u_res: width,
+            v_range: Range::unit(),
+            v_res: height,
+            frame_range: frame..frame+1,
+            framerate: self.framerate
+        }, &self.render);
+        let mut buf: Vec<u8> = vec![0; buffer.vec.len() * 4];
+        kantera::export::rgbas_to_u8s(&buffer.vec, &mut buf);
+        let mut vec = Vec::new();
+        image::png::PNGEncoder::new(&mut vec).encode(&buf, width as u32, height as u32, image::RGBA(8)).unwrap();
+        ctx.binary(vec);
+        ctx.text(format!(r#"{{"type":"sync","frame":{}}}"#, frame));
+
+        let desire_duration = Duration::from_millis(1000 / self.framerate as u64);
+        let delay = Instant::now() - self.render_at;
+        let duration = if desire_duration > delay {desire_duration - delay} else {Duration::from_millis(0)};
+        self.render_at = Instant::now() + duration;
+        ctx.run_later(duration, |act, ctx| {
+            act.render_loop(ctx)
         });
     }
 }
