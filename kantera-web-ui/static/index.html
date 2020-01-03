@@ -16,13 +16,14 @@
       <input type="button" id="uploadButton" value="Submit"></button>
     </form>
     <div id="editor"></div>
+    <div id="parseError" style="color: red"></div>
     <div id="status"></div>
     <img id="img"/>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.19.0/axios.js" integrity="sha256-XmdRbTre/3RulhYk/cOBUMpYlaAp2Rpo/s556u0OIKk=" crossorigin="anonymous"></script>
     <script src="https://pagecdn.io/lib/ace/1.4.6/ace.js" integrity="sha256-CVkji/u32aj2TeC+D13f7scFSIfphw2pmu4LaKWMSY8=" crossorigin="anonymous"></script>
     <script>
       const editor = ace.edit("editor");
-      editor.setTheme("ace/theme/Chrome");
+      editor.setTheme("ace/theme/chrome");
       editor.session.setMode("ace/mode/lisp");
       editor.commands.addCommand({
         name: 'apply',
@@ -77,9 +78,11 @@
               console.log('frame skipped');
             }
           } else if (typeof e.data === 'string') {
-            const data = JSON.parse(e.data);
+            const data = eval('(' + e.data + ')'); // for parse "\'"
             if (data.type === 'sync') {
               syncObj = {...syncObj, ...data, type: undefined};
+            } else if (data.type === 'parseFailed') {
+              document.getElementById('parseError').textContent = data.error;
             }
           } else {
             console.log(e.data);
@@ -95,6 +98,7 @@
 
       function apply() {
         if (!ws) return;
+        document.getElementById('parseError').textContent = '';
         ws.send(editor.getValue());
       }
     </script>
