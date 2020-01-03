@@ -30,13 +30,25 @@ You need install them:
 - FFmpeg
 - cairo
 
-## Usage (demo)
+## Usage
+### Example of video generating
 
 ``` sh
 $ cargo run --release --example demo
 ```
 
 After a while, a video named `out.mp4` will be output to current directory.
+
+### Web UI (WIP)
+
+``` sh
+$ cd kantera-web-ui
+$ cargo run --release
+```
+
+Then open `localhost:8080` in your web browser.
+
+e.g. https://twitter.com/carrotflakes/status/1213135191125872642
 
 ## Author
 
