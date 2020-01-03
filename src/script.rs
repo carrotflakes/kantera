@@ -254,9 +254,27 @@ pub fn make_env() -> Env {
     env.insert("transform".to_string(), r(Box::new(|vec: Vec<Val>| {
         use crate::{renders::transform::{Transform, path_to_transformer}};
         let render = vec[0].borrow_mut().downcast_mut::<Rc<dyn Render<Rgba>>>().unwrap().clone();
-        let translation_path = vec[1].borrow_mut().downcast_mut::<Path<Vec2<f64>>>().unwrap().clone();
-        let scale_path = vec[2].borrow_mut().downcast_mut::<Path<Vec2<f64>>>().unwrap().clone();
-        let rotation_path = vec[3].borrow_mut().downcast_mut::<Path<f64>>().unwrap().clone();
+        fn get_path_vec2(val: &Val) -> Path<Vec2<f64>> {
+            if let Some(path) = val.borrow().downcast_ref::<Path<Vec2<f64>>>() {
+                path.clone()
+            } else {
+                let val = val.borrow();
+                let v = val.downcast_ref::<Vec<Val>>().unwrap();
+                let a = *v[0].borrow().downcast_ref::<f64>().unwrap();
+                let b = *v[1].borrow().downcast_ref::<f64>().unwrap();
+                Path::new(Vec2(a, b))
+            }
+        }
+        fn get_path_f64(val: &Val) -> Path<f64> {
+            if let Some(path) = val.borrow().downcast_ref::<Path<f64>>() {
+                path.clone()
+            } else {
+                Path::new(val.borrow().downcast_ref::<f64>().unwrap().clone())
+            }
+        }
+        let translation_path = get_path_vec2(&vec[1]);
+        let scale_path = get_path_vec2(&vec[2]);
+        let rotation_path = get_path_f64(&vec[3]);
         r(Rc::new(Transform::new(
             render,
             path_to_transformer(translation_path, scale_path, rotation_path)
