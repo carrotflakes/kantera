@@ -49,7 +49,8 @@ fn main() {
                 render: Box::new(ImageRender {
                     image: img.clone(),
                     sizing: Sizing::Contain,
-                    default: Rgba(0.0, 0.0, 0.0, 0.0)
+                    default: Rgba(0.0, 0.0, 0.0, 0.0),
+                    interpolation: kantera::interpolation::Bilinear
                 }),
                 frame_type: FrameType::Repeat
             }),

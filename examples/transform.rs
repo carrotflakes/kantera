@@ -37,14 +37,20 @@ fn main() {
                 0.0,
                 true,
                 Box::new(Transform::<Rgba, Box<dyn Render<Rgba>>>::new(
-                    Box::new(ImageRender {image: image.clone(), sizing: Sizing::Fit, default: Rgba(0.0, 0.0, 0.0, 0.0)}),
+                    Box::new(ImageRender {
+                        image: image.clone(), sizing: Sizing::Fit, default: Rgba(0.0, 0.0, 0.0, 0.0),
+                        interpolation: kantera::interpolation::Bilinear
+                    }),
                     Box::new(Mat::new().get_transformer())
                 )))
             .append(
                 1.0,
                 true,
                 Box::new(Transform::<Rgba, Box<dyn Render<Rgba>>>::new(
-                    Box::new(ImageRender {image: image.clone(), sizing: Sizing::Fit, default: Rgba(0.0, 0.0, 0.0, 0.0)}),
+                    Box::new(ImageRender {
+                        image: image.clone(), sizing: Sizing::Fit, default: Rgba(0.0, 0.0, 0.0, 0.0),
+                        interpolation: kantera::interpolation::Bilinear
+                    }),
                     Box::new(Mat::new()
                         .scale(0.5, 0.5)
                         .get_transformer())
@@ -53,7 +59,10 @@ fn main() {
                 2.0,
                 true,
                 Box::new(Transform::<Rgba, Box<dyn Render<Rgba>>>::new(
-                    Box::new(ImageRender {image: image.clone(), sizing: Sizing::Fit, default: Rgba(0.0, 0.0, 0.0, 0.0)}),
+                    Box::new(ImageRender {
+                        image: image.clone(), sizing: Sizing::Fit, default: Rgba(0.0, 0.0, 0.0, 0.0),
+                        interpolation: kantera::interpolation::Bilinear
+                    }),
                     Box::new(Mat::new()
                         .scale(0.5, 0.5)
                         .translate(160.0, 120.0)
@@ -63,7 +72,10 @@ fn main() {
                 3.0,
                 true,
                 Box::new(Transform::<Rgba, Box<dyn Render<Rgba>>>::new(
-                    Box::new(ImageRender {image: image.clone(), sizing: Sizing::Fit, default: Rgba(0.0, 0.0, 0.0, 0.0)}),
+                    Box::new(ImageRender {
+                        image: image.clone(), sizing: Sizing::Fit, default: Rgba(0.0, 0.0, 0.0, 0.0),
+                        interpolation: kantera::interpolation::Bilinear
+                    }),
                     Box::new(Mat::new()
                         .scale(0.5, 0.5)
                         .translate(160.0, 120.0)
@@ -74,7 +86,10 @@ fn main() {
                 4.0,
                 true,
                 Box::new(Transform::<Rgba, Box<dyn Render<Rgba>>>::new(
-                    Box::new(ImageRender {image: image.clone(), sizing: Sizing::Fit, default: Rgba(0.0, 0.0, 0.0, 0.0)}),
+                    Box::new(ImageRender {
+                        image: image.clone(), sizing: Sizing::Fit, default: Rgba(0.0, 0.0, 0.0, 0.0),
+                        interpolation: kantera::interpolation::Bilinear
+                    }),
                     Box::new(Mat::new()
                         .translate(-160.0, -120.0)
                         .rotate(20.0f64.to_radians())
@@ -85,7 +100,10 @@ fn main() {
                 5.0,
                 true,
                 Box::new(Transform::<Rgba, Box<dyn Render<Rgba>>>::new(
-                    Box::new(ImageRender {image: image.clone(), sizing: Sizing::Fit, default: Rgba(0.0, 0.0, 0.0, 0.0)}),
+                    Box::new(ImageRender {
+                        image: image.clone(), sizing: Sizing::Fit, default: Rgba(0.0, 0.0, 0.0, 0.0),
+                        interpolation: kantera::interpolation::Bilinear
+                    }),
                     path_to_transformer(
                         Path::new(Vec2(0.0, 0.0))
                         .append(0.5, Vec2(0.0, 0.0), Point::Constant)

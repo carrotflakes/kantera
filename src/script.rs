@@ -165,7 +165,8 @@ pub fn make_env() -> Env {
         r(Rc::new(crate::renders::image_render::ImageRender {
             image: image,
             sizing: crate::renders::image_render::Sizing::Contain,
-            default: default
+            default: default,
+            interpolation: crate::interpolation::Bilinear // TODO
         }) as Rc<dyn Render<Rgba>>)
     }) as MyFn));
     env.insert("text_to_image".to_string(), r(Box::new(|vec: Vec<Val>| {

@@ -9,6 +9,7 @@ pub mod pixel;
 pub mod buffer;
 pub mod audio_buffer;
 pub mod image;
+pub mod interpolation;
 pub mod path;
 pub mod render;
 pub mod ffmpeg;

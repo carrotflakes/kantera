@@ -1,6 +1,8 @@
 use std::rc::Rc;
 use crate::render::{Res, Render};
 use crate::image::Image;
+use crate::lerp::Lerp;
+use crate::interpolation::Interpolation;
 
 #[derive(Debug, Copy, Clone)]
 pub enum Sizing {
@@ -10,43 +12,43 @@ pub enum Sizing {
     DotByDot,
 }
 
-pub struct ImageRender<T: Copy> {
+pub struct ImageRender<T: Lerp + Copy, U: Interpolation<T>> {
     pub image: Rc<Image<T>>,
     pub sizing: Sizing,
     pub default: T,
-    //pub interpolation: Interpolation
+    pub interpolation: U
 }
 
-impl <T: Copy> Render<T> for ImageRender<T> {
+impl <T: Lerp + Copy, U: Interpolation<T>> Render<T> for ImageRender<T, U> {
     fn sample(&self, u: f64, v: f64, _time: f64, res: Res) -> T {
         let width = self.image.width;
         let height = self.image.height;
         let (x, y) = match self.sizing {
             Sizing::Fit => (
-                (u * width as f64).floor() as i32,
-                (v * height as f64).floor() as i32
+                u * width as f64,
+                v * height as f64
             ),
             Sizing::Contain => {
                 let scale = (width as f64 / res.0 as f64).max(height as f64 / res.1 as f64);
                 (
-                    ((u - 0.5) * res.0 as f64 * scale).floor() as i32 + (width / 2) as i32,
-                    ((v - 0.5) * res.1 as f64 * scale).floor() as i32 + (height / 2) as i32
+                    (u - 0.5) * res.0 as f64 * scale + (width / 2) as f64,
+                    (v - 0.5) * res.1 as f64 * scale + (height / 2) as f64
                 )
             },
             Sizing::Cover => {
                 let scale = (width as f64 / res.0 as f64).min(height as f64 / res.1 as f64);
                 (
-                    ((u - 0.5) * res.0 as f64 * scale).floor() as i32 + (width / 2) as i32,
-                    ((v - 0.5) * res.1 as f64 * scale).floor() as i32 + (height / 2) as i32
+                    (u - 0.5) * res.0 as f64 * scale + (width / 2) as f64,
+                    (v - 0.5) * res.1 as f64 * scale + (height / 2) as f64
                 )
             },
             Sizing::DotByDot => (
-                (u * res.0 as f64).floor() as i32,
-                (v * res.1 as f64).floor() as i32
+                u * res.0 as f64,
+                v * res.1 as f64
             )
         };
-        if (0..width as i32).contains(&x) && (0..height as i32).contains(&y) {
-            self.image.vec[y as usize * width + x as usize].clone()
+        if 0.0 <= x && x < width as f64 && 0.0 <= y && y < height as f64 {
+            self.interpolation.interpolate(self.image.as_ref(), x, y)
         } else {
             self.default
         }

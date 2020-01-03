@@ -65,7 +65,10 @@ fn main() {
         &Composite::<Box<dyn Render<Rgba>>> {
             layers: vec![
                 (
-                    Box::new(ImageRender {image: image.clone(), sizing: Sizing::Fit, default: Rgba(0.0, 0.0, 0.0, 0.0)}),
+                    Box::new(ImageRender {
+                        image: image.clone(), sizing: Sizing::Fit, default: Rgba(0.0, 0.0, 0.0, 0.0),
+                        interpolation: kantera::interpolation::Bilinear
+                    }),
                     CompositeMode::None
                 ),
                 (

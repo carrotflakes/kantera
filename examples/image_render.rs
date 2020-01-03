@@ -33,19 +33,31 @@ fn main() {
             .append(
                 0.0,
                 true,
-                Box::new(ImageRender {image: image.clone(), sizing: Sizing::Fit, default: Rgba(0.0, 0.0, 0.0, 0.0)}))
+                Box::new(ImageRender {
+                    image: image.clone(), sizing: Sizing::Fit, default: Rgba(0.0, 0.0, 0.0, 0.0), 
+                    interpolation: kantera::interpolation::Bilinear
+                }))
             .append(
                 2.0,
                 true,
-                Box::new(ImageRender {image: image.clone(), sizing: Sizing::Contain, default: Rgba(0.0, 0.0, 0.0, 0.0)}))
+                Box::new(ImageRender {
+                    image: image.clone(), sizing: Sizing::Contain, default: Rgba(0.0, 0.0, 0.0, 0.0),
+                    interpolation: kantera::interpolation::Bilinear
+                }))
             .append(
                 4.0,
                 true,
-                Box::new(ImageRender {image: image.clone(), sizing: Sizing::Cover, default: Rgba(0.0, 0.0, 0.0, 0.0)}))
+                Box::new(ImageRender {
+                    image: image.clone(), sizing: Sizing::Cover, default: Rgba(0.0, 0.0, 0.0, 0.0),
+                    interpolation: kantera::interpolation::Bilinear
+                }))
             .append(
                 6.0,
                 true,
-                Box::new(ImageRender {image: image.clone(), sizing: Sizing::DotByDot, default: Rgba(0.0, 0.0, 0.0, 0.0)}))
+                Box::new(ImageRender {
+                    image: image.clone(), sizing: Sizing::DotByDot, default: Rgba(0.0, 0.0, 0.0, 0.0),
+                    interpolation: kantera::interpolation::Bilinear
+                }))
             );
 
     println!("done!");
