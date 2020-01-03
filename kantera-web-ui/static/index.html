@@ -25,6 +25,10 @@
       const editor = ace.edit("editor");
       editor.setTheme("ace/theme/chrome");
       editor.session.setMode("ace/mode/lisp");
+      // ☠ adhoc patch ☠
+      editor.session.on("changeMode", () => {
+        editor.session.$mode.$quotes = {'"': '"'};
+      });
       editor.commands.addCommand({
         name: 'apply',
         bindKey: {win: 'Ctrl-Return',  mac: 'Command-Return'},
