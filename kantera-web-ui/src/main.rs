@@ -21,6 +21,7 @@ use std::rc::Rc;
 
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
 const CLIENT_TIMEOUT: Duration = Duration::from_secs(10);
+const FRAMERATE_DEFAULT: usize = 30;
 
 struct MyWebSocket {
     hb: Instant,
@@ -60,8 +61,14 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWebSocket {
                 match reader.parse_top_level(&text) {
                     Ok(mut forms) => {
                         forms.insert(0, reader.parse("do").unwrap());
-                        let res = eval(make_env(), r(forms));
+                        let mut env = make_env();
+                        env.insert("framerate".to_string(), r(FRAMERATE_DEFAULT as i32));
+                        let res = eval(env.clone(), r(forms));
                         self.render = res.borrow().downcast_ref::<Rc<dyn Render<Rgba>>>().unwrap().clone();
+                        if let Some(val) = env.get(&"framerate".to_string()) {
+                            let framerate = *val.borrow().downcast_ref::<i32>().unwrap();
+                            self.framerate = framerate.min(120).max(1) as usize;
+                        }
                         *self.frame.lock().unwrap() = 0;
                     },
                     Err(mes) => ctx.text(format!(r#"{{"type":"parseFailed","error":{:?}}}"#, mes))
