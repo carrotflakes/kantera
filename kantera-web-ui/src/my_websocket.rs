@@ -1,4 +1,3 @@
-use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
 use actix::prelude::*;
@@ -19,7 +18,7 @@ const FRAMERATE_DEFAULT: usize = 30;
 
 pub struct MyWebSocket {
     hb: Instant,
-    frame: Mutex<i32>,
+    frame: i32,
     render: Rc<dyn Render<Rgba>>,
     framerate: usize,
     render_at: Instant
@@ -63,7 +62,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWebSocket {
                             let framerate = *val.borrow().downcast_ref::<i32>().unwrap();
                             self.framerate = framerate.min(120).max(1) as usize;
                         }
-                        *self.frame.lock().unwrap() = 0;
+                        self.frame = 0;
                     },
                     Err(mes) => ctx.text(format!(r#"{{"type":"parseFailed","error":{:?}}}"#, mes))
                 }
@@ -79,7 +78,7 @@ impl MyWebSocket {
     pub fn new() -> Self {
         Self {
             hb: Instant::now(),
-            frame: Mutex::new(0),
+            frame: 0,
             render: Rc::new(Dummy()),
             framerate: 30,
             render_at: Instant::now()
@@ -98,12 +97,8 @@ impl MyWebSocket {
     }
 
     fn render_loop(&mut self, ctx: &mut <Self as Actor>::Context) {
+        let frame = self.frame;
         let (width, height) = (600usize, 400usize);
-        let frame = {
-            let mut frame = self.frame.lock().unwrap();
-            *frame += 1;
-            *frame - 1
-        };
         let buffer = render_to_buffer(&RenderOpt {
             u_range: Range::unit(),
             u_res: width,
@@ -123,6 +118,7 @@ impl MyWebSocket {
         image::png::PNGEncoder::new(&mut vec).encode(&buf, width as u32, height as u32, image::RGBA(8)).unwrap();
         ctx.binary(vec);
         ctx.text(format!(r#"{{"type":"sync","frame":{}}}"#, frame));
+        self.frame += 1;
 
         let desire_duration = Duration::from_millis(1000 / self.framerate as u64);
         self.render_at = (self.render_at + desire_duration).max(Instant::now() - desire_duration);
