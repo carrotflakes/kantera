@@ -124,12 +124,9 @@ impl MyWebSocket {
         ctx.text(format!(r#"{{"type":"sync","frame":{}}}"#, frame));
 
         let desire_duration = Duration::from_millis(1000 / self.framerate as u64);
-        let delay = Instant::now() - self.render_at;
-        let duration = if desire_duration > delay {desire_duration - delay} else {Duration::from_millis(0)};
-        self.render_at = Instant::now() + duration;
-        ctx.run_later(duration, |act, ctx| {
-            act.render_loop(ctx)
-        });
+        self.render_at = (self.render_at + desire_duration).max(Instant::now() - desire_duration);
+        let duration = self.render_at.checked_duration_since(Instant::now()).unwrap_or(Duration::from_millis(1));
+        ctx.run_later(duration, Self::render_loop);
     }
 }
 

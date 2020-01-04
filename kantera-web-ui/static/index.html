@@ -63,24 +63,15 @@
         }
         ws = new WebSocket('ws://' + location.host + '/ws/');
         const history = [Date.now()];
-        let readyToDraw = true;
-        imgEl.onload = () => {
-          readyToDraw = true;
-        };
         ws.onopen = () => {
           console.log('connected');
           document.getElementById('connectButton').textContent = 'disconnect';
         };
         ws.onmessage = e => {
           if (e.data instanceof Blob) {
-            if (readyToDraw) {
-              imgEl.src = (window.URL || window.webkitURL).createObjectURL(e.data);
-              readyToDraw = false;
-              history.push(Date.now());
-              if (history.length > 30) history.shift();
-            } else {
-              console.log('frame skipped');
-            }
+            imgEl.src = (window.URL || window.webkitURL).createObjectURL(e.data);
+            history.push(Date.now());
+            if (history.length > 30) history.shift();
           } else if (typeof e.data === 'string') {
             const data = eval('(' + e.data + ')'); // for parse "\'"
             if (data.type === 'sync') {
