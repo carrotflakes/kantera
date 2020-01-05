@@ -68,7 +68,7 @@ async fn main() -> std::io::Result<()> {
         .service(web::resource("/upload").route(web::post().to(save_file)))
         .service(fs::Files::new("/", "static/").index_file("index.html"))
     })
-    .bind("127.0.0.1:8080")?
+    .bind(format!("127.0.0.1:{}", std::env::var("PORT").unwrap_or("8080".to_string())))?
     .run()
     .await
 }
