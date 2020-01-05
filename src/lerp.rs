@@ -1,4 +1,4 @@
-pub trait Lerp: std::ops::Add + Copy {
+pub trait Lerp: std::ops::Add<Output=Self> + Copy {
     fn scale(&self, v: f64) -> Self;
     fn lerp(&self, other: &Self, v: f64) -> Self;
     fn bezier(left: &Self, left_handle: &Self, right: &Self, right_handle: &Self, v: f64) -> Self;
