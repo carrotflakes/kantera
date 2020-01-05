@@ -70,6 +70,10 @@ impl<T: Num + Copy + From<f64>> Num for Vec2<T> {
 }
 impl<T: Num + Copy + From<f64>> Lerp for Vec2<T> {
     #[inline(always)]
+    fn scale(&self, v: f64) -> Self {
+        Vec2(self.0 * v.into(), self.1 * v.into())
+    }
+    #[inline(always)]
     fn lerp(&self, other: &Self, v: f64) -> Self {
         let iv = (1.0 - v).into();
         let v = v.into();
@@ -148,6 +152,10 @@ impl<T: Num + Copy + From<f64>> Num for Vec3<T> {
     }
 }
 impl<T: Num + Copy + From<f64>> Lerp for Vec3<T> {
+    #[inline(always)]
+    fn scale(&self, v: f64) -> Self {
+        Vec3(self.0 * v.into(), self.1 * v.into(), self.2 * v.into())
+    }
     #[inline(always)]
     fn lerp(&self, other: &Self, v: f64) -> Self {
         let iv = (1.0 - v).into();

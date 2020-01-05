@@ -20,7 +20,18 @@ impl Rgba {
     }
 }
 
+impl std::ops::Add for Rgba {
+    type Output = Self;
+    fn add(self, rhs: Self) -> Self {
+        Rgba(self.0 + rhs.0, self.1 + rhs.1, self.2 + rhs.2, self.3 + rhs.3)
+    }
+}
+
 impl Lerp for Rgba {
+    #[inline(always)]
+    fn scale(&self, v: f64) -> Self {
+        Rgba(self.0 * v, self.1 * v, self.2 * v, self.3 * v)
+    }
     #[inline(always)]
     fn lerp(&self, other: &Self, v: f64) -> Self {
         let iv = 1.0 - v;
