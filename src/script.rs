@@ -284,6 +284,7 @@ pub fn make_env() -> Env {
         let filepath = vec[0].borrow().downcast_ref::<String>().unwrap().clone();
         r(Rc::new(crate::image_import::load_image(&filepath)))
     }) as MyFn));
+    #[cfg(feature = "ffmpeg")]
     env.insert("import_audio".to_string(), r(Box::new(|vec: Vec<Val>| {
         let filepath = vec[0].borrow().downcast_ref::<String>().unwrap().clone();
         r(Rc::new(crate::ffmpeg::import_audio(&filepath)))

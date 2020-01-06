@@ -1,5 +1,3 @@
-use crate::ffmpeg::Exporter;
-
 use crate::buffer::Buffer;
 use crate::pixel::Rgba;
 use crate::render::{Range, Render, RenderOpt};
@@ -13,6 +11,7 @@ pub fn rgbas_to_u8s(block: &[Rgba], u8s: &mut [u8]) {
     }
 }
 
+#[cfg(feature = "ffmpeg")]
 pub fn render_to_mp4(
     sec: f64,
     width: usize,
@@ -23,7 +22,7 @@ pub fn render_to_mp4(
     render: &dyn Render<Rgba>) {
     let frames: usize = (framerate as f64 * sec).floor() as usize;
     let mut buffer = vec![Rgba::default(); width * height * buffer_frame_num];
-    let mut exporter = Exporter::new(width, height, framerate, file_name, true);
+    let mut exporter = crate::ffmpeg::Exporter::new(width, height, framerate, file_name, true);
     for f in 0..frames / buffer_frame_num {
         render.render(&RenderOpt {
             u_range: Range::unit(),

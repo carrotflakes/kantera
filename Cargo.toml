@@ -11,9 +11,15 @@ readme = "README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+default = ["ffmpeg", "cairo"]
+
+ffmpeg = []
+cairo = ["cairo-rs"]
+
 [dependencies]
 num-traits = "0.2"
-cairo-rs = "0.7"
+cairo-rs = { version = "0.7", optional = true }
 lazy_static = "1.4"
 regex = "1"
 rusttype = "0.8"
