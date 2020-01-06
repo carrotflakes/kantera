@@ -171,12 +171,12 @@ pub fn make_env() -> Env {
     }) as MyFn));
     env.insert("text_to_image".to_string(), r(Box::new(|vec: Vec<Val>| {
         let string = vec[0].borrow().downcast_ref::<String>().unwrap().clone();
+        let scale = *vec[1].borrow().downcast_ref::<f64>().unwrap();
         use crate::{text::{Font, render}};
         let font_path = "../IPAexfont00401/ipaexg.ttf"; // TODO
         let bytes = std::fs::read(font_path).unwrap();
         let font = Font::from_bytes(&bytes).unwrap();
-        // TODO: font size
-        r(Rc::new(render(&font, &string).map(|v| Rgba(0.0, 0.0, 0.0, *v))))
+        r(Rc::new(render(&font, scale as f32, &string).map(|v| Rgba(0.0, 0.0, 0.0, *v))))
     }) as MyFn));
     env.insert("composite".to_string(), r(Box::new(|vec: Vec<Val>| {
         use crate::renders::composite::{Composite, CompositeMode};

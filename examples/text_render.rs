@@ -20,7 +20,7 @@ fn main() {
     let font = Font::from_bytes(&bytes).unwrap();
     let (width, height) = (320, 240);
 
-    let image = Rc::new(render(&font, "にゃはは").map(|v| Rgba(0.1, 0.1, 0.1, *v)));
+    let image = Rc::new(render(&font, 32.0, "にゃはは").map(|v| Rgba(0.1, 0.1, 0.1, *v)));
 
     render_to_mp4(
         10.0, width, height, 30, 1,

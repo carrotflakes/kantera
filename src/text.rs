@@ -3,8 +3,8 @@ extern crate rusttype;
 pub use rusttype::*;
 use crate::image::Image;
 
-pub fn render(font: &Font, text: &str) -> Image<f64> {
-    let scale = Scale::uniform(32.0);
+pub fn render(font: &Font, scale: f32, text: &str) -> Image<f64> {
+    let scale = Scale::uniform(scale);
     let v_metrics = font.v_metrics(scale);
 
     let glyphs: Vec<_> = font.layout(text, scale, point(20.0, 20.0 + v_metrics.ascent)).collect();
