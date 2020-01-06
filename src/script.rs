@@ -10,6 +10,7 @@ use crate::{
     pixel::Rgba,
     render::Render,
     path::{Path, Point},
+    timed::Timed,
     v::{Vec2, Vec3}
 };
 
@@ -212,7 +213,7 @@ pub fn make_env() -> Env {
     }
     env.insert("path".to_string(), r(Box::new(|vec: Vec<Val>| {
         let mut it = vec.into_iter();
-        fn build_path<T: 'static + crate::lerp::Lerp>(first_value: T, it: impl Iterator<Item = Val>, vectorize: &impl Fn(&Val) -> T) -> Val {
+        fn build_path<T: 'static + Clone + crate::lerp::Lerp>(first_value: T, it: impl Iterator<Item = Val>, vectorize: &impl Fn(&Val) -> T) -> Val {
             let mut path = Path::new(first_value);
             for rp in it {
                 let rp = rp.borrow();
@@ -227,7 +228,7 @@ pub fn make_env() -> Env {
                 };
                 path = path.append(d_time, vec, point);
             }
-            r(path)
+            r(Rc::new(path) as Rc<dyn Timed<T>>)
         }
         if let Some(first_value) = it.next() {
             let v = first_value.borrow();
@@ -251,33 +252,42 @@ pub fn make_env() -> Env {
             panic!("path requires at least one argument")
         }
     }) as MyFn));
+    env.insert("cycle".to_string(), r(Box::new(|vec: Vec<Val>| {
+        use crate::timed::Cycle;
+        fn f<T: 'static>(vec: &Vec<Val>) -> Option<Val> {
+            let timed = vec[0].borrow().downcast_ref::<Rc<dyn Timed<T>>>()?.clone();
+            let duration = *vec[1].borrow().downcast_ref::<f64>().unwrap();
+            Some(r(Rc::new(Cycle::new(timed, duration)) as Rc<dyn Timed<T>>))
+        }
+        f::<f64>(&vec).or_else(|| f::<Vec2<f64>>(&vec)).or_else(|| f::<Vec3<f64>>(&vec)).unwrap()
+    }) as MyFn));
     env.insert("transform".to_string(), r(Box::new(|vec: Vec<Val>| {
-        use crate::{renders::transform::{Transform, path_to_transformer}};
+        use crate::{renders::transform::{Transform, timed_to_transformer}};
         let render = vec[0].borrow_mut().downcast_mut::<Rc<dyn Render<Rgba>>>().unwrap().clone();
-        fn get_path_vec2(val: &Val) -> Path<Vec2<f64>> {
-            if let Some(path) = val.borrow().downcast_ref::<Path<Vec2<f64>>>() {
-                path.clone()
+        fn get_timed_vec2(val: &Val) -> Rc<dyn Timed<Vec2<f64>>> {
+            if let Some(timed) = val.borrow().downcast_ref::<Rc<dyn Timed<Vec2<f64>>>>() {
+                timed.clone()
             } else {
                 let val = val.borrow();
                 let v = val.downcast_ref::<Vec<Val>>().unwrap();
                 let a = *v[0].borrow().downcast_ref::<f64>().unwrap();
                 let b = *v[1].borrow().downcast_ref::<f64>().unwrap();
-                Path::new(Vec2(a, b))
+                Rc::new(Vec2(a, b))
             }
         }
-        fn get_path_f64(val: &Val) -> Path<f64> {
-            if let Some(path) = val.borrow().downcast_ref::<Path<f64>>() {
-                path.clone()
+        fn get_timed_f64(val: &Val) -> Rc<dyn Timed<f64>> {
+            if let Some(timed) = val.borrow().downcast_ref::<Rc<dyn Timed<f64>>>() {
+                timed.clone()
             } else {
-                Path::new(val.borrow().downcast_ref::<f64>().unwrap().clone())
+                Rc::new(val.borrow().downcast_ref::<f64>().unwrap().clone())
             }
         }
-        let translation_path = get_path_vec2(&vec[1]);
-        let scale_path = get_path_vec2(&vec[2]);
-        let rotation_path = get_path_f64(&vec[3]);
+        let translation_timed = get_timed_vec2(&vec[1]);
+        let scale_timed = get_timed_vec2(&vec[2]);
+        let rotation_timed = get_timed_f64(&vec[3]);
         r(Rc::new(Transform::new(
             render,
-            path_to_transformer(translation_path, scale_path, rotation_path)
+            timed_to_transformer(translation_timed, scale_timed, rotation_timed)
         )) as Rc<dyn Render<Rgba>>)
     }) as MyFn));
     env.insert("import_image".to_string(), r(Box::new(|vec: Vec<Val>| {

@@ -108,3 +108,25 @@ pub fn path_to_transformer(
         )
     })
 }
+
+pub fn timed_to_transformer<T: Timed<Vec2<f64>> + 'static, S: Timed<Vec2<f64>> + 'static, R: Timed<f64> + 'static>(
+    translation_path: T,
+    scale_path: S,
+    rotation_path: R
+) -> Box<TransformFn> {
+    Box::new(move |u, v, time, res| {
+        let t = translation_path.get_value(time);
+        let (u, v) = (u - t.0, v - t.1);
+        let x = (u - 0.5) * res.0 as f64;
+        let y = (v - 0.5) * res.1 as f64;
+        let (sin, cos) = (-rotation_path.get_value(time)).sin_cos();
+        let (x, y) = (x * cos - y * sin, x * sin + y * cos);
+        let s = scale_path.get_value(time);
+        let (x, y) = (x / s.0, y / s.1);
+        (
+            x / res.0 as f64 + 0.5,
+            y / res.1 as f64 + 0.5,
+            time
+        )
+    })
+}
