@@ -261,6 +261,16 @@ pub fn make_env() -> Env {
         }
         f::<f64>(&vec).or_else(|| f::<Vec2<f64>>(&vec)).or_else(|| f::<Vec3<f64>>(&vec)).unwrap()
     }) as MyFn));
+    env.insert("sin".to_string(), r(Box::new(|vec: Vec<Val>| {
+        use crate::timed::Sine;
+        fn f<T: 'static + Clone + Timed<f64>>(vec: &Vec<Val>) -> Option<Val> {
+            let initial_phase = *vec[0].borrow().downcast_ref::<f64>().unwrap();
+            let frequency = vec[1].borrow().downcast_ref::<f64>().unwrap().clone();
+            let amplitude = vec[2].borrow().downcast_ref::<T>().unwrap().clone();
+            Some(r(Rc::new(Sine::new(initial_phase, frequency, amplitude)) as Rc<dyn Timed<f64>>))
+        }
+        f::<f64>(&vec).or_else(|| f::<Rc<dyn Timed<f64>>>(&vec)).unwrap()
+    }) as MyFn));
     env.insert("transform".to_string(), r(Box::new(|vec: Vec<Val>| {
         use crate::{renders::transform::{Transform, timed_to_transformer}};
         let render = vec[0].borrow_mut().downcast_mut::<Rc<dyn Render<Rgba>>>().unwrap().clone();

@@ -41,3 +41,26 @@ impl<T, U: Timed<T>> Timed<T> for Cycle<T, U> {
         self.timed.get_value(time % self.duration)
     }
 }
+
+#[derive(Debug)]
+pub struct Sine<T: Timed<f64>> {
+    initial_phase: f64,
+    frequency: f64,
+    amplitude: T
+}
+
+impl<T: Timed<f64>> Sine<T> {
+    pub fn new(initial_phase: f64, frequency: f64, amplitude: T) -> Self {
+        Sine {
+            initial_phase,
+            frequency,
+            amplitude
+        }
+    }
+}
+
+impl<T: Timed<f64>> Timed<f64> for Sine<T> {
+    fn get_value(&self, time: f64) -> f64 {
+        ((self.initial_phase + time) * self.frequency * std::f64::consts::PI * 2.0).sin() * self.amplitude.get_value(time)
+    }
+}
