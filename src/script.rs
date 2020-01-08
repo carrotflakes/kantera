@@ -149,6 +149,18 @@ pub fn make_env() -> Env {
             panic!()
         }
     }) as MyFn));
+    env.insert("frame".to_string(), r(Box::new(|vec: Vec<Val>| {
+        use crate::renders::frame::{Frame, FrameType};
+        let render = vec[0].borrow().downcast_ref::<Rc<dyn Render<Rgba>>>().unwrap().clone();
+        let frame_type = match vec[1].borrow().downcast_ref::<Symbol>().unwrap().0.as_str() {
+            "constant" => FrameType::Constant(*vec[2].borrow().downcast_ref::<Rgba>().unwrap()),
+            "extend" => FrameType::Extend,
+            "repeat" => FrameType::Repeat,
+            "reflect" => FrameType::Reflect,
+            _ => panic!("invalid frame_type")
+        };
+        r(Rc::new(Frame {render, frame_type}) as Rc<dyn Render<Rgba>>)
+    }) as MyFn));
     env.insert("sequence".to_string(), r(Box::new(|vec: Vec<Val>| {
         let mut sequence = crate::renders::sequence::Sequence::new();
         for p in vec.into_iter() {
