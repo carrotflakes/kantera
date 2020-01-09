@@ -21,6 +21,7 @@ pub struct MyWebSocket {
     frame: i32,
     render: Rc<dyn Render<Rgba>>,
     framerate: usize,
+    size: (usize, usize),
     render_at: Instant
 }
 
@@ -56,11 +57,20 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWebSocket {
                         forms.insert(0, reader.parse("do").unwrap());
                         let mut env = make_env();
                         env.insert("framerate".to_string(), r(FRAMERATE_DEFAULT as i32));
+                        env.insert("frame_size".to_string(), r(vec![r(600 as i32), r(400 as i32)]));
+                        env.insert("frame_height".to_string(), r(400 as i32));
                         let res = eval(env.clone(), r(forms));
                         self.render = res.borrow().downcast_ref::<Rc<dyn Render<Rgba>>>().unwrap().clone();
                         if let Some(val) = env.get(&"framerate".to_string()) {
                             let framerate = *val.borrow().downcast_ref::<i32>().unwrap();
                             self.framerate = framerate.min(120).max(1) as usize;
+                        }
+                        if let Some(val) = env.get(&"frame_size".to_string()) {
+                            let val = val.borrow();
+                            let vec = val.downcast_ref::<Vec<Val>>().unwrap();
+                            let width = *vec[0].borrow().downcast_ref::<i32>().unwrap();
+                            let height = *vec[1].borrow().downcast_ref::<i32>().unwrap();
+                            self.size = (width.max(0) as usize, height.max(0) as usize);
                         }
                         self.frame = 0;
                     },
@@ -81,6 +91,7 @@ impl MyWebSocket {
             frame: 0,
             render: Rc::new(Dummy()),
             framerate: 30,
+            size: (600, 400),
             render_at: Instant::now()
         }
     }
@@ -98,7 +109,7 @@ impl MyWebSocket {
 
     fn render_loop(&mut self, ctx: &mut <Self as Actor>::Context) {
         let frame = self.frame;
-        let (width, height) = (600usize, 400usize);
+        let (width, height) = self.size;
         let buffer = render_to_buffer(&RenderOpt {
             u_range: Range::unit(),
             u_res: width,
