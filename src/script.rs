@@ -1,10 +1,11 @@
 use std::rc::Rc;
-pub use gluten::{
-    data::*,
-    reader::Reader,
-    core::{eval, Env}
+use std::cell::RefCell;
+use gluten::{
+    reader::{Reader, default_atom_reader},
+    core::{eval, Env, macro_expand},
+    StringPool
 };
-use gluten::reader::make_default_atom_reader;
+pub use gluten::data::*;
 use crate::{
     image::Image,
     pixel::Rgba,
@@ -14,30 +15,58 @@ use crate::{
     v::{Vec2, Vec3}
 };
 
-pub fn make_reader() -> Reader {
-    let mut default_atom_reader = make_default_atom_reader();
-    Reader::new(Box::new(move |s: String| -> Result<Val, String> {
-        if let Ok(v) = s.parse::<i32>() {
-            return Ok(r(v));
+pub struct Runtime(Env);
+
+impl Runtime {
+    pub fn new() -> Runtime {
+        let reader = Reader::new(Box::new(atom_reader));
+        let env = Env::new(Rc::new(RefCell::new(reader)));
+        let mut rt = Runtime(env);
+        init_runtime(&mut rt);
+        rt
+    }
+
+    pub fn insert(&mut self, str: &str, val: Val) {
+        let sym = self.0.reader().borrow_mut().intern(str);
+        self.0.insert(sym, val);
+    }
+
+    pub fn get(&self, str: &str) -> Option<Val> {
+        let sym = self.0.reader().borrow().try_intern(str)?;
+        self.0.get(&sym)
+    }
+
+    pub fn re(&mut self, str: &str) -> Result<Val, String>{
+        let forms = self.0.reader().borrow_mut().parse_top_level(str)?;
+        let mut last_val = None;
+        for form in forms {
+            let form = macro_expand(&mut self.0, form);
+            last_val = Some(eval(self.0.clone(), form));
         }
-        if let Ok(v) = s.parse::<f64>() {
-            return Ok(r(v));
-        }
-        default_atom_reader(s)
-    }))
+        last_val.ok_or("no form".to_string())
+    }
 }
 
-pub fn make_env() -> Env {
-    let mut env = Env::new();
-    env.insert("true".to_string(), r(true));
-    env.insert("false".to_string(), r(false));
-    env.insert("first".to_string(), r(Box::new(|vec: Vec<Val>| {
+fn atom_reader(sp: &mut StringPool, s: &str) -> Result<Val, String> {
+    if let Ok(v) = s.parse::<i32>() {
+        return Ok(r(v));
+    }
+    if let Ok(v) = s.parse::<f64>() {
+        return Ok(r(v));
+    }
+    default_atom_reader(sp, s)
+}
+
+fn init_runtime(rt: &mut Runtime) {
+    rt.insert("true", r(true));
+    rt.insert("false", r(false));
+    rt.insert("first", r(Box::new(|vec: Vec<Val>| {
         vec[0].clone()
     }) as MyFn));
-    env.insert("vec".to_string(), r(Box::new(|vec: Vec<Val>| {
+    rt.insert("vec", r(Box::new(|vec: Vec<Val>| {
         r(vec)
     }) as MyFn));
-    env.insert("+".to_string(), r(Box::new(|vec: Vec<Val>| -> Val {
+    rt.insert("+", r(Box::new(|vec: Vec<Val>| -> Val {
         fn f<T: num_traits::Num + Copy + 'static>(vec: &Vec<Val>) -> Option<Val> {
             let mut acc = T::zero();
             for rv in vec.iter() {
@@ -47,7 +76,7 @@ pub fn make_env() -> Env {
         }
         f::<f64>(&vec).or_else(|| f::<i32>(&vec)).or_else(|| f::<Vec2<f64>>(&vec)).or_else(|| f::<Vec3<f64>>(&vec)).unwrap()
     }) as MyFn));
-    env.insert("-".to_string(), r(Box::new(|vec: Vec<Val>| -> Val {
+    rt.insert("-", r(Box::new(|vec: Vec<Val>| -> Val {
         fn f<T: num_traits::Num + Copy + 'static>(vec: &Vec<Val>) -> Option<Val> {
             let mut acc = *vec[0].borrow().downcast_ref::<T>()?;
             for rv in vec.iter().skip(1) {
@@ -57,7 +86,7 @@ pub fn make_env() -> Env {
         }
         f::<f64>(&vec).or_else(|| f::<i32>(&vec)).or_else(|| f::<Vec2<f64>>(&vec)).or_else(|| f::<Vec3<f64>>(&vec)).unwrap()
     }) as MyFn));
-    env.insert("*".to_string(), r(Box::new(|vec: Vec<Val>| -> Val {
+    rt.insert("*", r(Box::new(|vec: Vec<Val>| -> Val {
         fn f<T: num_traits::Num + Copy + 'static>(vec: &Vec<Val>) -> Option<Val> {
             let mut acc = T::one();
             for rv in vec.iter() {
@@ -67,7 +96,7 @@ pub fn make_env() -> Env {
         }
         f::<f64>(&vec).or_else(|| f::<i32>(&vec)).or_else(|| f::<Vec2<f64>>(&vec)).or_else(|| f::<Vec3<f64>>(&vec)).unwrap()
     }) as MyFn));
-    env.insert("/".to_string(), r(Box::new(|vec: Vec<Val>| -> Val {
+    rt.insert("/", r(Box::new(|vec: Vec<Val>| -> Val {
         fn f<T: num_traits::Num + Copy + 'static>(vec: &Vec<Val>) -> Option<Val> {
             let mut acc = *vec[0].borrow().downcast_ref::<T>()?;
             for rv in vec.iter().skip(1) {
@@ -77,7 +106,7 @@ pub fn make_env() -> Env {
         }
         f::<f64>(&vec).or_else(|| f::<i32>(&vec)).or_else(|| f::<Vec2<f64>>(&vec)).or_else(|| f::<Vec3<f64>>(&vec)).unwrap()
     }) as MyFn));
-    env.insert("stringify".to_string(), r(Box::new(|vec: Vec<Val>| -> Val {
+    rt.insert("stringify", r(Box::new(|vec: Vec<Val>| -> Val {
         fn f<T: std::fmt::Debug + 'static>(vec: &Vec<Val>) -> Option<Val> {
             Some(r(format!("{:?}", vec[0].borrow().downcast_ref::<T>()?)))
         }
@@ -86,7 +115,7 @@ pub fn make_env() -> Env {
         .or_else(|| f::<Rgba>(&vec))
         .unwrap()
     }) as MyFn));
-    env.insert("rgb".to_string(), r(Box::new(|vec: Vec<Val>| {
+    rt.insert("rgb", r(Box::new(|vec: Vec<Val>| {
         use regex::Regex;
         if let Some(string) = vec[0].borrow().downcast_ref::<String>() {
             let re = Regex::new(r"#([\da-fA-F]{2})([\da-fA-F]{2})([\da-fA-F]{2})").unwrap();
@@ -113,7 +142,7 @@ pub fn make_env() -> Env {
             ))
         }
     }) as MyFn));
-    env.insert("rgba".to_string(), r(Box::new(|vec: Vec<Val>| {
+    rt.insert("rgba", r(Box::new(|vec: Vec<Val>| {
         use regex::Regex;
         if let Some(string) = vec[0].borrow().downcast_ref::<String>() {
             let re = Regex::new(r"#([\da-fA-F]{2})([\da-fA-F]{2})([\da-fA-F]{2})([\da-fA-F]{2})").unwrap();
@@ -140,7 +169,7 @@ pub fn make_env() -> Env {
             ))
         }
     }) as MyFn));
-    env.insert("plain".to_string(), r(Box::new(|vec: Vec<Val>| {
+    rt.insert("plain", r(Box::new(|vec: Vec<Val>| {
         if let Some(p) = vec[0].borrow().downcast_ref::<Rgba>() {
             r(Rc::new(crate::renders::plain::Plain::new(*p)) as Rc<dyn Render<Rgba>>)
         } else if let Some(p) = vec[0].borrow().downcast_ref::<Path<Rgba>>() {
@@ -149,7 +178,7 @@ pub fn make_env() -> Env {
             panic!()
         }
     }) as MyFn));
-    env.insert("frame".to_string(), r(Box::new(|vec: Vec<Val>| {
+    rt.insert("frame", r(Box::new(|vec: Vec<Val>| {
         use crate::renders::frame::{Frame, FrameType};
         let render = vec[0].borrow().downcast_ref::<Rc<dyn Render<Rgba>>>().unwrap().clone();
         let frame_type = match vec[1].borrow().downcast_ref::<Symbol>().unwrap().0.as_str() {
@@ -161,7 +190,7 @@ pub fn make_env() -> Env {
         };
         r(Rc::new(Frame {render, frame_type}) as Rc<dyn Render<Rgba>>)
     }) as MyFn));
-    env.insert("sequence".to_string(), r(Box::new(|vec: Vec<Val>| {
+    rt.insert("sequence", r(Box::new(|vec: Vec<Val>| {
         let mut sequence = crate::renders::sequence::Sequence::new();
         for p in vec.into_iter() {
             let p = p.borrow().downcast_ref::<Vec<Val>>().unwrap().clone();
@@ -172,7 +201,7 @@ pub fn make_env() -> Env {
         }
         r(Rc::new(sequence) as Rc<dyn Render<Rgba>>)
     }) as MyFn));
-    env.insert("image_render".to_string(), r(Box::new(|vec: Vec<Val>| {
+    rt.insert("image_render", r(Box::new(|vec: Vec<Val>| {
         let image = vec[0].borrow().downcast_ref::<Rc<Image<Rgba>>>().unwrap().clone();
         let default = *vec[1].borrow().downcast_ref::<Rgba>().unwrap();
         r(Rc::new(crate::renders::image_render::ImageRender {
@@ -182,7 +211,7 @@ pub fn make_env() -> Env {
             interpolation: crate::interpolation::Bilinear // TODO
         }) as Rc<dyn Render<Rgba>>)
     }) as MyFn));
-    env.insert("text_to_image".to_string(), r(Box::new(|vec: Vec<Val>| {
+    rt.insert("text_to_image", r(Box::new(|vec: Vec<Val>| {
         let string = vec[0].borrow().downcast_ref::<String>().unwrap().clone();
         let scale = *vec[1].borrow().downcast_ref::<f64>().unwrap();
         use crate::{text::{Font, render}};
@@ -191,7 +220,7 @@ pub fn make_env() -> Env {
         let font = Font::from_bytes(&bytes).unwrap();
         r(Rc::new(render(&font, scale as f32, &string).map(|v| Rgba(0.0, 0.0, 0.0, *v))))
     }) as MyFn));
-    env.insert("composite".to_string(), r(Box::new(|vec: Vec<Val>| {
+    rt.insert("composite", r(Box::new(|vec: Vec<Val>| {
         use crate::renders::composite::{Composite, CompositeMode};
         let layers = vec.into_iter().map(|p| {
             let p = p.borrow().downcast_ref::<Vec<Val>>().unwrap().clone();
@@ -223,7 +252,7 @@ pub fn make_env() -> Env {
         let c = *vec[2].borrow().downcast_ref::<T>().unwrap();
         Vec3(a, b, c)
     }
-    env.insert("path".to_string(), r(Box::new(|vec: Vec<Val>| {
+    rt.insert("path", r(Box::new(|vec: Vec<Val>| {
         let mut it = vec.into_iter();
         fn build_path<T: 'static + Clone + crate::lerp::Lerp>(first_value: T, it: impl Iterator<Item = Val>, vectorize: &impl Fn(&Val) -> T) -> Val {
             let mut path = Path::new(first_value);
@@ -264,7 +293,7 @@ pub fn make_env() -> Env {
             panic!("path requires at least one argument")
         }
     }) as MyFn));
-    env.insert("cycle".to_string(), r(Box::new(|vec: Vec<Val>| {
+    rt.insert("cycle", r(Box::new(|vec: Vec<Val>| {
         use crate::timed::Cycle;
         fn f<T: 'static>(vec: &Vec<Val>) -> Option<Val> {
             let timed = vec[0].borrow().downcast_ref::<Rc<dyn Timed<T>>>()?.clone();
@@ -273,7 +302,7 @@ pub fn make_env() -> Env {
         }
         f::<f64>(&vec).or_else(|| f::<Vec2<f64>>(&vec)).or_else(|| f::<Vec3<f64>>(&vec)).unwrap()
     }) as MyFn));
-    env.insert("sin".to_string(), r(Box::new(|vec: Vec<Val>| {
+    rt.insert("sin", r(Box::new(|vec: Vec<Val>| {
         use crate::timed::Sine;
         fn f<T: 'static + Clone + Timed<f64>>(vec: &Vec<Val>) -> Option<Val> {
             let initial_phase = *vec[0].borrow().downcast_ref::<f64>().unwrap();
@@ -283,7 +312,7 @@ pub fn make_env() -> Env {
         }
         f::<f64>(&vec).or_else(|| f::<Rc<dyn Timed<f64>>>(&vec)).unwrap()
     }) as MyFn));
-    env.insert("transform".to_string(), r(Box::new(|vec: Vec<Val>| {
+    rt.insert("transform", r(Box::new(|vec: Vec<Val>| {
         use crate::{renders::transform::{Transform, timed_to_transformer}};
         let render = vec[0].borrow_mut().downcast_mut::<Rc<dyn Render<Rgba>>>().unwrap().clone();
         fn get_timed_vec2(val: &Val) -> Rc<dyn Timed<Vec2<f64>>> {
@@ -312,14 +341,13 @@ pub fn make_env() -> Env {
             timed_to_transformer(translation_timed, scale_timed, rotation_timed)
         )) as Rc<dyn Render<Rgba>>)
     }) as MyFn));
-    env.insert("import_image".to_string(), r(Box::new(|vec: Vec<Val>| {
+    rt.insert("import_image", r(Box::new(|vec: Vec<Val>| {
         let filepath = vec[0].borrow().downcast_ref::<String>().unwrap().clone();
         r(Rc::new(crate::image_import::load_image(&filepath)))
     }) as MyFn));
     #[cfg(feature = "ffmpeg")]
-    env.insert("import_audio".to_string(), r(Box::new(|vec: Vec<Val>| {
+    rt.insert("import_audio", r(Box::new(|vec: Vec<Val>| {
         let filepath = vec[0].borrow().downcast_ref::<String>().unwrap().clone();
         r(Rc::new(crate::ffmpeg::import_audio(&filepath)))
     }) as MyFn));
-    env
 }

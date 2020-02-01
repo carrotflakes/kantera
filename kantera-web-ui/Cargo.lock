@@ -838,7 +838,6 @@ dependencies = [
 [[package]]
 name = "gluten"
 version = "0.1.0"
-source = "git+https://github.com/carrotflakes/gluten.git?branch=kantera#5407b3faa2dfc4aafe1a1501aeb1a85e0d074203"
 
 [[package]]
 name = "gobject-sys"
@@ -996,7 +995,7 @@ name = "kantera"
 version = "0.0.1"
 dependencies = [
  "cairo-rs 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "gluten 0.1.0 (git+https://github.com/carrotflakes/gluten.git?branch=kantera)",
+ "gluten 0.1.0",
  "image 0.22.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "num-traits 0.2.10 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2032,7 +2031,6 @@ dependencies = [
 "checksum gif 0.10.3 (registry+https://github.com/rust-lang/crates.io-index)" = "471d90201b3b223f3451cd4ad53e34295f16a1df17b1edf3736d47761c3981af"
 "checksum glib 0.8.2 (registry+https://github.com/rust-lang/crates.io-index)" = "be27232841baa43e0fd5ae003f7941925735b2f733a336dc75f07b9eff415e7b"
 "checksum glib-sys 0.9.1 (registry+https://github.com/rust-lang/crates.io-index)" = "95856f3802f446c05feffa5e24859fe6a183a7cb849c8449afc35c86b1e316e2"
-"checksum gluten 0.1.0 (git+https://github.com/carrotflakes/gluten.git?branch=kantera)" = "<none>"
 "checksum gobject-sys 0.9.1 (registry+https://github.com/rust-lang/crates.io-index)" = "31d1a804f62034eccf370006ccaef3708a71c31d561fee88564abe71177553d9"
 "checksum h2 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)" = "b9433d71e471c1736fd5a61b671fc0b148d7a2992f666c958d03cd8feb3b88d1"
 "checksum heck 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)" = "20564e78d53d2bb135c343b3f47714a56af2061f1c928fdb541dc7b9fdd94205"

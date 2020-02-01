@@ -7,7 +7,7 @@ use kantera::{
     pixel::Rgba,
     render::{Render, Dummy, RenderOpt, Range},
     export::render_to_buffer,
-    script::*
+    script::{Runtime, r, Val}
 };
 use std::rc::Rc;
 
@@ -51,21 +51,18 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWebSocket {
             }
             Ok(ws::Message::Text(text)) => {
                 println!("{:?}", text);
-                let mut reader = make_reader();
-                match reader.parse_top_level(&text) {
-                    Ok(mut forms) => {
-                        forms.insert(0, reader.parse("do").unwrap());
-                        let mut env = make_env();
-                        env.insert("framerate".to_string(), r(FRAMERATE_DEFAULT as i32));
-                        env.insert("frame_size".to_string(), r(vec![r(600 as i32), r(400 as i32)]));
-                        env.insert("frame_height".to_string(), r(400 as i32));
-                        let res = eval(env.clone(), r(forms));
-                        self.render = res.borrow().downcast_ref::<Rc<dyn Render<Rgba>>>().unwrap().clone();
-                        if let Some(val) = env.get(&"framerate".to_string()) {
+                let mut rt = Runtime::new();
+                rt.insert("framerate", r(FRAMERATE_DEFAULT as i32));
+                rt.insert("frame_size", r(vec![r(600 as i32), r(400 as i32)]));
+                rt.insert("frame_height", r(400 as i32));
+                match rt.re(&text) {
+                    Ok(val) => {
+                        self.render = val.borrow().downcast_ref::<Rc<dyn Render<Rgba>>>().unwrap().clone();
+                        if let Some(val) = rt.get("framerate") {
                             let framerate = *val.borrow().downcast_ref::<i32>().unwrap();
                             self.framerate = framerate.min(120).max(1) as usize;
                         }
-                        if let Some(val) = env.get(&"frame_size".to_string()) {
+                        if let Some(val) = rt.get("frame_size") {
                             let val = val.borrow();
                             let vec = val.downcast_ref::<Vec<Val>>().unwrap();
                             let width = *vec[0].borrow().downcast_ref::<i32>().unwrap();
