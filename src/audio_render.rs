@@ -98,6 +98,6 @@ fn test() {
     assert_eq!(buffer.vec.len(), 2);
     assert_eq!(buffer.vec[0].len(), buffer.sample_num);
     assert_eq!(buffer.vec[1].len(), buffer.sample_num);
-    assert_eq!(buffer.vec[0][0], (0.0f64 / 8000.0 * 440.0).sin());
-    assert_eq!(buffer.vec[1][10], (10.0f64 / 8000.0 * 440.0).sin());
+    assert_eq!(buffer.vec[0][0], (0.0f64 / 8000.0 * 440.0 * std::f64::consts::PI * 2.0).sin() * 0.1);
+    assert_eq!(buffer.vec[1][10], (10.0f64 / 8000.0 * 440.0 * std::f64::consts::PI * 2.0).sin() * 0.1);
 }
