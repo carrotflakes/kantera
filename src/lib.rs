@@ -13,6 +13,7 @@ pub mod image;
 pub mod interpolation;
 pub mod path;
 pub mod render;
+pub mod audio_render;
 #[cfg(feature = "ffmpeg")]
 pub mod ffmpeg;
 pub mod export;
