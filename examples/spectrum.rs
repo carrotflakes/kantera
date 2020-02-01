@@ -31,12 +31,12 @@ fn main() {
     render_to_mp4(
         5.0, 320, 240, 30, 1,
         "spectrum.mp4",
-        &(Box::new(move |u: f64, v: f64, time: f64, (_w, _h): (usize, usize)| {
+        &Sample::new(Box::new(move |u: f64, v: f64, time: f64, (_w, _h): (usize, usize)| {
             let i = (v * 240.0 + time * 50.0).floor() as usize;
             let j = ((10.0f64).powf(u) * fs as f64 / 20.0).floor() as usize;
             let v = (os[i][j].norm() as f64).log10() * 0.15 + 0.2;
             Rgba(v, v, v, 1.0)
-        }) as Sample<Rgba>));
+        })));
 
     println!("done!");
 }

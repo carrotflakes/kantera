@@ -63,13 +63,13 @@ fn main() {
             layers: vec![
                 (
                     //Box::new(Plain(Rgba(0.0, 0.0, 1.0, 1.0))),
-                    Box::new(Box::new(|u: f64, v: f64, time: f64, _: (usize, usize)| {
+                    Box::new(Sample::new(Box::new(|u: f64, v: f64, time: f64, _: (usize, usize)| {
                         let (r, g, b) = hsl_to_rgb(
                             v * 0.2 + 0.5,
                             1.0,
                             ((u * 10.0).sin() + (v * 10.0).sin() + time).cos() * 0.25 + 0.5);
                         Rgba(r, g, b, 1.0)
-                    }) as Sample<Rgba>),
+                    }))),
                     CompositeMode::None
                 ),
                 (
