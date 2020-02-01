@@ -28,7 +28,22 @@ impl From<&AudioBuffer<u16>> for AudioBuffer<f32> {
     fn from(ab: &AudioBuffer<u16>) -> AudioBuffer<f32> {
         let mut vec = vec![];
         for v in ab.vec.iter() {
-            vec.push(v.iter().map(|x| *x as f32 / (std::u16::MAX as f32) * 2.0 - 1.0).collect());
+            vec.push(v.iter().map(|x| *x as f32 / std::u16::MAX as f32 * 2.0 - 1.0).collect());
+        }
+        AudioBuffer {
+            channel_num: ab.channel_num,
+            sample_num: ab.sample_num,
+            sample_rate: ab.sample_rate,
+            vec
+        }
+    }
+}
+
+impl From<&AudioBuffer<f64>> for AudioBuffer<u16> {
+    fn from(ab: &AudioBuffer<f64>) -> AudioBuffer<u16> {
+        let mut vec = vec![];
+        for v in ab.vec.iter() {
+            vec.push(v.iter().map(|x| ((*x + 1.0) / 2.0 * std::u16::MAX as f64).round() as u16).collect());
         }
         AudioBuffer {
             channel_num: ab.channel_num,

@@ -43,7 +43,7 @@ impl AudioRender for std::rc::Rc<dyn AudioRender> {
     }
 }
 
-pub struct Dummy(f64);
+pub struct Dummy(pub f64);
 
 impl AudioRender for Dummy {
     fn render(&self, ro: &AudioRenderOpt) -> Vec<f64> {
@@ -54,7 +54,7 @@ impl AudioRender for Dummy {
             for i in ro.sample_range.clone() {
                 let time = i as f64 / ro.sample_rate as f64;
                 //buffer[c * size + (i - ro.sample_range.start) as usize] =
-                buffer.push((time * 440.0).sin());
+                buffer.push((time * 440.0 * std::f64::consts::PI * 2.0).sin() * 0.1);
             }
         }
         buffer
