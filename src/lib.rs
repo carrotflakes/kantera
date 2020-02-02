@@ -21,4 +21,5 @@ pub mod renders;
 pub mod util;
 pub mod text;
 pub mod image_import;
+pub mod audio_renders;
 pub mod script;
