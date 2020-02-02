@@ -9,23 +9,22 @@ impl<R: AudioRender> AudioRender for Sequencer<R> {
         let channel_num = self.channel_num();
         let size = (ro.sample_range.end - ro.sample_range.start) as usize;
         let mut vec = vec![0.0; channel_num * size];
-        let start = ro.sample_range.start as f64 * ro.sample_rate as f64;
-        let end = ro.sample_range.end as f64 * ro.sample_rate as f64;
+        let start = ro.sample_range.start as f64 / ro.sample_rate as f64;
+        let end = ro.sample_range.end as f64 / ro.sample_rate as f64;
         for (time, render) in self.renders.iter() {
-            let ro_start = (0.0f64.max(start - time) * ro.sample_rate as f64).floor() as usize;
-            let ro_end = (render.duration().min(end - time) * ro.sample_rate as f64).floor() as usize;
+            let ro_start = (0.0f64.max(start - time) * ro.sample_rate as f64).floor() as i64;
+            let ro_end = (render.duration().min(end - time) * ro.sample_rate as f64).floor() as i64;
             if ro_end <= ro_start {
                 continue;
             }
-            let ro = AudioRenderOpt {
-                sample_range: ro_start as i64..ro_end as i64,
+            let rendered_vec = render.render(&AudioRenderOpt {
+                sample_range: ro_start..ro_end,
                 sample_rate: ro.sample_rate
-            };
-            let rendered_vec = render.render(&ro);
+            });
+            let offset = ((time * ro.sample_rate as f64) as i64 + ro_start as i64 - ro.sample_range.start as i64).max(0) as usize;
             for c in 0..channel_num {
-                for i in 0..ro_end - ro_start {
-                    vec[c * size + ((time * ro.sample_rate as f64) as usize - ro_start - ro.sample_range.start as usize) + i]
-                        += rendered_vec[c * (ro_end - ro_start) + i];
+                for i in 0..((ro_end - ro_start) as usize).min(size - offset) {
+                    vec[c * size + offset + i] += rendered_vec[c * (ro_end - ro_start) as usize + i];
                 }
             }
         }

@@ -55,10 +55,16 @@
       const imgEl = document.getElementById('img');
       let ws = null;
       let syncObj = {frame: 0};
+      let binaryType = null;
+      const buffers = [];
+      let bufferI = 0;
+      let streamInfo = null;
 
       function connect() {
         if (ws) {
           ws.close();
+          buffers.length = 0;
+          bufferI = 0;
           return;
         }
         ws = new WebSocket('ws://' + location.host + '/ws/');
@@ -69,15 +75,33 @@
         };
         ws.onmessage = e => {
           if (e.data instanceof Blob) {
-            imgEl.src = (window.URL || window.webkitURL).createObjectURL(e.data);
-            history.push(Date.now());
-            if (history.length > 30) history.shift();
+            if (binaryType === 'frame') {
+              imgEl.src = (window.URL || window.webkitURL).createObjectURL(e.data);
+              history.push(Date.now());
+              if (history.length > 30) history.shift();
+            } else if (binaryType === 'audio') {
+              const fileReader = new FileReader();
+              fileReader.onloadend = () => {
+                const array = new Uint16Array(fileReader.result);
+                buffers.push(array);
+                while (buffers.length > 4)
+                  buffers.shift();
+              };
+              fileReader.readAsArrayBuffer(e.data);
+            }
+            binaryType = null;
           } else if (typeof e.data === 'string') {
             const data = eval('(' + e.data + ')'); // for parse "\'"
             if (data.type === 'sync') {
               syncObj = {...syncObj, ...data, type: undefined};
             } else if (data.type === 'parseFailed') {
               document.getElementById('parseError').textContent = data.error;
+            } else if (data.type === 'frame') {
+              binaryType = 'frame';
+            } else if (data.type === 'audio') {
+              binaryType = 'audio';
+            } else if (data.type === 'streamInfo') {
+              streamInfo = data;
             }
           } else {
             console.log(e.data);
@@ -89,6 +113,11 @@
           console.log('closed');
           document.getElementById('connectButton').textContent = 'connect';
         };
+
+        if (startAudio) {
+          startAudio();
+          startAudio = null;
+        }
       }
 
       function apply() {
@@ -96,6 +125,38 @@
         document.getElementById('parseError').textContent = '';
         ws.send(editor.getValue());
       }
+
+      function startAudio() {
+        const ctx = new AudioContext();
+        console.log('sampleRate: ' + ctx.sampleRate);
+        let p = 0;
+        const bufferSize = 4096;
+        const scriptNode = ctx.createScriptProcessor(bufferSize, 1, 2);
+        scriptNode.onaudioprocess = e => {
+          const buffer = e.outputBuffer;
+          const array0 = buffer.getChannelData(0);
+          const array1 = buffer.getChannelData(1);
+          const sampleRate = ctx.sampleRate;
+          const remoteSampleRate = streamInfo && streamInfo.samplerate || 4000;
+
+          for (let i = 0; i < bufferSize; ++i) {
+            if (buffers.length) {
+              const bufLen = buffers[0].length / 2;
+              let j = bufferI++ * remoteSampleRate / sampleRate | 0;
+              array0[i] = buffers[0][j] / 2**15 - 1.0;
+              array1[i] = buffers[0][bufLen + j] / 2**15 - 1.0;
+              if (bufLen <= (bufferI * remoteSampleRate / sampleRate | 0)) {
+                buffers.shift();
+                bufferI = 0;
+              }
+            } else {
+              array1[i] = array0[i] = 0;
+            }
+          }
+        };
+        scriptNode.connect(ctx.destination);
+      }
+
     </script>
   </body>
 </html>

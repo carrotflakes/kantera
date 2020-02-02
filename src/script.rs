@@ -10,6 +10,7 @@ use crate::{
     image::Image,
     pixel::Rgba,
     render::Render,
+    audio_render::AudioRender,
     path::{Path, Point},
     timed::Timed,
     v::{Vec2, Vec3}
@@ -340,6 +341,45 @@ fn init_runtime(rt: &mut Runtime) {
             render,
             timed_to_transformer(translation_timed, scale_timed, rotation_timed)
         )) as Rc<dyn Render<Rgba>>)
+    }) as MyFn));
+    rt.insert("test_audio", r(Box::new(|_vec: Vec<Val>| {
+        use crate::audio_renders::{note::Note, sequencer::Sequencer};
+        fn note(dur: f64, nn: i32, vel: f64, pan: f64) -> Box<dyn AudioRender> {
+            Box::new(Note {
+                frequency: 440.0 * 2.0f64.powf((nn - 69) as f64 / 12.0),
+                duration: dur,
+                gain: vel,
+                pan: pan
+            })
+        }
+        //r(Rc::new(note(1.0, 60, 0.3, 1.0)) as Rc<dyn AudioRender>)
+        r(Rc::new(Sequencer::new()
+            .append(0.00, note(1.0, 60, 0.2, -1.0))
+            .append(1.00, note(1.0, 64, 0.2, -1.0))
+            .append(2.00, note(1.0, 62, 0.2, -1.0))
+            .append(3.00, note(1.0, 67, 0.2, -1.0))
+            .append(4.00, note(1.0, 60, 0.2, 1.0))
+            .append(5.00, note(1.0, 64, 0.2, 1.0))
+            .append(6.00, note(1.0, 62, 0.2, 1.0))
+            .append(7.00, note(1.0, 67, 0.2, 1.0))
+            .append(0.00, note(0.25, 72, 0.1, 0.0))
+            .append(0.50, note(0.25, 72, 0.1, 0.0))
+            .append(1.00, note(0.25, 72, 0.1, 0.0))
+            .append(1.50, note(0.25, 72, 0.1, 0.0))
+            .append(2.00, note(0.25, 72, 0.1, 0.0))
+            .append(2.50, note(0.25, 72, 0.1, 0.0))
+            .append(2.00, note(0.25, 72, 0.1, 0.0))
+            .append(2.50, note(0.25, 72, 0.1, 0.0))
+            .append(3.00, note(0.25, 72, 0.1, 0.0))
+            .append(3.50, note(0.50, 74, 0.1, 0.0))
+            .append(4.00, note(0.25, 72, 0.1, 0.0))
+            .append(4.50, note(0.25, 72, 0.1, 0.0))
+            .append(5.00, note(0.25, 72, 0.1, 0.0))
+            .append(5.50, note(0.25, 72, 0.1, 0.0))
+            .append(6.00, note(0.25, 72, 0.1, 0.0))
+            .append(6.50, note(0.25, 72, 0.1, 0.0))
+            .append(7.00, note(0.25, 72, 0.1, 0.0))
+            .append(7.50, note(0.50, 74, 0.1, 0.0))) as Rc<dyn AudioRender>)
     }) as MyFn));
     rt.insert("import_image", r(Box::new(|vec: Vec<Val>| {
         let filepath = vec[0].borrow().downcast_ref::<String>().unwrap().clone();

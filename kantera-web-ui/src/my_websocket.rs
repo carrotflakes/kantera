@@ -6,6 +6,7 @@ use actix_web_actors::ws;
 use kantera::{
     pixel::Rgba,
     render::{Render, Dummy, RenderOpt, Range},
+    audio_render::AudioRender,
     export::render_to_buffer,
     script::{Runtime, r, Val}
 };
@@ -15,12 +16,15 @@ use std::rc::Rc;
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
 const CLIENT_TIMEOUT: Duration = Duration::from_secs(10);
 const FRAMERATE_DEFAULT: usize = 30;
+const SAMPLERATE_DEFAULT: usize = 16000;
 
 pub struct MyWebSocket {
     hb: Instant,
     frame: i32,
     render: Rc<dyn Render<Rgba>>,
+    audio_render: Option<Rc<dyn AudioRender>>,
     framerate: usize,
+    samplerate: usize,
     size: (usize, usize),
     render_at: Instant
 }
@@ -53,6 +57,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWebSocket {
                 println!("{:?}", text);
                 let mut rt = Runtime::new();
                 rt.insert("framerate", r(FRAMERATE_DEFAULT as i32));
+                rt.insert("samplerate", r(SAMPLERATE_DEFAULT as i32));
                 rt.insert("frame_size", r(vec![r(600 as i32), r(400 as i32)]));
                 rt.insert("frame_height", r(400 as i32));
                 match rt.re(&text) {
@@ -62,6 +67,10 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWebSocket {
                             let framerate = *val.borrow().downcast_ref::<i32>().unwrap();
                             self.framerate = framerate.min(120).max(1) as usize;
                         }
+                        if let Some(val) = rt.get("samplerate") {
+                            let samplerate = *val.borrow().downcast_ref::<i32>().unwrap();
+                            self.samplerate = samplerate.min(48000).max(4000) as usize;
+                        }
                         if let Some(val) = rt.get("frame_size") {
                             let val = val.borrow();
                             let vec = val.downcast_ref::<Vec<Val>>().unwrap();
@@ -69,7 +78,14 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWebSocket {
                             let height = *vec[1].borrow().downcast_ref::<i32>().unwrap();
                             self.size = (width.max(0) as usize, height.max(0) as usize);
                         }
+                        if let Some(val) = rt.get("audio") {
+                            let audio_render = val.borrow().downcast_ref::<Rc<dyn AudioRender>>().unwrap().clone();
+                            self.audio_render = Some(audio_render);
+                        } else {
+                            self.audio_render = None;
+                        }
                         self.frame = 0;
+                        ctx.text(format!(r#"{{"type":"streamInfo","framerate":{:?},"samplerate":{:?}}}"#, self.framerate, self.samplerate));
                     },
                     Err(mes) => ctx.text(format!(r#"{{"type":"parseFailed","error":{:?}}}"#, mes))
                 }
@@ -87,7 +103,9 @@ impl MyWebSocket {
             hb: Instant::now(),
             frame: 0,
             render: Rc::new(Dummy()),
-            framerate: 30,
+            audio_render: None,
+            framerate: FRAMERATE_DEFAULT,
+            samplerate: SAMPLERATE_DEFAULT,
             size: (600, 400),
             render_at: Instant::now()
         }
@@ -115,16 +133,35 @@ impl MyWebSocket {
             frame_range: frame..frame+1,
             framerate: self.framerate
         }, &self.render);
-        let mut buf: Vec<u8> = vec![0; buffer.vec.len() * 4]; 
+        let mut buf: Vec<u8> = vec![0; buffer.vec.len() * 4];
         for i in 0..buffer.vec.len() {
             buf[i * 4 + 0] = (buffer.vec[i].0.min(1.0).max(0.0) * 255.99).floor() as u8;
             buf[i * 4 + 1] = (buffer.vec[i].1.min(1.0).max(0.0) * 255.99).floor() as u8;
             buf[i * 4 + 2] = (buffer.vec[i].2.min(1.0).max(0.0) * 255.99).floor() as u8;
             buf[i * 4 + 3] = (buffer.vec[i].3.min(1.0).max(0.0) * 255.99).floor() as u8;
         }
-        let mut vec = Vec::new();
-        image::png::PNGEncoder::new(&mut vec).encode(&buf, width as u32, height as u32, image::RGBA(8)).unwrap();
-        ctx.binary(vec);
+        let mut bin = Vec::new();
+        image::png::PNGEncoder::new(&mut bin).encode(&buf, width as u32, height as u32, image::RGBA(8)).unwrap();
+        ctx.text(r#"{"type":"frame"}"#);
+        ctx.binary(bin);
+
+        if let Some(ref audio_render) = self.audio_render {
+            let sample_rate = self.samplerate;
+            let ro = kantera::audio_render::AudioRenderOpt {
+                sample_rate: sample_rate,
+                sample_range: frame as i64 * sample_rate as i64 / self.framerate as i64..(frame as i64 + 1) * sample_rate as i64 / self.framerate as i64
+            };
+            let vec = audio_render.render(&ro);
+            let mut bin = Vec::new();
+            use std::io::Write;
+            for v in vec.iter() {
+                let v = ((v + 1.0) / 2.0 * std::u16::MAX as f64).round() as u16;
+                bin.write(&v.to_le_bytes()).unwrap();
+            }
+            ctx.text(r#"{"type":"audio"}"#);
+            ctx.binary(bin);
+        }
+
         ctx.text(format!(r#"{{"type":"sync","frame":{}}}"#, frame));
         self.frame += 1;
 
