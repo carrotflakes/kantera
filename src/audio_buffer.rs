@@ -53,3 +53,21 @@ impl From<&AudioBuffer<f64>> for AudioBuffer<u16> {
         }
     }
 }
+
+pub fn pan(left: f64, right: f64, pan: f64) -> (f64, f64) {
+    let pan = pan.min(1.0).max(-1.0);
+    let x = if pan <= 0.0 { pan + 1.0 } else { pan };
+    let (gain_r, gain_l) = (x * std::f64::consts::PI / 2.0).sin_cos();
+    if pan <= 0.0 {
+        (left + right * gain_l, right * gain_r)
+    } else {
+        (left * gain_l, right + left + gain_r)
+    }
+}
+
+pub fn pan_mono(v: f64, pan: f64) -> (f64, f64) {
+    let pan = pan.min(1.0).max(-1.0);
+    let x = (pan + 1.0) / 2.0;
+    let (gain_r, gain_l) = (x * std::f64::consts::PI / 2.0).sin_cos();
+    (v * gain_l, v * gain_r)
+}

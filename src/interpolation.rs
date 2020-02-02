@@ -5,12 +5,36 @@ pub trait Interpolation<T: Lerp> {
     fn interpolate(&self, image: &Image<T>, x: f64, y: f64) -> T;
 }
 
+pub trait AudioInterpolation<T> {
+    fn interpolate(&self, audio_slice: &[T], x: f64) -> T;
+}
+
 pub struct NearestNeighbor;
 
 impl<T: Lerp> Interpolation<T> for NearestNeighbor {
     fn interpolate(&self, image: &Image<T>, x: f64, y: f64) -> T {
         if 0.0 <= x && x < image.width as f64 && 0.0 <= y && y < image.height as f64 {
             image.vec[y as usize * image.width + x as usize].clone()
+        } else {
+            panic!()
+        }
+    }
+}
+
+impl<T: Lerp> AudioInterpolation<T> for NearestNeighbor {
+    fn interpolate(&self, audio_slice: &[T], x: f64) -> T {
+        if 0.0 <= x && x < audio_slice.len() as f64 {
+            audio_slice[x as usize].clone()
+        } else {
+            panic!()
+        }
+    }
+}
+
+impl AudioInterpolation<u16> for NearestNeighbor {
+    fn interpolate(&self, audio_slice: &[u16], x: f64) -> u16 {
+        if 0.0 <= x && x < audio_slice.len() as f64 {
+            audio_slice[x as usize].clone()
         } else {
             panic!()
         }
