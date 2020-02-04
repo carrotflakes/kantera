@@ -10,6 +10,7 @@ use kantera::{
     interpolation::NearestNeighbor,
     ffmpeg::{import_audio, export_audio}
 };
+use std::rc::Rc;
 
 fn note(dur: f64, nn: i32, vel: f64, pan: f64) -> Box<dyn AudioRender> {
     Box::new(Note {
@@ -23,7 +24,7 @@ fn note(dur: f64, nn: i32, vel: f64, pan: f64) -> Box<dyn AudioRender> {
 fn main() {
     let audio_buffer = import_audio("./scc.mp3");
     let audio_buffer_render = AudioBufferRender {
-        audio_buffer: audio_buffer,
+        audio_buffer: Rc::new(audio_buffer),
         interpolation: NearestNeighbor
     };
     let audio_clip = AudioClip {

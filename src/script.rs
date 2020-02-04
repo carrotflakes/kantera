@@ -10,10 +10,13 @@ use crate::{
     image::Image,
     pixel::Rgba,
     render::Render,
+    audio_buffer::AudioBuffer,
     audio_render::AudioRender,
+    audio_renders,
     path::{Path, Point},
     timed::Timed,
-    v::{Vec2, Vec3}
+    v::{Vec2, Vec3},
+    interpolation
 };
 
 pub struct Runtime(Env);
@@ -209,7 +212,7 @@ fn init_runtime(rt: &mut Runtime) {
             image: image,
             sizing: crate::renders::image_render::Sizing::Contain,
             default: default,
-            interpolation: crate::interpolation::Bilinear // TODO
+            interpolation: interpolation::Bilinear // TODO
         }) as Rc<dyn Render<Rgba>>)
     }) as MyFn));
     rt.insert("text_to_image", r(Box::new(|vec: Vec<Val>| {
@@ -341,6 +344,26 @@ fn init_runtime(rt: &mut Runtime) {
             render,
             timed_to_transformer(translation_timed, scale_timed, rotation_timed)
         )) as Rc<dyn Render<Rgba>>)
+    }) as MyFn));
+    rt.insert("audio_buffer_render", r(Box::new(|vec: Vec<Val>| {
+        let audio_buffer = vec[0].borrow().downcast_ref::<Rc<AudioBuffer<u16>>>().unwrap().clone();
+        r(Rc::new(audio_renders::audio_buffer::AudioBufferRender {
+            audio_buffer: audio_buffer,
+            interpolation: interpolation::NearestNeighbor
+        }) as Rc<dyn AudioRender>)
+    }) as MyFn));
+    rt.insert("audio_clip", r(Box::new(|vec: Vec<Val>| {
+        let audio_render = vec[0].borrow().downcast_ref::<Rc<dyn AudioRender>>().unwrap().clone();
+        r(Rc::new(audio_renders::audio_clip::AudioClip {
+            audio_render: audio_render,
+            gain: *vec[1].borrow().downcast_ref::<f64>().unwrap(),
+            pan: *vec[2].borrow().downcast_ref::<f64>().unwrap(),
+            start: *vec[3].borrow().downcast_ref::<f64>().unwrap(),
+            duration: *vec[4].borrow().downcast_ref::<f64>().unwrap(),
+            pitch: *vec[5].borrow().downcast_ref::<f64>().unwrap(),
+            fadein: *vec[6].borrow().downcast_ref::<f64>().unwrap(),
+            fadeout: *vec[7].borrow().downcast_ref::<f64>().unwrap()
+        }) as Rc<dyn AudioRender>)
     }) as MyFn));
     rt.insert("test_audio", r(Box::new(|_vec: Vec<Val>| {
         use crate::audio_renders::{note::Note, sequencer::Sequencer};

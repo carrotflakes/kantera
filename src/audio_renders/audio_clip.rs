@@ -17,14 +17,16 @@ impl<T: AudioRender> AudioRender for AudioClip<T> {
         let channel_num = self.channel_num();
         let size = (ro.sample_range.end - ro.sample_range.start) as usize;
         let start = ro.sample_range.start as f64 / ro.sample_rate as f64;
-        let end = ro.sample_range.end as f64 / ro.sample_rate as f64;
+        //let end = ro.sample_range.end as f64 / ro.sample_rate as f64;
         let rendered_vec = {
             let sample_rate = (ro.sample_rate as f64 / self.pitch) as usize;
             let local_start = self.start + start * self.pitch;
-            let local_end = self.start + end * self.pitch;
+            //let local_end = self.start + end * self.pitch;
             let sample_range_start = local_start * sample_rate as f64;
-            let sample_range_end = local_end * sample_rate as f64;
-            assert_eq!(size, (sample_range_end - sample_range_start) as usize);
+            // let sample_range_end = local_end * sample_rate as f64;
+            // assert_eq!(size, (sample_range_end - sample_range_start) as usize);
+            // FIXME: (x_x) keisan ga awanai
+            let sample_range_end = sample_range_start as usize + size;
             self.audio_render.render(&AudioRenderOpt {
                 sample_range: sample_range_start as i64..sample_range_end as i64,
                 sample_rate: sample_rate
@@ -51,7 +53,6 @@ impl<T: AudioRender> AudioRender for AudioClip<T> {
             let fade_duration = self.fadein * ro.sample_rate as f64;
             let len = fade_duration as i64 - ro.sample_range.start;
             if 0 < len {
-                println!("{:?}", len);
                 for c in 0..channel_num {
                     for i in 0..size.min(len as usize) {
                         let scale = (i + ro.sample_range.start as usize) as f64 / fade_duration; // TOOD: valid power?
@@ -67,7 +68,6 @@ impl<T: AudioRender> AudioRender for AudioClip<T> {
             let total_len = (self.duration / self.pitch * ro.sample_rate as f64) as i64 - ro.sample_range.end;
             let len = fade_duration as i64 - total_len;
             if 0 < len {
-                println!("{:?}", len);
                 for c in 0..channel_num {
                     for i in 0..size.min(len as usize) {
                         let scale = (i + total_len as usize) as f64 / fade_duration; // TOOD: valid power?
@@ -76,6 +76,11 @@ impl<T: AudioRender> AudioRender for AudioClip<T> {
                     }
                 }
             }
+        }
+        // FIXME
+        for i in ((self.duration() * ro.sample_rate as f64) as usize).saturating_sub(ro.sample_range.end as usize)..size {
+            vec[i] = 0.0;
+            vec[size + i] = 0.0;
         }
         vec
     }

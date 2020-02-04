@@ -48,7 +48,15 @@
         params.append('file', document.getElementById('uploadFile').files[0]);
         const res = await axios.post('/upload', params, {headers: {'content-type': 'multipart/form-data'}});
         console.log(res);
-        editor.setValue(res.data.map(fp => `(set image (import_image ${JSON.stringify(fp)}))`).join('\n') + '\n' + editor.getValue());
+        editor.setValue(res.data.map(fp => {
+          const ext = fp.slice(fp.lastIndexOf('.') + 1);
+          if (['png', 'jpg', 'jpeg', 'gif'].includes(ext))
+            return `(set image (import_image ${JSON.stringify(fp)}))`;
+          if (['mp3', 'wav', 'ogg'].includes(ext))
+            return `(set audio0 (import_audio ${JSON.stringify(fp)}))`;
+          else
+            return `; uploaded: ${JSON.stringify(fp)}`;
+        }).join('\n') + '\n' + editor.getValue());
       };
 
       const statusEl = document.getElementById('status');
