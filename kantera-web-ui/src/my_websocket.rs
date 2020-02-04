@@ -155,7 +155,7 @@ impl MyWebSocket {
             let mut bin = Vec::new();
             use std::io::Write;
             for v in vec.iter() {
-                let v = ((v + 1.0) / 2.0 * std::u16::MAX as f64).round() as u16;
+                let v = ((v.min(1.0).max(-1.0) + 1.0) / 2.0 * std::u16::MAX as f64).round() as u16;
                 bin.write(&v.to_le_bytes()).unwrap();
             }
             ctx.text(r#"{"type":"audio"}"#);
