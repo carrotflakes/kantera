@@ -365,6 +365,15 @@ fn init_runtime(rt: &mut Runtime) {
             fadeout: *vec[7].borrow().downcast_ref::<f64>().unwrap()
         }) as Rc<dyn AudioRender>)
     }) as MyFn));
+    rt.insert("audio_sequencer", r(Box::new(|vec: Vec<Val>| {
+        let renders = vec.into_iter().map(|p| {
+            let p = p.borrow().downcast_ref::<Vec<Val>>().unwrap().clone();
+            let time = p[0].borrow_mut().downcast_mut::<f64>().unwrap().clone();
+            let render = p[1].borrow().downcast_ref::<Rc<dyn AudioRender>>().unwrap().clone();
+            (time, render)
+        }).collect();
+        r(Rc::new(audio_renders::sequencer::Sequencer {renders}) as Rc<dyn AudioRender>)
+    }) as MyFn));
     rt.insert("test_audio", r(Box::new(|_vec: Vec<Val>| {
         use crate::audio_renders::{note::Note, sequencer::Sequencer};
         fn note(dur: f64, nn: i32, vel: f64, pan: f64) -> Box<dyn AudioRender> {
