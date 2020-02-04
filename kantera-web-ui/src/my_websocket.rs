@@ -11,6 +11,7 @@ use kantera::{
     script::{Runtime, r, Val}
 };
 use std::rc::Rc;
+use std::collections::HashMap;
 
 
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
@@ -26,7 +27,8 @@ pub struct MyWebSocket {
     framerate: usize,
     samplerate: usize,
     size: (usize, usize),
-    render_at: Instant
+    render_at: Instant,
+    rt_cache: Val
 }
 
 impl Actor for MyWebSocket {
@@ -60,6 +62,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWebSocket {
                 rt.insert("samplerate", r(SAMPLERATE_DEFAULT as i32));
                 rt.insert("frame_size", r(vec![r(600 as i32), r(400 as i32)]));
                 rt.insert("frame_height", r(400 as i32));
+                rt.insert("__rt_cache", self.rt_cache.clone());
                 match rt.re(&text) {
                     Ok(val) => {
                         self.render = val.borrow().downcast_ref::<Rc<dyn Render<Rgba>>>().unwrap().clone();
@@ -107,7 +110,8 @@ impl MyWebSocket {
             framerate: FRAMERATE_DEFAULT,
             samplerate: SAMPLERATE_DEFAULT,
             size: (600, 400),
-            render_at: Instant::now()
+            render_at: Instant::now(),
+            rt_cache: r(HashMap::<String, Val>::new())
         }
     }
 

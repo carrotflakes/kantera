@@ -1,8 +1,9 @@
 use std::rc::Rc;
 use std::cell::RefCell;
+use std::fmt::Write;
 use gluten::{
     reader::{Reader, default_atom_reader},
-    core::{eval, Env, macro_expand},
+    core::{eval, Env, macro_expand, Macro},
     StringPool
 };
 pub use gluten::data::*;
@@ -59,6 +60,33 @@ fn atom_reader(sp: &mut StringPool, s: &str) -> Result<Val, String> {
         return Ok(r(v));
     }
     default_atom_reader(sp, s)
+}
+
+fn write_val<T: Write>(write: &mut T, val: &Val) {
+    let val = val.borrow();
+    if let Some(s) = val.downcast_ref::<Symbol>() {
+        write!(write, "{}", s.0.as_ref()).unwrap();
+    } else if let Some(s) = val.downcast_ref::<String>() {
+        write!(write, "{:?}", s).unwrap();
+    } else if let Some(s) = val.downcast_ref::<i32>() {
+        write!(write, "{:?}", s).unwrap();
+    } else if let Some(s) = val.downcast_ref::<f64>() {
+        write!(write, "{:?}", s).unwrap();
+    } else if let Some(vec) = val.downcast_ref::<Vec<Val>>() {
+        write!(write, "(").unwrap();
+        let mut first = true;
+        for val in vec {
+            if first {
+                first = false;
+            } else {
+                write!(write, " ").unwrap();
+            }
+            write_val(write, val);
+        }
+        write!(write, ")").unwrap();
+    } else {
+        write!(write, "#?#").unwrap();
+    }
 }
 
 fn init_runtime(rt: &mut Runtime) {
@@ -422,4 +450,48 @@ fn init_runtime(rt: &mut Runtime) {
         let filepath = vec[0].borrow().downcast_ref::<String>().unwrap().clone();
         r(Rc::new(crate::ffmpeg::import_audio(&filepath)))
     }) as MyFn));
+    rt.insert("hash_map_get", r(Box::new(|vec: Vec<Val>| {
+        let hash_map = vec[0].borrow();
+        let hash_map = hash_map.downcast_ref::<std::collections::HashMap<String, Val>>().unwrap();
+        let key = vec[1].borrow().downcast_ref::<String>().unwrap().clone();
+        hash_map.get(&key).map(|x| x.clone()).unwrap_or_else(|| r(false))
+    }) as MyFn));
+    rt.insert("hash_map_set", r(Box::new(|vec: Vec<Val>| {
+        let mut hash_map = vec[0].borrow_mut();
+        let hash_map = hash_map.downcast_mut::<std::collections::HashMap<String, Val>>().unwrap();
+        let key = vec[1].borrow().downcast_ref::<String>().unwrap().clone();
+        let val = vec[2].clone();
+        hash_map.insert(key, val.clone());
+        val
+    }) as MyFn));
+    rt.insert("or", r(Macro(Box::new(|env: &mut Env, vec: Vec<Val>| {
+        let let_sym = r(env.reader().borrow_mut().intern("let"));
+        let if_sym = r(env.reader().borrow_mut().intern("if"));
+        let mut ret = vec.last().unwrap().clone();
+        let mut i = 0;
+        for val in vec.iter().rev().skip(1) {
+            i += 1;
+            let sym = r(env.reader().borrow_mut().intern(&format!("#gensym{}#", i)));
+            ret = r(vec![
+                let_sym.clone(),
+                r(vec![r(vec![sym.clone(), val.clone()])]),
+                r(vec![if_sym.clone(), sym.clone(), sym.clone(), ret])
+            ]);
+        }
+        ret
+    }))));
+    rt.insert("defmacro", r(Macro(Box::new(gluten::core::defmacro))));
+    rt.insert("quasiquote", r(Macro(Box::new(gluten::quasiquote::quasiquote))));
+    rt.insert("with_cache", r(Macro(Box::new(|env: &mut Env, vec: Vec<Val>| {
+        let reader = env.reader();
+        let mut reader = reader.borrow_mut();
+        let rt_cache = env.get(&reader.intern("__rt_cache")).unwrap().clone();
+        let mut key = String::new();
+        write_val(&mut key, &vec[0]);
+        r(vec![
+            r(reader.intern("or")),
+            r(vec![r(reader.intern("hash_map_get")), rt_cache.clone(), r(key.clone())]),
+            r(vec![r(reader.intern("hash_map_set")), rt_cache, r(key), vec[0].clone()])
+        ])
+    }))));
 }
