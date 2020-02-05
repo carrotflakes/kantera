@@ -26,6 +26,7 @@ pub struct MyWebSocket {
     audio_render: Option<Rc<dyn AudioRender>>,
     framerate: usize,
     samplerate: usize,
+    frame_num: Option<usize>,
     size: (usize, usize),
     render_at: Instant,
     rt_cache: Val
@@ -61,6 +62,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWebSocket {
                 rt.insert("framerate", r(FRAMERATE_DEFAULT as i32));
                 rt.insert("samplerate", r(SAMPLERATE_DEFAULT as i32));
                 rt.insert("frame_size", r(vec![r(600 as i32), r(400 as i32)]));
+                rt.insert("frame_num", r(false));
                 rt.insert("frame_height", r(400 as i32));
                 rt.insert("__rt_cache", self.rt_cache.clone());
                 match rt.re(&text) {
@@ -87,6 +89,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWebSocket {
                         } else {
                             self.audio_render = None;
                         }
+                        self.frame_num = rt.get("frame_num").and_then(|val| val.borrow().downcast_ref::<i32>().copied()).map(|val| val.max(1) as usize);
                         self.frame = 0;
                         ctx.text(format!(r#"{{"type":"streamInfo","framerate":{:?},"samplerate":{:?}}}"#, self.framerate, self.samplerate));
                     },
@@ -109,6 +112,7 @@ impl MyWebSocket {
             audio_render: None,
             framerate: FRAMERATE_DEFAULT,
             samplerate: SAMPLERATE_DEFAULT,
+            frame_num: None,
             size: (600, 400),
             render_at: Instant::now(),
             rt_cache: r(HashMap::<String, Val>::new())
@@ -168,6 +172,11 @@ impl MyWebSocket {
 
         ctx.text(format!(r#"{{"type":"sync","frame":{}}}"#, frame));
         self.frame += 1;
+        if let Some(frame_num) = self.frame_num {
+            if frame_num as i32 <= self.frame {
+                self.frame = 0;
+            }
+        }
 
         let desire_duration = Duration::from_millis(1000 / self.framerate as u64);
         self.render_at = (self.render_at + desire_duration).max(Instant::now() - desire_duration);
