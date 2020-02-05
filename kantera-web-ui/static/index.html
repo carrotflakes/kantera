@@ -131,7 +131,7 @@
       function apply() {
         if (!ws) return;
         document.getElementById('parseError').textContent = '';
-        ws.send(editor.getValue());
+        ws.send('script: ' + editor.getValue());
       }
 
       function startAudio() {

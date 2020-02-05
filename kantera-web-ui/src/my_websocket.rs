@@ -58,37 +58,9 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWebSocket {
             }
             Ok(ws::Message::Text(text)) => {
                 println!("{:?}", text);
-                let mut rt = Runtime::new();
-                rt.insert("framerate", r(FRAMERATE_DEFAULT as i32));
-                rt.insert("samplerate", r(SAMPLERATE_DEFAULT as i32));
-                rt.insert("frame_size", r(vec![r(600 as i32), r(400 as i32)]));
-                rt.insert("frame_num", r(false));
-                rt.insert("frame_height", r(400 as i32));
-                rt.insert("__rt_cache", self.rt_cache.clone());
-                match rt.re(&text) {
-                    Ok(_) => {
-                        self.render = rt.get("video").and_then(|val| val.borrow().downcast_ref::<Rc<dyn Render<Rgba>>>().cloned());
-                        self.audio_render = rt.get("audio").and_then(|val| val.borrow().downcast_ref::<Rc<dyn AudioRender>>().cloned());
-                        if let Some(val) = rt.get("framerate") {
-                            let framerate = *val.borrow().downcast_ref::<i32>().unwrap();
-                            self.framerate = framerate.min(120).max(1) as usize;
-                        }
-                        if let Some(val) = rt.get("samplerate") {
-                            let samplerate = *val.borrow().downcast_ref::<i32>().unwrap();
-                            self.samplerate = samplerate.min(48000).max(4000) as usize;
-                        }
-                        if let Some(val) = rt.get("frame_size") {
-                            let val = val.borrow();
-                            let vec = val.downcast_ref::<Vec<Val>>().unwrap();
-                            let width = *vec[0].borrow().downcast_ref::<i32>().unwrap();
-                            let height = *vec[1].borrow().downcast_ref::<i32>().unwrap();
-                            self.size = (width.max(0) as usize, height.max(0) as usize);
-                        }
-                        self.frame_num = rt.get("frame_num").and_then(|val| val.borrow().downcast_ref::<i32>().copied()).map(|val| val.max(1) as usize);
-                        self.frame = 0;
-                        ctx.text(format!(r#"{{"type":"streamInfo","framerate":{:?},"samplerate":{:?}}}"#, self.framerate, self.samplerate));
-                    },
-                    Err(mes) => ctx.text(format!(r#"{{"type":"parseFailed","error":{:?}}}"#, mes))
+                if text.starts_with("script: ") {
+                    let src = &text["script: ".len()..];
+                    self.run_script(src, ctx);
                 }
             },
             Ok(ws::Message::Binary(bin)) => ctx.binary(bin),
@@ -179,5 +151,40 @@ impl MyWebSocket {
         self.render_at = (self.render_at + desire_duration).max(Instant::now() - desire_duration);
         let duration = self.render_at.checked_duration_since(Instant::now()).unwrap_or(Duration::from_millis(1));
         ctx.run_later(duration, Self::render_loop);
+    }
+
+    fn run_script(&mut self, src: &str, ctx: &mut <Self as Actor>::Context) {
+        let mut rt = Runtime::new();
+        rt.insert("framerate", r(FRAMERATE_DEFAULT as i32));
+        rt.insert("samplerate", r(SAMPLERATE_DEFAULT as i32));
+        rt.insert("frame_size", r(vec![r(600 as i32), r(400 as i32)]));
+        rt.insert("frame_num", r(false));
+        rt.insert("frame_height", r(400 as i32));
+        rt.insert("__rt_cache", self.rt_cache.clone());
+        match rt.re(&src) {
+            Ok(_) => {
+                self.render = rt.get("video").and_then(|val| val.borrow().downcast_ref::<Rc<dyn Render<Rgba>>>().cloned());
+                self.audio_render = rt.get("audio").and_then(|val| val.borrow().downcast_ref::<Rc<dyn AudioRender>>().cloned());
+                if let Some(val) = rt.get("framerate") {
+                    let framerate = *val.borrow().downcast_ref::<i32>().unwrap();
+                    self.framerate = framerate.min(120).max(1) as usize;
+                }
+                if let Some(val) = rt.get("samplerate") {
+                    let samplerate = *val.borrow().downcast_ref::<i32>().unwrap();
+                    self.samplerate = samplerate.min(48000).max(4000) as usize;
+                }
+                if let Some(val) = rt.get("frame_size") {
+                    let val = val.borrow();
+                    let vec = val.downcast_ref::<Vec<Val>>().unwrap();
+                    let width = *vec[0].borrow().downcast_ref::<i32>().unwrap();
+                    let height = *vec[1].borrow().downcast_ref::<i32>().unwrap();
+                    self.size = (width.max(0) as usize, height.max(0) as usize);
+                }
+                self.frame_num = rt.get("frame_num").and_then(|val| val.borrow().downcast_ref::<i32>().copied()).map(|val| val.max(1) as usize);
+                self.frame = 0;
+                ctx.text(format!(r#"{{"type":"streamInfo","framerate":{:?},"samplerate":{:?}}}"#, self.framerate, self.samplerate));
+            },
+            Err(mes) => ctx.text(format!(r#"{{"type":"parseFailed","error":{:?}}}"#, mes))
+        }
     }
 }
