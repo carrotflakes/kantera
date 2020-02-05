@@ -5,7 +5,7 @@ use actix_web_actors::ws;
 
 use kantera::{
     pixel::Rgba,
-    render::{Render, Dummy, RenderOpt, Range},
+    render::{Render, RenderOpt, Range},
     audio_render::AudioRender,
     export::render_to_buffer,
     script::{Runtime, r, Val}
@@ -22,7 +22,7 @@ const SAMPLERATE_DEFAULT: usize = 16000;
 pub struct MyWebSocket {
     hb: Instant,
     frame: i32,
-    render: Rc<dyn Render<Rgba>>,
+    render: Option<Rc<dyn Render<Rgba>>>,
     audio_render: Option<Rc<dyn AudioRender>>,
     framerate: usize,
     samplerate: usize,
@@ -66,8 +66,9 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWebSocket {
                 rt.insert("frame_height", r(400 as i32));
                 rt.insert("__rt_cache", self.rt_cache.clone());
                 match rt.re(&text) {
-                    Ok(val) => {
-                        self.render = val.borrow().downcast_ref::<Rc<dyn Render<Rgba>>>().unwrap().clone();
+                    Ok(_) => {
+                        self.render = rt.get("video").and_then(|val| val.borrow().downcast_ref::<Rc<dyn Render<Rgba>>>().cloned());
+                        self.audio_render = rt.get("audio").and_then(|val| val.borrow().downcast_ref::<Rc<dyn AudioRender>>().cloned());
                         if let Some(val) = rt.get("framerate") {
                             let framerate = *val.borrow().downcast_ref::<i32>().unwrap();
                             self.framerate = framerate.min(120).max(1) as usize;
@@ -82,12 +83,6 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWebSocket {
                             let width = *vec[0].borrow().downcast_ref::<i32>().unwrap();
                             let height = *vec[1].borrow().downcast_ref::<i32>().unwrap();
                             self.size = (width.max(0) as usize, height.max(0) as usize);
-                        }
-                        if let Some(val) = rt.get("audio") {
-                            let audio_render = val.borrow().downcast_ref::<Rc<dyn AudioRender>>().unwrap().clone();
-                            self.audio_render = Some(audio_render);
-                        } else {
-                            self.audio_render = None;
                         }
                         self.frame_num = rt.get("frame_num").and_then(|val| val.borrow().downcast_ref::<i32>().copied()).map(|val| val.max(1) as usize);
                         self.frame = 0;
@@ -108,7 +103,7 @@ impl MyWebSocket {
         Self {
             hb: Instant::now(),
             frame: 0,
-            render: Rc::new(Dummy()),
+            render: None,
             audio_render: None,
             framerate: FRAMERATE_DEFAULT,
             samplerate: SAMPLERATE_DEFAULT,
@@ -132,26 +127,28 @@ impl MyWebSocket {
 
     fn render_loop(&mut self, ctx: &mut <Self as Actor>::Context) {
         let frame = self.frame;
-        let (width, height) = self.size;
-        let buffer = render_to_buffer(&RenderOpt {
-            u_range: Range::unit(),
-            u_res: width,
-            v_range: Range::unit(),
-            v_res: height,
-            frame_range: frame..frame+1,
-            framerate: self.framerate
-        }, &self.render);
-        let mut buf: Vec<u8> = vec![0; buffer.vec.len() * 4];
-        for i in 0..buffer.vec.len() {
-            buf[i * 4 + 0] = (buffer.vec[i].0.min(1.0).max(0.0) * 255.99).floor() as u8;
-            buf[i * 4 + 1] = (buffer.vec[i].1.min(1.0).max(0.0) * 255.99).floor() as u8;
-            buf[i * 4 + 2] = (buffer.vec[i].2.min(1.0).max(0.0) * 255.99).floor() as u8;
-            buf[i * 4 + 3] = (buffer.vec[i].3.min(1.0).max(0.0) * 255.99).floor() as u8;
+        if let Some(ref render) = self.render {
+            let (width, height) = self.size;
+            let buffer = render_to_buffer(&RenderOpt {
+                u_range: Range::unit(),
+                u_res: width,
+                v_range: Range::unit(),
+                v_res: height,
+                frame_range: frame..frame+1,
+                framerate: self.framerate
+            }, render);
+            let mut buf: Vec<u8> = vec![0; buffer.vec.len() * 4];
+            for i in 0..buffer.vec.len() {
+                buf[i * 4 + 0] = (buffer.vec[i].0.min(1.0).max(0.0) * 255.99).floor() as u8;
+                buf[i * 4 + 1] = (buffer.vec[i].1.min(1.0).max(0.0) * 255.99).floor() as u8;
+                buf[i * 4 + 2] = (buffer.vec[i].2.min(1.0).max(0.0) * 255.99).floor() as u8;
+                buf[i * 4 + 3] = (buffer.vec[i].3.min(1.0).max(0.0) * 255.99).floor() as u8;
+            }
+            let mut bin = Vec::new();
+            image::png::PNGEncoder::new(&mut bin).encode(&buf, width as u32, height as u32, image::RGBA(8)).unwrap();
+            ctx.text(r#"{"type":"frame"}"#);
+            ctx.binary(bin);
         }
-        let mut bin = Vec::new();
-        image::png::PNGEncoder::new(&mut bin).encode(&buf, width as u32, height as u32, image::RGBA(8)).unwrap();
-        ctx.text(r#"{"type":"frame"}"#);
-        ctx.binary(bin);
 
         if let Some(ref audio_render) = self.audio_render {
             let sample_rate = self.samplerate;
