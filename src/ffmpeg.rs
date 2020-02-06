@@ -202,10 +202,8 @@ pub fn probe(file_path: &str) -> VideoInfo {
                 |caps| caps.get(1).unwrap().as_str().parse().unwrap());
         }
         if line.starts_with("nb_frames=") {
-            frame_num = match line[10..].parse() {
-                Ok(x) => Some(x),
-                Err(_) => None
-            };
+            // NOTE: N/A is considered 1.
+            frame_num = Some(line[10..].parse().unwrap_or(1));
         }
         if line.starts_with("channels=") {
             channel_num = Some(line[9..].parse().unwrap());
@@ -306,6 +304,40 @@ pub fn import_audio(file_path: &str) -> AudioBuffer<u16> {
         channel_num,
         sample_rate,
         sample_num: vec[0].len(),
+        vec
+    }
+}
+
+use crate::image::Image;
+
+pub fn import_image(file_path: &str) -> Image<Rgba> {
+    let vi = probe(file_path);
+    let (width, height, _, _) = vi.get_video_info().unwrap();
+    let mut child = Command::new("/bin/sh")
+        .args(&[
+            "-c",
+            format!(
+                "ffmpeg -hide_banner -i {input} -f image2pipe -pix_fmt bgra -vcodec rawvideo -",
+                input = file_path).as_str()])
+        .stdout(Stdio::piped())
+        .spawn()
+        .expect("failed to execute child");
+    let stdout = child.stdout.as_mut().unwrap();
+    let mut reader = BufReader::new(stdout);
+    let mut vec = Vec::with_capacity(width * height);
+    let mut buf = vec![0u8; width * height * 4];
+    if let Ok(_) = reader.read_exact(buf.as_mut()) {
+        for i in 0..width * height {
+            vec.push(Rgba(
+                buf[i * 4 + 2] as f64 / 255.0,
+                buf[i * 4 + 1] as f64 / 255.0,
+                buf[i * 4 + 0] as f64 / 255.0,
+                buf[i * 4 + 3] as f64 / 255.0));
+        }
+    }
+    Image {
+        width,
+        height,
         vec
     }
 }
