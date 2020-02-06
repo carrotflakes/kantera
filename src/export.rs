@@ -51,14 +51,14 @@ pub fn render_to_mp4(
 
 pub static mut DEBUG_PRINT: bool = true;
 
-pub fn render_to_buffer(ro: &RenderOpt, render: &dyn Render<Rgba>) -> Buffer<Rgba> {
+pub fn render_to_buffer<T: Default + Clone>(ro: &RenderOpt, render: &dyn Render<T>) -> Buffer<T> {
     if unsafe {DEBUG_PRINT} {
         println!("render start: {:#?}", ro);
     }
     let start = std::time::Instant::now();
 
     let frame_num = (ro.frame_range.end - ro.frame_range.start) as usize;
-    let mut vec = vec![Rgba::default(); ro.u_res * ro.v_res * frame_num];
+    let mut vec = vec![T::default(); ro.u_res * ro.v_res * frame_num];
     render.render(ro, vec.as_mut_slice());
 
     let duration = start.elapsed();
@@ -78,7 +78,7 @@ pub fn render_to_buffer(ro: &RenderOpt, render: &dyn Render<Rgba>) -> Buffer<Rgb
 
 use std::thread;
 
-pub fn render_to_buffer_parallel(ro: &RenderOpt, render: &'static (dyn Render<Rgba> + Send + Sync)) -> Buffer<Rgba> {
+pub fn render_to_buffer_parallel<T: Default + Clone + Send>(ro: &RenderOpt, render: &'static (dyn Render<T> + Send + Sync)) -> Buffer<T> {
     if unsafe {DEBUG_PRINT} {
         println!("render start: {:#?}", ro);
     }
@@ -94,20 +94,20 @@ pub fn render_to_buffer_parallel(ro: &RenderOpt, render: &'static (dyn Render<Rg
             ..ro.clone()
         };
         thread::spawn(move || {
-            let mut vec = vec![Rgba::default(); ro.u_res * ro.v_res * frame_num];
+            let mut vec = vec![T::default(); ro.u_res * ro.v_res * frame_num];
             render.render(&ro, vec.as_mut_slice());
             vec
         })
     }).collect::<Vec<_>>();
-    let vecs = handles.into_iter().map(|handle| handle.join().unwrap()).collect::<Vec<Vec<Rgba>>>();
+    let vecs = handles.into_iter().map(|handle| handle.join().unwrap()).collect::<Vec<Vec<T>>>();
 
-    let mut vec = vec![Rgba::default(); ro.u_res * ro.v_res * frame_num];
+    let mut vec = vec![T::default(); ro.u_res * ro.v_res * frame_num];
     for f in 0..frame_num {
         for x in 0..ro.u_res {
             for y in 0..ro.v_res {
                 let i = x * n / ro.u_res;
                 let u_res = (i + 1) * ro.u_res / n - i * ro.u_res / n;
-                vec[f * ro.u_res * ro.v_res + y * ro.u_res + x] = vecs[i][f * u_res * ro.v_res + y * u_res + (x - i * ro.u_res / n)];
+                vec[f * ro.u_res * ro.v_res + y * ro.u_res + x] = vecs[i][f * u_res * ro.v_res + y * u_res + (x - i * ro.u_res / n)].clone();
             }
         }
     }
