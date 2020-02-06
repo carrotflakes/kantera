@@ -75,3 +75,54 @@ pub fn render_to_buffer(ro: &RenderOpt, render: &dyn Render<Rgba>) -> Buffer<Rgb
         vec: vec
     }
 }
+
+use std::thread;
+
+pub fn render_to_buffer_parallel(ro: &RenderOpt, render: &'static (dyn Render<Rgba> + Send + Sync)) -> Buffer<Rgba> {
+    if unsafe {DEBUG_PRINT} {
+        println!("render start: {:#?}", ro);
+    }
+    let start = std::time::Instant::now();
+
+    let frame_num = (ro.frame_range.end - ro.frame_range.start) as usize;
+    let n = 4; // TODO
+    let handles: Vec<_> = (0..n).map(|i| {
+        let u_range = Range(i as f64 / n as f64 * ro.u_range.size() + ro.u_range.0, (i + 1) as f64 / n as f64 * ro.u_range.size() + ro.u_range.0);
+        let ro = RenderOpt {
+            u_range: u_range,
+            u_res: (i + 1) * ro.u_res / n - i * ro.u_res / n,
+            ..ro.clone()
+        };
+        thread::spawn(move || {
+            let mut vec = vec![Rgba::default(); ro.u_res * ro.v_res * frame_num];
+            render.render(&ro, vec.as_mut_slice());
+            vec
+        })
+    }).collect::<Vec<_>>();
+    let vecs = handles.into_iter().map(|handle| handle.join().unwrap()).collect::<Vec<Vec<Rgba>>>();
+
+    let mut vec = vec![Rgba::default(); ro.u_res * ro.v_res * frame_num];
+    for f in 0..frame_num {
+        for x in 0..ro.u_res {
+            for y in 0..ro.v_res {
+                let i = x * n / ro.u_res;
+                let u_res = (i + 1) * ro.u_res / n - i * ro.u_res / n;
+                vec[f * ro.u_res * ro.v_res + y * ro.u_res + x] = vecs[i][f * u_res * ro.v_res + y * u_res + (x - i * ro.u_res / n)];
+            }
+        }
+    }
+
+    let duration = start.elapsed();
+    if unsafe {DEBUG_PRINT} {
+        println!("render end, took: {}.{:04} sec",
+                duration.as_secs(), duration.subsec_nanos() / 1_000_000);
+    }
+
+    Buffer {
+        width: ro.u_res,
+        height: ro.v_res,
+        frame_num: frame_num,
+        framerate: ro.framerate,
+        vec: vec
+    }
+}
