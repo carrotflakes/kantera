@@ -14,7 +14,7 @@ fn main() {
 
     render_to_mp4(
         5.0, width, height, 30, 1,
-        "import_image.mp4",
+        "ffmpeg_import_image.mp4",
         &ImageRender {
             image: image.clone(), sizing: Sizing::Fit, default: Rgba(0.0, 0.0, 0.0, 0.0),
             interpolation: kantera::interpolation::Bilinear
