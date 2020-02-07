@@ -1,3 +1,4 @@
+pub mod pixel_into;
 pub mod plain;
 pub mod sequence;
 pub mod playback;
