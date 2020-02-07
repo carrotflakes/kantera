@@ -2,6 +2,7 @@ extern crate kantera;
 
 use kantera::pixel::Rgba;
 use kantera::export::{render_to_buffer, render_to_buffer_parallel};
+use kantera::buffer::Buffer;
 use kantera::renders::sample::Sample;
 use kantera::render::{Range, Render, RenderOpt};
 use kantera::util::noise;
@@ -22,8 +23,12 @@ fn main() {
             noise(u / 10.0 * w as f64, v / 10.0 * h as f64, time) * 0.5 + 0.5, 1.0)
     }));
     for _ in 0..5 {
+        let start = std::time::Instant::now();
         render_to_buffer(&ro, &render);
-        render_to_buffer_parallel(&ro, unsafe { std::mem::transmute::<&dyn Render<Rgba>, &'static (dyn Render<Rgba> + Send + Sync)>(&render) });
+        println!("{:?}", start.elapsed());
+        let start = std::time::Instant::now();
+        render_to_buffer_parallel(&ro, unsafe { std::mem::transmute::<&dyn Render<Rgba>, &'static (dyn Render<Rgba> + Send + Sync)>(&render) }) as Buffer<Rgba>;
+        println!("{:?}", start.elapsed());
     }
 
     println!("done!");
