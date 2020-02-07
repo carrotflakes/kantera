@@ -1,6 +1,6 @@
 use std::io::Write;
 use std::process::{Command, Child, Stdio};
-use crate::pixel::Rgba;
+use crate::pixel::{Rgba, RgbU8};
 
 pub struct Exporter {
     size: (usize, usize),
@@ -71,14 +71,14 @@ pub fn u8s_to_rgbas(u8s: &[u8], block: &mut [Rgba]) {
 use crate::buffer::Buffer;
 use std::io::Read;
 
-pub fn import(file_path: &str) -> Buffer<Rgba> {
+pub fn import(file_path: &str) -> Buffer<RgbU8> {
     let vi = probe(file_path);
     let (width, height, frame_num, framerate) = vi.get_video_info().unwrap();
     let mut child = Command::new("/bin/sh")
         .args(&[
             "-c",
             format!(
-                "ffmpeg -hide_banner -i {input} -f image2pipe -pix_fmt bgra -vcodec rawvideo -",
+                "ffmpeg -hide_banner -i {input} -f image2pipe -pix_fmt rgb24 -vcodec rawvideo -",
                 input = file_path).as_str()])
         .stdout(Stdio::piped())
         .spawn()
@@ -86,15 +86,11 @@ pub fn import(file_path: &str) -> Buffer<Rgba> {
     let stdout = child.stdout.as_mut().unwrap();
     let mut reader = BufReader::new(stdout);
     let mut vec = Vec::with_capacity(width * height * frame_num);
-    let mut buf = vec![0u8; width * height * 4];
-    for _ in 0..frame_num { // TODO: while let
+    let mut buf = vec![0u8; width * height * 3];
+    for _ in 0..frame_num {
         if let Ok(_) = reader.read_exact(buf.as_mut()) {
             for i in 0..width * height {
-                vec.push(Rgba(
-                    buf[i * 4 + 2] as f64 / 255.0,
-                    buf[i * 4 + 1] as f64 / 255.0,
-                    buf[i * 4 + 0] as f64 / 255.0,
-                    buf[i * 4 + 3] as f64 / 255.0));
+                vec.push(RgbU8(buf[i * 3 + 0], buf[i * 3 + 1], buf[i * 3 + 2]));
             }
         } else {
             break;

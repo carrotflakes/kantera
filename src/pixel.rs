@@ -66,8 +66,8 @@ impl RgbU8 {
     }
 }
 
-impl From<&RgbU8> for Rgba {
-    fn from(p: &RgbU8) -> Rgba {
+impl From<RgbU8> for Rgba {
+    fn from(p: RgbU8) -> Rgba {
         Rgba(
             p.0 as f64 / 255.0,
             p.1 as f64 / 255.0,
