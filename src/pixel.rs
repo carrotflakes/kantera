@@ -48,4 +48,32 @@ impl Lerp for Rgba {
     }
 }
 
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub struct RgbU8(pub u8, pub u8, pub u8);
+
+impl Default for RgbU8 {
+    fn default() -> Self {
+        RgbU8(0, 0, 0)
+    }
+}
+
+impl RgbU8 {
+    pub fn normal_blend(&self, rhs: &RgbU8, alpha: f64) -> RgbU8 {
+        RgbU8(
+            (self.0 as f64 * (1.0 - alpha) + rhs.0 as f64 * alpha) as u8,
+            (self.1 as f64 * (1.0 - alpha) + rhs.1 as f64 * alpha) as u8,
+            (self.2 as f64 * (1.0 - alpha) + rhs.2 as f64 * alpha) as u8)
+    }
+}
+
+impl From<&RgbU8> for Rgba {
+    fn from(p: &RgbU8) -> Rgba {
+        Rgba(
+            p.0 as f64 / 255.0,
+            p.1 as f64 / 255.0,
+            p.2 as f64 / 255.0,
+            1.0)
+    }
+}
+
 // TODO: HSV
