@@ -2,7 +2,6 @@ extern crate kantera;
 
 use std::rc::Rc;
 use kantera::pixel::Rgba;
-use kantera::render::Render;
 use kantera::export::render_to_mp4;
 use kantera::ffmpeg::import_image;
 use kantera::renders::image_render::{ImageRender, Sizing};
