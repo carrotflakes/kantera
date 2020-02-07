@@ -35,6 +35,7 @@ pub trait Render<T> {
 
     fn render(&self, ro: &RenderOpt, buffer: &mut [T]) {
         let RenderOpt {u_range, u_res, v_range, v_res, frame_range, framerate, ..} = ro;
+        let res = ((*u_res as f64 / u_range.size()) as usize, (*v_res as f64 / v_range.size()) as usize);
         for f in frame_range.start..frame_range.end {
             let time = f as f64 / *framerate as f64;
             for y in 0..*v_res {
@@ -42,7 +43,7 @@ pub trait Render<T> {
                 for x in 0..*u_res {
                     let u = x as f64 / *u_res as f64;
                     buffer[(f - frame_range.start) as usize * u_res * v_res + y * u_res + x] =
-                        self.sample(u_range.at(u), v_range.at(v), time, (*u_res, *v_res));
+                        self.sample(u_range.at(u), v_range.at(v), time, res);
                 }
             }
         }
