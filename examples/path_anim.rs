@@ -84,7 +84,7 @@ fn main() {
                             }
                         }
                     }))),
-                    CompositeMode::Normal(Path::new(1.0))
+                    CompositeMode::Normal(Rc::new(1.0))
                 )
             ]
     });

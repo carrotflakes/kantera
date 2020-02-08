@@ -86,8 +86,7 @@ fn main() {
                             .append(1.0, 10.0, Point::Linear)
                     }),
                     CompositeMode::Normal(
-                        Path::new(0.0)
-                            .append(1.0, 1.0, Point::Linear)
+                        Rc::new(Path::new(0.0).append(1.0, 1.0, Point::Linear))
                     )
                 )
             ]

@@ -11,7 +11,6 @@ use kantera::{
         composite::{Composite, CompositeMode},
         image_render::{ImageRender, Sizing}
     },
-    path::Path,
     text::{Font, render}
 };
 
@@ -46,7 +45,7 @@ fn main() {
                             image: image.clone(), sizing: Sizing::Contain, default: Rgba(0.0, 0.0, 0.0, 0.0),
                             interpolation: kantera::interpolation::Bicubic::new(1.0 / 3.0, 1.0 / 3.0)
                         }))),
-                    CompositeMode::Normal(Path::new(1.0))
+                    CompositeMode::Normal(Rc::new(1.0))
                 )
             ]
         });
