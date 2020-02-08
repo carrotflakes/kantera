@@ -81,10 +81,10 @@ fn main() {
                             interpolation: kantera::interpolation::Bilinear
                         }),
                         max_size: 10,
-                        size_path: Path::new(0.0)
+                        size: Rc::new(Path::new(0.0)
                             .append(6.0, 0.0, Point::Constant)
                             .append(1.0, 10.0, Point::Linear)
-                    }),
+                    )}),
                     CompositeMode::Normal(
                         Rc::new(Path::new(0.0).append(1.0, 1.0, Point::Linear))
                     )

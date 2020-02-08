@@ -1,11 +1,12 @@
 use crate::pixel::Rgba;
 use crate::render::{Range, Res, Render, RenderOpt};
-use crate::path::{Path, Timed};
+use crate::path::Timed;
+use std::rc::Rc;
 
 pub struct Bokeh<R: Render<Rgba>> {
     pub render: R,
     pub max_size: usize,
-    pub size_path: Path<f64>
+    pub size: Rc<dyn Timed<f64>>
 }
 
 impl<R: Render<Rgba>> Render<Rgba> for Bokeh<R> {
@@ -33,7 +34,7 @@ impl<R: Render<Rgba>> Render<Rgba> for Bokeh<R> {
                 },
                 sub_buffer.as_mut_slice());
 
-            let real_size: usize = (self.size_path.get_value(time).round().abs() as usize).min(size);
+            let real_size: usize = (self.size.get_value(time).round().abs() as usize).min(size);
 
             for y in 0..*v_res + size * 2 {
                 let mut acc = Rgba(0.0, 0.0, 0.0, 0.0);
