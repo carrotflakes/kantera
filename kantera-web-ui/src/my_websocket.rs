@@ -39,6 +39,7 @@ impl Actor for MyWebSocket {
     fn started(&mut self, ctx: &mut Self::Context) {
         self.haertbeat(ctx);
         self.render_loop(ctx);
+        ctx.text(r#"{"type":"log","log":"ready."}"#);
     }
 }
 

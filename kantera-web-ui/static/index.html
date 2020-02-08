@@ -19,6 +19,7 @@
     <div id="parseError" style="color: red"></div>
     <div id="status"></div>
     <img id="img"/>
+    <div id="log"></div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.19.0/axios.js" integrity="sha256-XmdRbTre/3RulhYk/cOBUMpYlaAp2Rpo/s556u0OIKk=" crossorigin="anonymous"></script>
     <script src="https://pagecdn.io/lib/ace/1.4.6/ace.js" integrity="sha256-CVkji/u32aj2TeC+D13f7scFSIfphw2pmu4LaKWMSY8=" crossorigin="anonymous"></script>
     <script>
@@ -61,6 +62,7 @@
 
       const statusEl = document.getElementById('status');
       const imgEl = document.getElementById('img');
+      const logEl = document.getElementById('log');
       let ws = null;
       let syncObj = {frame: 0};
       let binaryType = null;
@@ -110,6 +112,8 @@
               binaryType = 'audio';
             } else if (data.type === 'streamInfo') {
               streamInfo = data;
+            } else if (data.type === 'log') {
+              logEl.textContent += data.log + '\n';
             }
           } else {
             console.log(e.data);
