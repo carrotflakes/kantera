@@ -6,7 +6,10 @@ use gluten::{
     core::{eval, Env, macro_expand, Macro},
     StringPool
 };
-pub use gluten::data::*;
+pub use gluten::{
+    data::*,
+    error::GlutenError
+};
 use crate::{
     image::Image,
     pixel::Rgba,
@@ -41,18 +44,18 @@ impl Runtime {
         self.0.get(&sym)
     }
 
-    pub fn re(&mut self, str: &str) -> Result<Val, String>{
+    pub fn re(&mut self, str: &str) -> Result<Val, GlutenError>{
         let forms = self.0.reader().borrow_mut().parse_top_level(str)?;
         let mut last_val = None;
         for form in forms {
-            let form = macro_expand(&mut self.0, form);
-            last_val = Some(eval(self.0.clone(), form));
+            let form = macro_expand(&mut self.0, form)?;
+            last_val = Some(eval(self.0.clone(), form)?);
         }
-        last_val.ok_or("no form".to_string())
+        last_val.ok_or(GlutenError::Str("no form".to_string()))
     }
 }
 
-fn atom_reader(sp: &mut StringPool, s: &str) -> Result<Val, String> {
+fn atom_reader(sp: &mut StringPool, s: &str) -> Result<Val, GlutenError> {
     if let Ok(v) = s.parse::<i32>() {
         return Ok(r(v));
     }
@@ -488,7 +491,7 @@ fn init_runtime(rt: &mut Runtime) {
                 r(vec![if_sym.clone(), sym.clone(), sym.clone(), ret])
             ]);
         }
-        ret
+        Ok(ret)
     }))));
     rt.insert("defmacro", r(Macro(Box::new(gluten::core::defmacro))));
     rt.insert("quasiquote", r(Macro(Box::new(gluten::quasiquote::quasiquote))));
@@ -498,10 +501,10 @@ fn init_runtime(rt: &mut Runtime) {
         let rt_cache = env.get(&reader.intern("__rt_cache")).unwrap().clone();
         let mut key = String::new();
         write_val(&mut key, &vec[0]);
-        r(vec![
+        Ok(r(vec![
             r(reader.intern("or")),
             r(vec![r(reader.intern("hash_map_get")), rt_cache.clone(), r(key.clone())]),
             r(vec![r(reader.intern("hash_map_set")), rt_cache, r(key), vec[0].clone()])
-        ])
+        ]))
     }))));
 }
