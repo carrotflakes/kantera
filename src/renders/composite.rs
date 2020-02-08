@@ -1,11 +1,11 @@
 use crate::pixel::Rgba;
 use crate::render::{Res, Render, RenderOpt};
-use crate::path::{Path, Timed};
+use crate::path::Timed;
+use std::rc::Rc;
 
-#[derive(Debug)]
 pub enum CompositeMode {
     None,
-    Normal(Path<f64>)
+    Normal(Rc<dyn Timed<f64>>)
 }
 
 pub struct Composite<R: Render<Rgba>> {

@@ -204,7 +204,7 @@ fn init_runtime(rt: &mut Runtime) {
     rt.insert("plain", r(Box::new(|vec: Vec<Val>| {
         if let Some(p) = vec[0].borrow().downcast_ref::<Rgba>() {
             r(Rc::new(crate::renders::plain::Plain::new(*p)) as Rc<dyn Render<Rgba>>)
-        } else if let Some(p) = vec[0].borrow().downcast_ref::<Path<Rgba>>() {
+        } else if let Some(p) = vec[0].borrow().downcast_ref::<Rc<dyn Timed<Rgba>>>() {
             r(Rc::new(crate::renders::plain::Plain::new(p.clone())) as Rc<dyn Render<Rgba>>)
         } else {
             panic!()
@@ -260,7 +260,9 @@ fn init_runtime(rt: &mut Runtime) {
             let mode = p[1].borrow().downcast_ref::<Symbol>().unwrap().0.to_owned();
             let mode = match mode.as_str() {
                 "none" => CompositeMode::None,
-                "normal" => CompositeMode::Normal(Path::new(1.0)),
+                "normal" => CompositeMode::Normal(
+                    p.get(2).map(|x| x.borrow().downcast_ref::<Rc<dyn Timed<f64>>>().unwrap().clone()).unwrap_or_else(|| Rc::new(1.0))
+                ),
                 _ => panic!("illegal CompositeMode")
             };
             (render, mode)
@@ -343,6 +345,14 @@ fn init_runtime(rt: &mut Runtime) {
             Some(r(Rc::new(Sine::new(initial_phase, frequency, amplitude)) as Rc<dyn Timed<f64>>))
         }
         f::<f64>(&vec).or_else(|| f::<Rc<dyn Timed<f64>>>(&vec)).unwrap()
+    }) as MyFn));
+    rt.insert("timed/add", r(Box::new(|vec: Vec<Val>| {
+        fn f<T: 'static + std::ops::Add<Output = T>>(vec: &Vec<Val>) -> Option<Val> {
+            let a = vec[0].borrow().downcast_ref::<Rc<dyn Timed<T>>>()?.clone();
+            let b = vec[1].borrow().downcast_ref::<Rc<dyn Timed<T>>>()?.clone();
+            Some(r(Rc::new(crate::timed::Add::new(a, b)) as Rc<dyn Timed<T>>))
+        }
+        f::<f64>(&vec).or_else(|| f::<Vec2<f64>>(&vec)).or_else(|| f::<Vec3<f64>>(&vec)).unwrap()
     }) as MyFn));
     rt.insert("transform", r(Box::new(|vec: Vec<Val>| {
         use crate::{renders::transform::{Transform, timed_to_transformer}};

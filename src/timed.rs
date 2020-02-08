@@ -64,3 +64,25 @@ impl<T: Timed<f64>> Timed<f64> for Sine<T> {
         ((self.initial_phase + time) * self.frequency * std::f64::consts::PI * 2.0).sin() * self.amplitude.get_value(time)
     }
 }
+
+#[derive(Debug)]
+pub struct Add<T: std::ops::Add<Output = T>, A: Timed<T>, B: Timed<T>> {
+    pub a: A,
+    pub b: B,
+    pub t: std::marker::PhantomData<T>
+}
+
+impl<T: std::ops::Add<Output = T>, A: Timed<T>, B: Timed<T>> Add<T, A, B> {
+    pub fn new(a: A, b: B) -> Self {
+        Add {
+            a, b,
+            t: std::marker::PhantomData
+        }
+    }
+}
+
+impl<T: std::ops::Add<Output = T>, A: Timed<T>, B: Timed<T>> Timed<T> for Add<T, A, B> {
+    fn get_value(&self, time: f64) -> T {
+        self.a.get_value(time) + self.b.get_value(time)
+    }
+}
