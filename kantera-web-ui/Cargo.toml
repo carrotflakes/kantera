@@ -8,6 +8,7 @@ edition = "2018"
 
 [dependencies]
 kantera = { git = "https://github.com/carrotflakes/kantera.git" }
+#kantera = { path = ".." }
 futures = "0.3.1"
 actix = "0.9"
 actix-codec = "0.2"
