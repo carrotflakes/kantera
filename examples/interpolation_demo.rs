@@ -15,7 +15,7 @@ use kantera::{
 };
 
 fn main() {
-    let font_path = "./IPAexfont00401/ipaexg.ttf";
+    let font_path = "./kantera-web-ui/assets/IPAexfont00401/ipaexg.ttf";
     let bytes = std::fs::read(font_path).unwrap();
     let font = Font::from_bytes(&bytes).unwrap();
     let (width, height) = (320, 240);
