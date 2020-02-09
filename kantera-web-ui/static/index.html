@@ -77,7 +77,7 @@
           bufferI = 0;
           return;
         }
-        ws = new WebSocket('ws://' + location.host + '/ws/');
+        ws = new WebSocket(location.protocol.replace('http', 'ws') + '//' + location.host + '/ws/');
         const history = [Date.now()];
         ws.onopen = () => {
           console.log('connected');
