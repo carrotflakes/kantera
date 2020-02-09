@@ -24,8 +24,8 @@ impl<T: Default, R: Render<T>> Render<T> for Sequence<T, R> {
     }
 
     fn render(&self, ro: &RenderOpt, buffer: &mut [T]) {
-        let RenderOpt {u_res, v_res, frame_range, framerate, ..} = ro;
-        let frame_size = u_res * v_res;
+        let RenderOpt {x_range, y_range, frame_range, framerate, ..} = ro;
+        let frame_size = ((x_range.end - x_range.start) * (y_range.end - y_range.start)) as usize;
         let mut offset_frame = 0;
 
         for i in 0..self.pages.len() {
@@ -44,7 +44,7 @@ impl<T: Default, R: Render<T>> Render<T> for Sequence<T, R> {
             }
             render.render(&RenderOpt {
                 frame_range: left - offset_frame..right - offset_frame,
-                .. *ro
+                ..ro.clone()
             }, &mut buffer[(left - frame_range.start as i32) as usize * frame_size..
                            (right - frame_range.start as i32) as usize * frame_size]);
         }

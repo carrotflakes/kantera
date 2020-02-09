@@ -1,7 +1,7 @@
 extern crate kantera;
 
 use kantera::pixel::Rgba;
-use kantera::render::{Range, Render, RenderOpt, Dummy};
+use kantera::render::{Render, RenderOpt, Dummy};
 
 fn make_image() -> kantera::image::Image<Rgba> {
     let (width, height) = (640, 480);
@@ -41,10 +41,10 @@ fn main() {
     let image = Rc::new(make_image());
     let buffer = render_to_buffer(
         &RenderOpt {
-            u_range: Range::unit(),
-            u_res: 20,
-            v_range: Range::unit(),
-            v_res: 20,
+            x_range: 0..20,
+            y_range: 0..20,
+            res_x: 20,
+            res_y: 20,
             frame_range: 0..100,
             framerate: 4,
         },
@@ -52,10 +52,10 @@ fn main() {
 
     let buffer2 = render_to_buffer(
         &RenderOpt {
-            u_range: Range::unit(),
-            u_res: 640,
-            v_range: Range::unit(),
-            v_res: 480,
+            x_range: 0..640,
+            y_range: 0..480,
+            res_x: 640,
+            res_y: 480,
             frame_range: 0..30 * 7,
             framerate: 30
         },

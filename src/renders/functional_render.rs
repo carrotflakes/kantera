@@ -8,8 +8,8 @@ impl <T: Copy> Render<T> for FunctionalRender<T> {
     }
 
     fn render(&self, ro: &RenderOpt, buffer: &mut [T]) {
-        let RenderOpt {u_res, v_res, frame_range, framerate, ..} = ro;
-        let frame_size = *u_res * *v_res;
+        let RenderOpt {res_x, res_y, frame_range, framerate, ..} = ro;
+        let frame_size = *res_x * *res_y;
         for f in 0..(frame_range.end - frame_range.start) as usize {
             let time = (frame_range.start as f64 + f as f64) / *framerate as f64;
             (self.0)(ro, time, &mut buffer[f * frame_size..(f + 1) * frame_size]);

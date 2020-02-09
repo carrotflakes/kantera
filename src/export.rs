@@ -1,6 +1,6 @@
 use crate::buffer::Buffer;
 use crate::pixel::Rgba;
-use crate::render::{Range, Render, RenderOpt};
+use crate::render::{Render, RenderOpt};
 
 pub fn rgbas_to_u8s(block: &[Rgba], u8s: &mut [u8]) {
     for i in 0..block.len() {
@@ -25,10 +25,10 @@ pub fn render_to_mp4(
     let mut exporter = crate::ffmpeg::Exporter::new(width, height, framerate, file_name, true);
     for f in 0..frames / buffer_frame_num {
         render.render(&RenderOpt {
-            u_range: Range::unit(),
-            u_res: width,
-            v_range: Range::unit(),
-            v_res: height,
+            x_range: 0..width as i32,
+            y_range: 0..height as i32,
+            res_x: width,
+            res_y: height,
             frame_range: (f * buffer_frame_num) as i32..((f + 1) * buffer_frame_num) as i32,
             framerate: framerate
         }, buffer.as_mut_slice());
@@ -37,10 +37,10 @@ pub fn render_to_mp4(
     {
         let start = (frames / buffer_frame_num) * buffer_frame_num;
         render.render(&RenderOpt {
-            u_range: Range::unit(),
-            u_res: width,
-            v_range: Range::unit(),
-            v_res: height,
+            x_range: 0..width as i32,
+            y_range: 0..height as i32,
+            res_x: width,
+            res_y: height,
             frame_range: start as i32..frames as i32,
             framerate: framerate
         }, buffer.as_mut_slice());
@@ -57,8 +57,10 @@ pub fn render_to_buffer<T: Default + Clone>(ro: &RenderOpt, render: &dyn Render<
     }
     let start = std::time::Instant::now();
 
+    let x_size = (ro.x_range.end - ro.x_range.start) as usize;
+    let y_size = (ro.y_range.end - ro.y_range.start) as usize;
     let frame_num = (ro.frame_range.end - ro.frame_range.start) as usize;
-    let mut vec = vec![T::default(); ro.u_res * ro.v_res * frame_num];
+    let mut vec = vec![T::default(); y_size * x_size * frame_num];
     render.render(ro, vec.as_mut_slice());
 
     let duration = start.elapsed();
@@ -68,8 +70,8 @@ pub fn render_to_buffer<T: Default + Clone>(ro: &RenderOpt, render: &dyn Render<
     }
 
     Buffer {
-        width: ro.u_res,
-        height: ro.v_res,
+        width: x_size,
+        height: y_size,
         frame_num: frame_num,
         framerate: ro.framerate,
         vec: vec
@@ -80,36 +82,37 @@ use std::thread;
 
 pub fn render_to_buffer_parallel<T: Default + Clone + Send, U: From<T>>(ro: &RenderOpt, render: &'static (dyn Render<T> + Send + Sync)) -> Buffer<U> {
     let frame_num = (ro.frame_range.end - ro.frame_range.start) as usize;
-    let n = 4; // TODO
+    let x_size = (ro.x_range.end - ro.x_range.start) as usize;
+    let y_size = (ro.y_range.end - ro.y_range.start) as usize;
+    let n = 4i32; // TODO
     let handles: Vec<_> = (0..n).map(|i| {
-        let u_range = Range(i as f64 / n as f64 * ro.u_range.size() + ro.u_range.0, (i + 1) as f64 / n as f64 * ro.u_range.size() + ro.u_range.0);
+        let x_range = (ro.x_range.end - ro.x_range.start) * i / n + ro.x_range.start..(ro.x_range.end - ro.x_range.start) * (i + 1) / n + ro.x_range.start;
         let ro = RenderOpt {
-            u_range: u_range,
-            u_res: (i + 1) * ro.u_res / n - i * ro.u_res / n,
+            x_range,
             ..ro.clone()
         };
         thread::spawn(move || {
-            let mut vec = vec![T::default(); ro.u_res * ro.v_res * frame_num];
+            let mut vec = vec![T::default(); (ro.x_range.end - ro.x_range.start) as usize * y_size * frame_num];
             render.render(&ro, vec.as_mut_slice());
             vec
         })
     }).collect::<Vec<_>>();
     let vecs = handles.into_iter().map(|handle| handle.join().unwrap()).collect::<Vec<Vec<T>>>();
 
-    let mut vec = Vec::with_capacity(ro.u_res * ro.v_res * frame_num);
+    let mut vec = Vec::with_capacity(y_size * x_size * frame_num);
     for f in 0..frame_num {
-        for y in 0..ro.v_res {
-            for x in 0..ro.u_res {
-                let i = x * n / ro.u_res;
-                let u_res = (i + 1) * ro.u_res / n - i * ro.u_res / n;
-                vec.push(vecs[i][f * u_res * ro.v_res + y * u_res + (x - i * ro.u_res / n)].clone().into());
+        for y in ro.y_range.clone() {
+            for x in ro.x_range.clone() {
+                let i = ((x - ro.x_range.start) * n) as usize / x_size;
+                let x_size_ = (i + 1) * x_size / n as usize - i * x_size / n as usize;
+                vec.push(vecs[i][f * x_size_ * y_size + (y - ro.y_range.start) as usize * x_size_ + ((x - ro.x_range.start) as usize - i * x_size / n as usize)].clone().into());
             }
         }
     }
 
     Buffer {
-        width: ro.u_res,
-        height: ro.v_res,
+        width: x_size,
+        height: y_size,
         frame_num: frame_num,
         framerate: ro.framerate,
         vec: vec

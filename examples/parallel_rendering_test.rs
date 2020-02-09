@@ -4,15 +4,15 @@ use kantera::pixel::Rgba;
 use kantera::export::{render_to_buffer, render_to_buffer_parallel};
 use kantera::buffer::Buffer;
 use kantera::renders::sample::Sample;
-use kantera::render::{Range, Render, RenderOpt};
+use kantera::render::{Render, RenderOpt};
 use kantera::util::noise;
 
 fn main() {
     let ro = RenderOpt {
-        u_range: Range::unit(),
-        u_res: 3840 / 4,
-        v_range: Range::unit(),
-        v_res: 2160 / 4,
+        x_range: 0..3840 / 4,
+        y_range: 0..2160 / 4,
+        res_x: 3840 / 4,
+        res_y: 2160 / 4,
         frame_range: 0..30 * 1,
         framerate: 30,
     };

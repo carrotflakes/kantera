@@ -73,8 +73,8 @@ fn main() {
                 ),
                 (
                     Box::new(FunctionalRender(Box::new(move |ro, time, buffer| {
-                        let w = ro.u_res;
-                        let h = ro.v_res;
+                        let w = ro.res_x;
+                        let h = ro.res_y;
                         for y in 0..h {
                             for x in 0..w {
                                 let p = path.get_value(time);

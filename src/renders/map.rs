@@ -13,10 +13,10 @@ impl <T: Copy, R: Render<T>> Render<T> for Map<T, R> {
     fn render(&self, ro: &RenderOpt, buffer: &mut [T]) {
         self.render.render(ro, buffer);
 
-        let RenderOpt {u_res, v_res, frame_range, ..} = ro;
-        let frame_size = *u_res * *v_res;
+        let RenderOpt {res_x, res_y, frame_range, ..} = ro;
+        let frame_size = *res_x * *res_y;
         for f in 0..(frame_range.end - frame_range.start) as usize {
-            (self.map)(*u_res, *v_res, &mut buffer[f * frame_size..(f + 1) * frame_size]);
+            (self.map)(*res_x, *res_y, &mut buffer[f * frame_size..(f + 1) * frame_size]);
         }
     }
 

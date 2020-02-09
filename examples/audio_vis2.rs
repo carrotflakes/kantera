@@ -38,8 +38,8 @@ fn main() {
             const DPI: f64 = std::f64::consts::PI * 2.0;
             let res = 24.0;
             let n = 9;
-            let w = ro.u_res;
-            let h = ro.v_res;
+            let w = ro.res_x;
+            let h = ro.res_y;
             for y in 0..h {
                 let cv = (y as f64 / h as f64) * 2.0 - 1.0;
                 for x in 0..w {

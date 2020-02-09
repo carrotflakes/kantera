@@ -16,11 +16,13 @@ impl <T: Copy, U: Timed<T>> Render<T> for Plain<T, U> {
     }
 
     fn render(&self, ro: &RenderOpt, buffer: &mut [T]) {
-        let RenderOpt {u_res, v_res, frame_range, framerate, ..} = ro;
+        let RenderOpt {x_range, y_range, frame_range, framerate, ..} = ro;
+        let x_size = (x_range.end - x_range.start) as usize;
+        let y_size = (y_range.end - y_range.start) as usize;
         for f in frame_range.start..frame_range.end {
-            for v in 0..*v_res {
-                for u in 0..*u_res {
-                    buffer[(f - frame_range.start) as usize * u_res * v_res + v * u_res + u] =
+            for y in 0..y_size {
+                for x in 0..x_size {
+                    buffer[(f - frame_range.start) as usize * x_size * y_size + y * x_size + x] =
                         self.0.get_value(f as f64 / *framerate as f64);
                 }
             }

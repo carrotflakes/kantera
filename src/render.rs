@@ -1,31 +1,14 @@
 use crate::pixel::Rgba;
 use crate::util::hsl_to_rgb;
 
-#[derive(Debug, Copy, Clone)]
-pub struct Range(pub f64, pub f64);
-
-impl Range {
-    pub fn unit() -> Range {
-        Range(0.0, 1.0)
-    }
-
-    pub fn size(&self) -> f64 {
-        self.1 - self.0
-    }
-
-    pub fn at(&self, rate: f64) -> f64 {
-        (self.1 - self.0) * rate + self.0
-    }
-}
-
 pub type Res = (usize, usize);
 
 #[derive(Debug)]
 pub struct RenderOpt {
-    pub u_range: Range,
-    pub u_res: usize,
-    pub v_range: Range,
-    pub v_res: usize,
+    pub x_range: std::ops::Range<i32>,
+    pub y_range: std::ops::Range<i32>,
+    pub res_x: usize,
+    pub res_y: usize,
     pub frame_range: std::ops::Range<i32>,
     pub framerate: usize,
 }
@@ -34,16 +17,18 @@ pub trait Render<T> {
     fn sample(&self, u: f64, v: f64, time: f64, res: Res) -> T;
 
     fn render(&self, ro: &RenderOpt, buffer: &mut [T]) {
-        let RenderOpt {u_range, u_res, v_range, v_res, frame_range, framerate, ..} = ro;
-        let res = ((*u_res as f64 / u_range.size()) as usize, (*v_res as f64 / v_range.size()) as usize);
+        let RenderOpt {x_range, y_range, res_x, res_y, frame_range, framerate, ..} = ro;
+        let x_size = (x_range.end - x_range.start) as usize;
+        let y_size = (y_range.end - y_range.start) as usize;
+        let res = (*res_x, *res_y);
         for f in frame_range.start..frame_range.end {
             let time = f as f64 / *framerate as f64;
-            for y in 0..*v_res {
-                let v = y as f64 / *v_res as f64;
-                for x in 0..*u_res {
-                    let u = x as f64 / *u_res as f64;
-                    buffer[(f - frame_range.start) as usize * u_res * v_res + y * u_res + x] =
-                        self.sample(u_range.at(u), v_range.at(v), time, res);
+            for y in y_range.clone() {
+                let v = y as f64 / *res_y as f64;
+                for x in x_range.clone() {
+                    let u = x as f64 / *res_x as f64;
+                    buffer[(f - frame_range.start) as usize * x_size * y_size + (y - y_range.start) as usize * x_size + (x - x_range.start) as usize] =
+                        self.sample(u, v, time, res);
                 }
             }
         }
@@ -82,12 +67,14 @@ impl Render<Rgba> for Dummy {
     }
 
     fn render(&self, ro: &RenderOpt, buffer: &mut [Rgba]) {
-        let RenderOpt {u_res, v_res, frame_range, framerate, ..} = ro;
-        for f in frame_range.start..frame_range.end {
-            for v in 0..*v_res {
-                for u in 0..*u_res {
-                    let (r, g, b) = hsl_to_rgb(f as f64 * 0.3 / *framerate as f64, u as f64 / *u_res as f64, v as f64 / *v_res as f64);
-                    buffer[(f - frame_range.start) as usize * u_res * v_res + v * u_res + u] =
+        let RenderOpt {x_range, y_range, res_x, res_y, frame_range, framerate, ..} = ro;
+        let x_size = (x_range.end - x_range.start) as usize;
+        let y_size = (y_range.end - y_range.start) as usize;
+        for f in frame_range.clone() {
+            for y in y_range.clone() {
+                for x in x_range.clone() {
+                    let (r, g, b) = hsl_to_rgb(f as f64 * 0.3 / *framerate as f64, x as f64 / *res_x as f64, y as f64 / *res_y as f64);
+                    buffer[(f - frame_range.start) as usize * x_size * y_size + (y - y_range.start) as usize * x_size + (x - x_range.start) as usize] =
                         Rgba(r, g, b, 1.0);
                 }
             }
@@ -98,11 +85,11 @@ impl Render<Rgba> for Dummy {
 impl Clone for RenderOpt {
     fn clone(&self) -> Self {
         RenderOpt {
-            u_range: self.u_range.clone(),
-            u_res: self.u_res,
-            v_range: self.v_range.clone(),
-            v_res: self.v_res,
-            frame_range: self.frame_range.start..self.frame_range.end,
+            x_range: self.x_range.clone(),
+            y_range: self.y_range.clone(),
+            res_x: self.res_x,
+            res_y: self.res_y,
+            frame_range: self.frame_range.clone(),
             framerate: self.framerate
         }
     }

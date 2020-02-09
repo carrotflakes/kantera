@@ -22,9 +22,9 @@ impl<R: Render<Rgba>> Render<Rgba> for Composite<R> {
     }
 
     fn render(&self, ro: &RenderOpt, buffer: &mut [Rgba]) {
-        let RenderOpt {u_res, v_res, frame_range, framerate, ..} = ro;
+        let RenderOpt {x_range, y_range, frame_range, framerate, ..} = ro;
         let mut sub_buffer = vec![Rgba::default(); buffer.len()];
-        let frame_size = u_res * v_res;
+        let frame_size = ((x_range.end - x_range.start) * (y_range.end - y_range.start)) as usize;
 
         for (render, cm) in &self.layers {
             render.render(ro, sub_buffer.as_mut_slice());

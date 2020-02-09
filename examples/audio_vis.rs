@@ -34,8 +34,8 @@ fn main() {
             let mut output = vec![Complex::zero(); fs];
             fft.process(&mut input[0..fs], &mut output);
 
-            let w = ro.u_res;
-            let h = ro.v_res;
+            let w = ro.res_x;
+            let h = ro.res_y;
             for y in 0..h {
                 let d = (y as f64 / h as f64) * 2.0 - 1.0;
                 for x in 0..w {

@@ -1,6 +1,6 @@
 use crate::pixel::Rgba;
 use crate::image::Image;
-use crate::render::{Res, Range, Render, RenderOpt};
+use crate::render::{Res, Render, RenderOpt};
 
 pub struct Filter<R: Render<Rgba>> {
     pub render: R,
@@ -13,32 +13,32 @@ impl<R: Render<Rgba>> Render<Rgba> for Filter<R> {
     }
 
     fn render(&self, ro: &RenderOpt, buffer: &mut [Rgba]) {
-        let RenderOpt {u_range, u_res, v_range, v_res, frame_range, framerate, ..} = ro;
+        let RenderOpt {x_range, y_range, res_x, res_y, frame_range, framerate, ..} = ro;
+        let x_size = (ro.x_range.end - ro.x_range.start) as usize;
+        let y_size = (ro.y_range.end - ro.y_range.start) as usize;
         let Image {width, height, ref vec} = self.filter;
         assert!(width % 2 == 1 && height % 2 == 1);
-        let mut sub_buffer = vec![Rgba::default(); (u_res + width) * (v_res + height)];
+        let mut sub_buffer = vec![Rgba::default(); (res_x + width) * (res_y + height)];
 
-        for f in frame_range.start..frame_range.end {
+        for f in frame_range.clone() {
             self.render.render(
                 &RenderOpt {
-                    u_range: Range(u_range.0 - ((width / 2) as f64 / *u_res as f64),
-                                   u_range.1 + ((width / 2) as f64 / *u_res as f64)),
-                    u_res: u_res + width - 1,
-                    v_range: Range(v_range.0 - ((height / 2) as f64 / *v_res as f64),
-                                   v_range.1 + ((height / 2) as f64 / *v_res as f64)),
-                    v_res: v_res + height - 1,
+                    x_range: x_range.start - (width / 2) as i32..x_range.end + (width / 2) as i32,
+                    y_range: y_range.start - (height / 2) as i32..y_range.end + (height / 2) as i32,
+                    res_x: *res_x,
+                    res_y: *res_y,
                     frame_range: f..f + 1,
                     framerate: *framerate
                 },
                 sub_buffer.as_mut_slice());
 
-            for y in 0..*v_res {
-                for x in 0..*u_res {
+            for y in 0..y_size {
+                for x in 0..x_size {
                     let mut acc = Rgba(0.0, 0.0, 0.0, 0.0);
 
                     for fy in 0..height {
                         for fx in 0..width {
-                            let p1 = sub_buffer[(y + fy) * (u_res + width - 1) + x + fx];
+                            let p1 = sub_buffer[(y + fy) * (x_size + width - 1) + x + fx];
                             let p2 = vec[fy * width + fx];
                             acc.0 += p1.0 * p2.0;
                             acc.1 += p1.1 * p2.1;
@@ -47,7 +47,7 @@ impl<R: Render<Rgba>> Render<Rgba> for Filter<R> {
                         }
                     }
 
-                    buffer[(f - frame_range.start) as usize * u_res * v_res + y * u_res + x] = acc;
+                    buffer[(f - frame_range.start) as usize * x_size * y_size + y * x_size + x] = acc;
                 }
             }
         }

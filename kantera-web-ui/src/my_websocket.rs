@@ -6,7 +6,7 @@ use actix_web_actors::ws;
 use kantera::{
     pixel::Rgba,
     buffer::Buffer,
-    render::{Render, RenderOpt, Range},
+    render::{Render, RenderOpt},
     audio_render::AudioRender,
     export::render_to_buffer_parallel,
     script::{Runtime, r, Val}
@@ -106,10 +106,10 @@ impl MyWebSocket {
             let buffer = {
                 let render = unsafe { std::mem::transmute::<&dyn Render<Rgba>, &'static (dyn Render<Rgba> + Send + Sync)>(render) };
                 render_to_buffer_parallel(&RenderOpt {
-                    u_range: Range::unit(),
-                    u_res: width,
-                    v_range: Range::unit(),
-                    v_res: height,
+                    x_range: 0..width as i32,
+                    y_range: 0..height as i32,
+                    res_x: width,
+                    res_y: height,
                     frame_range: frame..frame+1,
                     framerate: self.framerate
                 }, render) as Buffer<Rgba>
