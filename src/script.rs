@@ -249,11 +249,12 @@ fn init_runtime(rt: &mut Runtime) {
     rt.insert("text_to_image", r(Box::new(|vec: Vec<Val>| {
         let string = vec[0].borrow().downcast_ref::<String>().unwrap().clone();
         let scale = *vec[1].borrow().downcast_ref::<f64>().unwrap();
-        use crate::{text::{Font, render}};
-        let font_path = "../IPAexfont00401/ipaexg.ttf"; // TODO
-        let bytes = std::fs::read(font_path).unwrap();
-        let font = Font::from_bytes(&bytes).unwrap();
-        r(Rc::new(render(&font, scale as f32, &string).map(|v| Rgba(0.0, 0.0, 0.0, *v))))
+        let font = vec.get(2).and_then(|v| v.borrow().downcast_ref::<Rc<crate::text::Font>>().cloned()).unwrap_or_else(|| {
+            let font_path = "./tmp/IPAexfont00401/ipaexg.ttf";
+            let bytes = std::fs::read(font_path).unwrap();
+            Rc::new(crate::text::Font::from_bytes(bytes).unwrap())
+        });
+        r(Rc::new(crate::text::render(&font, scale as f32, &string).map(|v| Rgba(0.0, 0.0, 0.0, *v))))
     }) as MyFn));
     rt.insert("composite", r(Box::new(|vec: Vec<Val>| {
         use crate::renders::composite::{Composite, CompositeMode};
@@ -462,6 +463,12 @@ fn init_runtime(rt: &mut Runtime) {
     rt.insert("import_audio", r(Box::new(|vec: Vec<Val>| {
         let filepath = vec[0].borrow().downcast_ref::<String>().unwrap().clone();
         r(Rc::new(crate::ffmpeg::import_audio(&filepath)))
+    }) as MyFn));
+    rt.insert("import_ttf", r(Box::new(|vec: Vec<Val>| {
+        let filepath = vec[0].borrow().downcast_ref::<String>().unwrap().clone();
+        let bytes = std::fs::read(filepath).unwrap();
+        let font = crate::text::Font::from_bytes(bytes).unwrap();
+        r(Rc::new(font))
     }) as MyFn));
     rt.insert("hash_map_get", r(Box::new(|vec: Vec<Val>| {
         let hash_map = vec[0].borrow();

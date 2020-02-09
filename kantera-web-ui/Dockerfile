@@ -13,6 +13,10 @@ RUN mkdir -p /app/src && touch /app/src/lib.rs
 WORKDIR /app
 RUN cargo build --release
 
+# Include default assets
+RUN mkdir /app/tmp
+COPY ./assets/IPAexfont00401 /app/tmp/IPAexfont00401
+
 COPY ./src /app/src
 RUN cargo build --release
 

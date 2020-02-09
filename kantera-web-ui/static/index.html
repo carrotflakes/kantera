@@ -40,7 +40,7 @@
       });
       editor.session.on('change', delta => {
       });
-      editor.setValue(localStorage.getItem('kantera-web-ui/code') || '');
+      editor.setValue(localStorage.getItem('kantera-web-ui/code') || `(set framerate 20)\n(set transparent (rgba 0.0 0.0 0.0 1.0))\n(set font (import_ttf "./tmp/IPAexfont00401/ipaexg.ttf"))\n(set video\n    (composite\n        (vec (plain (rgb 0.0 1.0 0.0)) 'normal)\n        (vec (image_render (text_to_image "Hello, kantera!" 50.0 font) transparent) 'normal)))\n`);
       window.addEventListener('unload', e => {
         localStorage.setItem('kantera-web-ui/code', editor.getValue());
       });

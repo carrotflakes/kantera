@@ -189,7 +189,7 @@ impl MyWebSocket {
                 self.frame = 0;
                 ctx.text(format!(r#"{{"type":"streamInfo","framerate":{:?},"samplerate":{:?}}}"#, self.framerate, self.samplerate));
             },
-            Err(mes) => ctx.text(format!(r#"{{"type":"parseFailed","error":{:?}}}"#, mes))
+            Err(mes) => ctx.text(format!(r#"{{"type":"parseFailed","error":{:?}}}"#, format!("{}", mes)))
         }
     }
 }
