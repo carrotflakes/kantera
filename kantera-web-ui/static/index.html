@@ -115,7 +115,7 @@
             } else if (data.type === 'streamInfo') {
               streamInfo = data;
             } else if (data.type === 'log') {
-              logEl.textContent += data.log + '\n';
+              logEl.innerHTML += (data.log + '\n').replace(/\n/, '</br>');
             }
           } else {
             console.log(e.data);
