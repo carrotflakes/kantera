@@ -22,6 +22,7 @@ TODO:
 - [ ] Sound composition
 - [ ] DSL for building renderer
 - [ ] Multi-thread rendering
+- [ ] Realtime hosting via WebRTC
 
 ## Concepts
 - Orthogonal APIs
@@ -42,7 +43,7 @@ $ cargo run --release --example demo
 
 After a while, a video named `out.mp4` will be output to current directory.
 
-### Web UI (WIP)
+### Web UI
 
 ``` sh
 $ cd kantera-web-ui
@@ -52,6 +53,10 @@ $ cargo run --release
 Then open `localhost:8080` in your web browser.
 
 e.g. https://twitter.com/carrotflakes/status/1213135191125872642
+
+### Web UI (heroku)
+
+[![Deploy](https://www.herokucdn.com/deploy/button.png)](https://heroku.com/deploy)
 
 ## Author
 

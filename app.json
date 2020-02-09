@@ -1,0 +1,8 @@
+{
+  "name": "kantera",
+  "description": "Kantera the video compositor - Web-UI",
+  "stack": "container",
+  "keywords": [],
+  "website": "https://github.com/carrotflakes/kantera",
+  "repository": "https://github.com/carrotflakes/kantera"
+}
