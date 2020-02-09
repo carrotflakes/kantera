@@ -12,7 +12,7 @@
     <button id="connectButton"onClick="connect()">connect</button>
     <button onClick="apply()">apply</button>
     <form>
-      <input type="file" id="uploadFile" name="file"/>
+      <input type="file" id="uploadFile" name="file" accept=".png,.jpg,.jpeg,.gif,.mp3,.wav,.ogg,.ttf"/>
       <input type="button" id="uploadButton" value="Submit"></button>
     </form>
     <div id="editor"></div>
@@ -52,9 +52,11 @@
         editor.setValue(res.data.map(fp => {
           const ext = fp.slice(fp.lastIndexOf('.') + 1);
           if (['png', 'jpg', 'jpeg', 'gif'].includes(ext))
-            return `(set image (import_image ${JSON.stringify(fp)}))`;
+            return `(set image0 (import_image ${JSON.stringify(fp)}))`;
           if (['mp3', 'wav', 'ogg'].includes(ext))
             return `(set audio0 (import_audio ${JSON.stringify(fp)}))`;
+          if (['ttf'].includes(ext))
+            return `(set font0 (import_ttf ${JSON.stringify(fp)}))`;
           else
             return `; uploaded: ${JSON.stringify(fp)}`;
         }).join('\n') + '\n' + editor.getValue());
