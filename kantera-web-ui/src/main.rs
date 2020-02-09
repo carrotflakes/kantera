@@ -1,6 +1,5 @@
 mod my_websocket;
 
-use std::sync::Mutex;
 use std::io::Write;
 
 use actix_web::{middleware, web, App, Error, HttpRequest, HttpResponse, HttpServer};
@@ -10,13 +9,6 @@ use actix_multipart::Multipart;
 use futures::StreamExt;
 
 use my_websocket::MyWebSocket;
-
-async fn index(state: web::Data<Mutex<usize>>, req: HttpRequest) -> HttpResponse {
-    println!("{:?}", req);
-    *(state.lock().unwrap()) += 1;
-
-    HttpResponse::Ok().body(format!("Num of requests: {}", state.lock().unwrap()))
-}
 
 async fn ws_index(r: HttpRequest, stream: web::Payload) -> Result<HttpResponse, Error> {
     println!("{:?}", r);
@@ -57,15 +49,11 @@ async fn main() -> std::io::Result<()> {
     env_logger::init();
     std::fs::create_dir_all("./tmp").unwrap();
 
-    let data = web::Data::new(Mutex::new(0usize));
-
     let addr = format!("0.0.0.0:{}", std::env::var("PORT").unwrap_or("8080".to_string()));
     println!("addr: {}", addr);
     HttpServer::new(move || {
         App::new()
-        .app_data(data.clone())
         .wrap(middleware::Logger::default())
-        .service(web::resource("/").to(index))
         .service(web::resource("/ws/").route(web::get().to(ws_index)))
         .service(web::resource("/upload").route(web::post().to(save_file)))
         .service(fs::Files::new("/", "static/").index_file("index.html"))
