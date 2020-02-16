@@ -61,7 +61,7 @@ impl From<&mut ImageSurface> for Image<Rgba> {
 }
 
 pub struct WrapedContext<'a> {
-    pub context: *mut Context,
+    pub context: Option<Context>,
     pub surface: ImageSurface,
     pub images: &'a mut Vec<Image<Rgba>>
 }
@@ -69,21 +69,15 @@ pub struct WrapedContext<'a> {
 impl<'a> WrapedContext<'a> {
     pub fn new(surface: ImageSurface, images: &'a mut Vec<Image<Rgba>>) -> Self {
         WrapedContext {
-            context: Box::into_raw(Box::new(Context::new(&surface))),
+            context: Some(Context::new(&surface)),
             surface: surface,
             images: images
         }
     }
     pub fn push(&mut self) {
-        unsafe { drop(Box::from_raw(self.context)) };
+        self.context = None;
         self.images.push((&mut self.surface).into());
-        self.context = Box::into_raw(Box::new(Context::new(&self.surface)));
-    }
-}
-
-impl<'a> Drop for WrapedContext<'a> {
-    fn drop(&mut self) {
-        unsafe { drop(Box::from_raw(self.context)) };
+        self.context = Some(Context::new(&self.surface));
     }
 }
 
@@ -91,6 +85,6 @@ impl<'a> core::ops::Deref for WrapedContext<'a> {
     type Target = Context;
 
     fn deref(&self) -> &Context {
-        unsafe { &*self.context }
+        self.context.as_ref().unwrap()
     }
 }
