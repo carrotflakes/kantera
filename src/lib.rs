@@ -12,6 +12,8 @@ pub mod audio_buffer;
 pub mod image;
 pub mod interpolation;
 pub mod path;
+#[cfg(feature = "cairo")]
+pub mod path_to_image;
 pub mod render;
 pub mod audio_render;
 #[cfg(feature = "ffmpeg")]
