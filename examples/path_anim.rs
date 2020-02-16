@@ -15,14 +15,14 @@ use kantera::{
 fn main() {
     let path = Path::new(Vec2(50.0, 100.0))
         .append(1.0, Vec2(50.0, 50.0), Point::Linear)
-        .append(1.0, Vec2(100.0, 50.0), Point::Bezier(Vec2(0.0, 20.0), Vec2(0.0, -20.0)))
-        .append(1.0, Vec2(150.0, 50.0), Point::Bezier(Vec2(-15.0, -15.0), Vec2(15.0, 15.0)))
-        .append(1.0, Vec2(150.0, 100.0), Point::Bezier(Vec2(60.0, 0.0), Vec2(0.0, 0.0)))
+        .append(1.0, Vec2(100.0, 50.0), Point::Bezier(Vec2(0.0, 0.0), Vec2(0.0, 20.0)))
+        .append(1.0, Vec2(150.0, 50.0), Point::Bezier(Vec2(0.0, -20.0), Vec2(-15.0, -15.0)))
+        .append(1.0, Vec2(150.0, 100.0), Point::Bezier(Vec2(15.0, 15.0), Vec2(60.0, 0.0)))
         .append(1.0, Vec2(50.0, 150.0), Point::Constant)
-        .append(1.0, Vec2(75.0, 150.0), Point::Bezier(Vec2(0.0, -40.0), Vec2(0.0, -40.0)))
+        .append(1.0, Vec2(75.0, 150.0), Point::Bezier(Vec2(0.0, 0.0), Vec2(0.0, -40.0)))
         .append(1.0, Vec2(100.0, 150.0), Point::Bezier(Vec2(0.0, -40.0), Vec2(0.0, -40.0)))
-        .append(1.0, Vec2(125.0, 150.0), Point::Bezier(Vec2(0.0, -40.0), Vec2(0.0, -80.0)))
-        .append(1.0, Vec2(130.0, 150.0), Point::Bezier(Vec2(0.0, -80.0), Vec2(0.0, -40.0)));
+        .append(1.0, Vec2(125.0, 150.0), Point::Bezier(Vec2(0.0, -40.0), Vec2(0.0, -40.0)))
+        .append(1.0, Vec2(130.0, 150.0), Point::Bezier(Vec2(0.0, -80.0), Vec2(0.0, -80.0)));
 
     let image = Rc::new(kantera::cairo::render_image(320, 240, &|ctx| {
         for w in path.points.windows(2) {
@@ -36,17 +36,21 @@ fn main() {
             }
             ctx.stroke();
         }
-        for p in path.points.iter() {
-            match p.2 {
+        for w in path.points.windows(2) {
+            let (left, right) = (w[0], w[1]);
+            match right.2 {
                 Point::Bezier(lh, rh) => {
-                    ctx.move_to((p.1).0 + lh.0, (p.1).1 + lh.1);
-                    ctx.line_to((p.1).0, (p.1).1);
-                    ctx.line_to((p.1).0 + rh.0, (p.1).1 + rh.1);
+                    ctx.move_to((left.1).0, (left.1).1);
+                    ctx.line_to((left.1).0 + lh.0, (left.1).1 + lh.1);
+                    ctx.move_to((right.1).0, (right.1).1);
+                    ctx.line_to((right.1).0 + rh.0, (right.1).1 + rh.1);
                     ctx.set_source_rgb(0.4, 0.4, 0.4);
                     ctx.stroke();
                 },
                 _ => {}
             }
+        }
+        for p in path.points.iter() {
             ctx.arc((p.1).0, (p.1).1, 2.0, 0.0, std::f64::consts::PI * 2.0);
             ctx.set_source_rgb(0.8, 0.8, 0.8);
             ctx.fill();

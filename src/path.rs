@@ -41,12 +41,7 @@ impl<T: Lerp> Timed<T> for Path<T> {
                         let v = (time - left.0) / (right.0 - left.0);
                         left.1.lerp(&right.1, v)
                     },
-                    Point::Bezier(right_handle, _) => {
-                        let left_handle = match left.2 {
-                            Point::Bezier(_, h) => h,
-                            _ => left.1
-                        };
-
+                    Point::Bezier(left_handle, right_handle) => {
                         let v = (time - left.0) / (right.0 - left.0);
                         Lerp::bezier(&left.1, &left_handle, &right.1, &right_handle, v)
                     }
