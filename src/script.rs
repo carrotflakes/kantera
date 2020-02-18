@@ -19,6 +19,7 @@ use crate::{
     audio_renders,
     path::{Path, Point},
     timed::Timed,
+    lerp::Lerp,
     v::{Vec2, Vec3},
     interpolation
 };
@@ -207,7 +208,7 @@ fn init_runtime(rt: &mut Runtime) {
     rt.insert("plain", r(Box::new(|vec: Vec<Val>| {
         if let Some(p) = vec[0].borrow().downcast_ref::<Rgba>() {
             r(Rc::new(crate::renders::plain::Plain::new(*p)) as Rc<dyn Render<Rgba>>)
-        } else if let Some(p) = vec[0].borrow().downcast_ref::<Rc<dyn Timed<Rgba>>>() {
+        } else if let Some(p) = borrow_timed(&vec[0]) {
             r(Rc::new(crate::renders::plain::Plain::new(p.clone())) as Rc<dyn Render<Rgba>>)
         } else {
             panic!()
@@ -265,7 +266,7 @@ fn init_runtime(rt: &mut Runtime) {
             let mode = match mode.as_str() {
                 "none" => CompositeMode::None,
                 "normal" => CompositeMode::Normal(
-                    p.get(2).map(|x| x.borrow().downcast_ref::<Rc<dyn Timed<f64>>>().unwrap().clone()).unwrap_or_else(|| Rc::new(1.0))
+                    p.get(2).and_then(borrow_timed::<f64>).unwrap_or_else(|| Rc::new(1.0))
                 ),
                 _ => panic!("illegal CompositeMode")
             };
@@ -292,7 +293,7 @@ fn init_runtime(rt: &mut Runtime) {
     }
     rt.insert("path", r(Box::new(|vec: Vec<Val>| {
         let mut it = vec.into_iter();
-        fn build_path<T: 'static + Clone + crate::lerp::Lerp>(first_value: T, it: impl Iterator<Item = Val>, vectorize: &impl Fn(&Val) -> T) -> Val {
+        fn build_path<T: 'static + Clone + Lerp>(first_value: T, it: impl Iterator<Item = Val>, vectorize: &impl Fn(&Val) -> T) -> Val {
             let mut path = Path::new(first_value);
             for rp in it {
                 let rp = rp.borrow();
@@ -307,7 +308,7 @@ fn init_runtime(rt: &mut Runtime) {
                 };
                 path = path.append(d_time, vec, point);
             }
-            r(Rc::new(path) as Rc<dyn Timed<T>>)
+            r(Rc::new(path))
         }
         if let Some(first_value) = it.next() {
             let v = first_value.borrow();
@@ -351,9 +352,9 @@ fn init_runtime(rt: &mut Runtime) {
         f::<f64>(&vec).or_else(|| f::<Rc<dyn Timed<f64>>>(&vec)).unwrap()
     }) as MyFn));
     rt.insert("timed/add", r(Box::new(|vec: Vec<Val>| {
-        fn f<T: 'static + std::ops::Add<Output = T>>(vec: &Vec<Val>) -> Option<Val> {
-            let a = vec[0].borrow().downcast_ref::<Rc<dyn Timed<T>>>()?.clone();
-            let b = vec[1].borrow().downcast_ref::<Rc<dyn Timed<T>>>()?.clone();
+        fn f<T: 'static + Lerp>(vec: &Vec<Val>) -> Option<Val> {
+            let a = borrow_timed(&vec[0])?;
+            let b = borrow_timed(&vec[1])?;
             Some(r(Rc::new(crate::timed::Add::new(a, b)) as Rc<dyn Timed<T>>))
         }
         f::<f64>(&vec).or_else(|| f::<Vec2<f64>>(&vec)).or_else(|| f::<Vec3<f64>>(&vec)).unwrap()
@@ -362,8 +363,8 @@ fn init_runtime(rt: &mut Runtime) {
         use crate::{renders::transform::{Transform, timed_to_transformer}};
         let render = vec[0].borrow_mut().downcast_mut::<Rc<dyn Render<Rgba>>>().unwrap().clone();
         fn get_timed_vec2(val: &Val) -> Rc<dyn Timed<Vec2<f64>>> {
-            if let Some(timed) = val.borrow().downcast_ref::<Rc<dyn Timed<Vec2<f64>>>>() {
-                timed.clone()
+            if let Some(timed) = borrow_timed::<Vec2<f64>>(val) {
+                timed
             } else {
                 let val = val.borrow();
                 let v = val.downcast_ref::<Vec<Val>>().unwrap();
@@ -373,8 +374,8 @@ fn init_runtime(rt: &mut Runtime) {
             }
         }
         fn get_timed_f64(val: &Val) -> Rc<dyn Timed<f64>> {
-            if let Some(timed) = val.borrow().downcast_ref::<Rc<dyn Timed<f64>>>() {
-                timed.clone()
+            if let Some(timed) = borrow_timed::<f64>(val) {
+                timed
             } else {
                 Rc::new(val.borrow().downcast_ref::<f64>().unwrap().clone())
             }
@@ -455,6 +456,13 @@ fn init_runtime(rt: &mut Runtime) {
             .append(7.00, note(0.25, 72, 0.1, 0.0))
             .append(7.50, note(0.50, 74, 0.1, 0.0))) as Rc<dyn AudioRender>)
     }) as MyFn));
+    rt.insert("path_to_image", r(Box::new(|vec: Vec<Val>| {
+        use crate::path_to_image::{closed_path_rect, closed_path_to_image, expand_rect};
+        let path = vec[0].borrow().downcast_ref::<Rc<Path<Vec2<f64>>>>().unwrap().clone();
+        let line_width = 3.0f64;
+        let rect = expand_rect(closed_path_rect(&path), line_width.ceil() as i32);
+        r(Rc::new(closed_path_to_image(rect, Rgba(1.0, 0.0, 0.0, 1.0), Rgba(1.0, 1.0, 1.0, 1.0), line_width, &path)))
+    }) as MyFn));
     rt.insert("import_image", r(Box::new(|vec: Vec<Val>| {
         let filepath = vec[0].borrow().downcast_ref::<String>().unwrap().clone();
         r(Rc::new(crate::image_import::load_image(&filepath)))
@@ -514,4 +522,9 @@ fn init_runtime(rt: &mut Runtime) {
             r(vec![r(reader.intern("hash_map_set")), rt_cache, r(key), vec[0].clone()])
         ]))
     }))));
+}
+
+fn borrow_timed<'a, T: 'static + Lerp>(val: &Val) -> Option<Rc<dyn Timed<T>>> {
+    val.borrow().downcast_ref::<Rc<dyn Timed<T>>>().cloned()
+        .or_else(|| val.borrow().downcast_ref::<Rc<Path<T>>>().map(|x| x.clone() as Rc<dyn Timed<T>>))
 }
