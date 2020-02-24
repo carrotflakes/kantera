@@ -8,6 +8,7 @@ import './style.css';
 import rootReducer from 'src/modules/reducer';
 import rootSaga from 'src/modules/saga';
 import App from 'containers/App';
+import './monaco';
 
 const composeEnhancers =
   process.env.NODE_ENV === 'development' &&
