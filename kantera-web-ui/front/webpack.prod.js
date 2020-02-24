@@ -1,12 +1,11 @@
 const merge = require('webpack-merge');
 const path = require('path');
-const HtmlWebpackPlugin = require('html-webpack-plugin');
-const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
+const common = require('./webpack.common.js');
 
-module.exports = {
+module.exports = merge(common, {
   mode: 'production',
   output: {
     filename: 'bundle.js',
     path: path.resolve(__dirname, '../static')
   }
-};
+});
