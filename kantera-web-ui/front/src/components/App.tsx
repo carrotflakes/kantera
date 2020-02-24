@@ -2,6 +2,8 @@ import React from 'react';
 import styled from 'styled-components';
 import MonacoEditor from 'react-monaco-editor';
 import monacoEditor from 'monaco-editor';
+import axios from 'axios';
+import config from 'src/config';
 
 const Button = styled.button`
 background: #eee;
@@ -25,6 +27,7 @@ export default ({
   send
 }: Props) => {
   const [code, setCode] = React.useState('code!!');
+  const selectFileRef = React.useRef<HTMLInputElement>(null);
   const imgRef = React.useCallback(node => {
     if (node !== null) {
       init(node);
@@ -47,6 +50,27 @@ export default ({
       }
     });
   };
+  const fileUpload = async (e: React.SyntheticEvent) => {
+    e.preventDefault();
+    if (selectFileRef.current === null || !selectFileRef.current.files)
+      return false;
+    const params = new FormData();
+    params.append('file', selectFileRef.current.files[0]);
+    const res = await axios.post(config.serverUrl + 'upload', params, {headers: {'content-type': 'multipart/form-data'}});
+    console.log(res);
+    setCode(res.data.map((fp: string) => {
+      const ext = fp.slice(fp.lastIndexOf('.') + 1);
+      if (['png', 'jpg', 'jpeg', 'gif'].includes(ext))
+        return `(set image0 (import_image ${JSON.stringify(fp)}))`;
+      if (['mp3', 'wav', 'ogg'].includes(ext))
+        return `(set audio0 (import_audio ${JSON.stringify(fp)}))`;
+      if (['ttf'].includes(ext))
+        return `(set font0 (import_ttf ${JSON.stringify(fp)}))`;
+      else
+        return `; uploaded: ${JSON.stringify(fp)}`;
+    }).join('\n') + '\n' + code);
+    return false;
+  };
   return (
     <div>
       {
@@ -59,8 +83,8 @@ export default ({
         <label htmlFor="uploadFile">
           select file
         </label>
-        <input type="file" id="uploadFile" name="file" accept=".png,.jpg,.jpeg,.gif,.mp3,.wav,.ogg,.ttf" style={{display: "none"}}/>
-        <Button id="uploadButton">submit</Button>
+        <input type="file" id="uploadFile" ref={selectFileRef} name="file" accept=".png,.jpg,.jpeg,.gif,.mp3,.wav,.ogg,.ttf" style={{display: "none"}}/>
+        <Button onClick={fileUpload}>submit</Button>
       </form>
       <MonacoEditor
         width="800"

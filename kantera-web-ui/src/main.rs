@@ -6,6 +6,7 @@ use actix_web::{middleware, web, App, Error, HttpRequest, HttpResponse, HttpServ
 use actix_files as fs;
 use actix_web_actors::ws;
 use actix_multipart::Multipart;
+use actix_cors::Cors;
 use futures::StreamExt;
 
 use my_websocket::MyWebSocket;
@@ -53,6 +54,13 @@ async fn main() -> std::io::Result<()> {
     println!("addr: {}", addr);
     HttpServer::new(move || {
         App::new()
+        .wrap(
+            Cors::new()
+                .allowed_origin("http://localhost:3001") // for developing front
+                .allowed_methods(vec!["GET", "POST"])
+                .max_age(3600)
+                .finish()
+        )
         .wrap(middleware::Logger::default())
         .service(web::resource("/ws/").route(web::get().to(ws_index)))
         .service(web::resource("/upload").route(web::post().to(save_file)))
