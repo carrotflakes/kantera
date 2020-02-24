@@ -5,9 +5,9 @@
   "author": "carrotflakes",
   "license": "MIT",
   "scripts": {
-    "start": "webpack --watch",
+    "start": "webpack --config webpack.dev.js --watch",
     "start_": "webpack-dev-server --open",
-    "build": "webpack"
+    "build": "webpack --config webpack.prod.js"
   },
   "dependencies": {
     "@types/axios": "^0.14.0",

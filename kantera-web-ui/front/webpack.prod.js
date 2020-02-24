@@ -3,20 +3,11 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
 
 module.exports = {
-  mode: 'development',
-  devtool: 'source-map',
+  mode: 'production',
   entry: './src/index.tsx',
   output: {
     filename: 'bundle.js',
-    path: path.resolve(__dirname, 'build')
-  },
-  resolve: {
-    extensions: ['.ts', '.tsx', '.js']
-  },
-  devServer: {
-    contentBase: 'build',
-    port: 3001,
-    hot: true
+    path: path.resolve(__dirname, '../static')
   },
   module: {
     rules: [
