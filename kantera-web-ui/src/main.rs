@@ -56,7 +56,6 @@ async fn main() -> std::io::Result<()> {
         App::new()
         .wrap(
             Cors::new()
-                .allowed_origin("http://localhost:3001") // for developing front
                 .allowed_methods(vec!["GET", "POST"])
                 .max_age(3600)
                 .finish()
