@@ -1,6 +1,7 @@
 import { delay, fork, call, take, put, select, takeLatest } from 'redux-saga/effects';
 import { eventChannel, END } from 'redux-saga';
 import AudioManager from 'src/audioManager';
+import config from 'src/config';
 
 export const CONNECT = 'MAIN_PROCESS/CONNECT' as const;
 export const DISCONNECT = 'MAIN_PROCESS/DISCONNECT' as const;
@@ -126,8 +127,7 @@ function* handleConnect(action: ReturnType<typeof connect>) {
     yield put(setAudioManager(audioManager));
   }
   const imgEl = yield select(state => state.mainProcess.imgEl);
-  const wsUrl = location.protocol.replace('http', 'ws') + '//' + location.host + '/ws/';
-  const ws: WebSocket = yield call(connectWebsocket, wsUrl);
+  const ws: WebSocket = yield call(connectWebsocket, config.webSocketUrl);
   const socketChannel = eventChannel(emit => {
     ws.onmessage = event => emit(event.data);
     ws.onclose = () => emit(END);

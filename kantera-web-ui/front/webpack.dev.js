@@ -1,10 +1,10 @@
+const merge = require('webpack-merge');
 const path = require('path');
-const webpackProd = require('./webpack.prod.js');
+const common = require('./webpack.common.js');
 
-module.exports = {
-  ...webpackProd,
+module.exports = merge(common, {
   mode: 'development',
-  devtool: 'source-map',
+  devtool: 'inline-source-map',
   output: {
     filename: 'bundle.js',
     path: path.resolve(__dirname, 'build')
@@ -14,4 +14,4 @@ module.exports = {
     port: 3001,
     hot: true
   }
-};
+});
