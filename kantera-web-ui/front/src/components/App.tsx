@@ -6,7 +6,7 @@ import axios from 'axios';
 import config from 'src/config';
 
 const localStorageCodeKey = 'kantera-web-ui/code';
-const initialCode = `(set framerate 20)\n(set transparent (rgba 0.0 0.0 0.0 1.0))\n(set font (import_ttf "./tmp/IPAexfont00401/ipaexg.ttf"))\n(set video\n    (composite\n        (vec (plain (rgb 0.0 1.0 0.0)) 'normal)\n        (vec (image_render (text_to_image "Hello, kantera!" 50.0 font) transparent) 'normal)))\n`;
+const initialCode = `(set framerate 20)\n(set transparent (rgba 0.0 0.0 0.0 1.0))\n(set font (import_ttf "./tmp/IPAexfont00401/ipaexg.ttf"))\n(set video\n  (composite\n    (vec (plain (rgb 0.0 1.0 0.0)) 'normal)\n    (vec (image_render (text_to_image "Hello, kantera!" 50.0 font) transparent) 'normal)))\n`;
 
 const Button = styled.button`
 background: #eee;
@@ -44,6 +44,9 @@ export default ({
 
   const apply = (code: string) => {send('script: ' + code);};
   const editorDidMount = (editor: monacoEditor.editor.IStandaloneCodeEditor, monaco: typeof monacoEditor) => {
+    const model = editor.getModel();
+    model?.updateOptions(config.monacoEditorModelOption);
+    editor.setModel(model);
     editor.addAction({
       id: 'apply kantera code',
       label: 'apply',
