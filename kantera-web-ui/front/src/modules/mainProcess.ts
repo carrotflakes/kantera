@@ -130,9 +130,8 @@ function* handleConnect(action: ReturnType<typeof connect>) {
   const ws: WebSocket = yield call(connectWebsocket, wsUrl);
   const socketChannel = eventChannel(emit => {
     ws.onmessage = event => emit(event.data);
-    ws.onclose = () => {console.log('onc'); emit(END)};
+    ws.onclose = () => emit(END);
     return () => {
-      console.log('unsub');
       ws.onmessage = null;
     };
   });
@@ -180,7 +179,6 @@ function* handleConnect(action: ReturnType<typeof connect>) {
       }
     }
   } finally {
-    console.log('finally');
     yield put(disconnected());
   }
 }
