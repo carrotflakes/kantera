@@ -5,6 +5,9 @@ import monacoEditor from 'monaco-editor';
 import axios from 'axios';
 import config from 'src/config';
 
+const localStorageCodeKey = 'kantera-web-ui/code';
+const initialCode = `(set framerate 20)\n(set transparent (rgba 0.0 0.0 0.0 1.0))\n(set font (import_ttf "./tmp/IPAexfont00401/ipaexg.ttf"))\n(set video\n    (composite\n        (vec (plain (rgb 0.0 1.0 0.0)) 'normal)\n        (vec (image_render (text_to_image "Hello, kantera!" 50.0 font) transparent) 'normal)))\n`;
+
 const Button = styled.button`
 background: #eee;
 margin: 4px;
@@ -26,13 +29,19 @@ export default ({
   init,
   send
 }: Props) => {
-  const [code, setCode] = React.useState('code!!');
+  const [code, setCode] = React.useState(localStorage.getItem(localStorageCodeKey) || initialCode);
   const selectFileRef = React.useRef<HTMLInputElement>(null);
   const imgRef = React.useCallback(node => {
     if (node !== null) {
       init(node);
     }
   }, []);
+  React.useEffect(() => {
+    window.addEventListener('unload', e => {
+      localStorage.setItem(localStorageCodeKey, code);
+    });
+  });
+
   const apply = (code: string) => {send('script: ' + code);};
   const editorDidMount = (editor: monacoEditor.editor.IStandaloneCodeEditor, monaco: typeof monacoEditor) => {
     editor.addAction({
