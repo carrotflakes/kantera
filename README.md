@@ -46,7 +46,10 @@ After a while, a video named `out.mp4` will be output to current directory.
 ### Web UI
 
 ``` sh
-$ cd kantera-web-ui
+$ cd kantera-web-ui/front
+$ yarn install
+$ yarn build
+$ cd ..
 $ cargo run --release
 ```
 
