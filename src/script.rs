@@ -334,12 +334,12 @@ fn init_runtime(rt: &mut Runtime) {
     }) as MyFn));
     rt.insert("cycle", r(Box::new(|vec: Vec<Val>| {
         use crate::timed::Cycle;
-        fn f<T: 'static>(vec: &Vec<Val>) -> Option<Val> {
-            let timed = vec[0].borrow().downcast_ref::<Rc<dyn Timed<T>>>()?.clone();
+        fn f<T: 'static + Lerp>(vec: &Vec<Val>) -> Option<Val> {
+            let timed = borrow_timed(&vec[0])?;
             let duration = *vec[1].borrow().downcast_ref::<f64>().unwrap();
             Some(r(Rc::new(Cycle::new(timed, duration)) as Rc<dyn Timed<T>>))
         }
-        f::<f64>(&vec).or_else(|| f::<Vec2<f64>>(&vec)).or_else(|| f::<Vec3<f64>>(&vec)).unwrap()
+        f::<f64>(&vec).or_else(|| f::<Vec2<f64>>(&vec)).or_else(|| f::<Vec3<f64>>(&vec)).or_else(|| f::<Rgba>(&vec)).unwrap()
     }) as MyFn));
     rt.insert("sin", r(Box::new(|vec: Vec<Val>| {
         use crate::timed::Sine;
