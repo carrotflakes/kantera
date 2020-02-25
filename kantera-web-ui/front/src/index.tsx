@@ -3,8 +3,8 @@ import ReactDOM from 'react-dom';
 import { createStore, applyMiddleware, compose } from 'redux';
 import { Provider } from 'react-redux';
 import createSagaMiddleware from 'redux-saga';
+import { createGlobalStyle } from 'styled-components';
 import 'ress';
-import './style.css';
 import rootReducer from 'src/modules/reducer';
 import rootSaga from 'src/modules/saga';
 import App from 'containers/App';
@@ -24,8 +24,15 @@ const enhancer = composeEnhancers(
 export const store = createStore(rootReducer, enhancer);
 sagaMiddleWare.run(rootSaga);
 
+const GlobalStyle = createGlobalStyle`
+* {
+  color: #555;
+}
+`;
+
 ReactDOM.render(
   <Provider store={store}>
+    <GlobalStyle/>
     <App/>
   </Provider>,
   document.getElementById('app'));
