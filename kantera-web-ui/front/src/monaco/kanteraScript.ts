@@ -1,3 +1,5 @@
+// This file based on https://github.com/microsoft/monaco-languages/blob/209730c94fa2e37c3681f3d40de474853868fd74/src/scheme/scheme.ts
+
 import * as monaco from 'monaco-editor';
 
 import IRichLanguageConfiguration = monaco.languages.LanguageConfiguration;
@@ -6,7 +8,7 @@ import ILanguage = monaco.languages.IMonarchLanguage;
 export const conf: IRichLanguageConfiguration = {
 	comments: {
 		lineComment: ';',
-		blockComment: ['#|', '|#'],
+		//blockComment: ['#|', '|#'],
 	},
 
 	brackets: [['(', ')'], ['{', '}'], ['[', ']']],
@@ -38,34 +40,18 @@ export const language = <ILanguage>{
 	],
 
 	keywords: [
-		'case',
-		'do',
-		'let',
-		'loop',
-		'if',
-		'else',
-		'when',
-		'cons',
-		'car',
-		'cdr',
-		'cond',
-		'lambda',
-		'lambda*',
-		'syntax-rules',
-		'format',
-		'set!',
-		'quote',
-		'eval',
-		'append',
-		'list',
-		'list?',
-		'member?',
-		'load',
+    'quote',
+    'do',
+    'let',
+    'if',
+    'lambda',
+    'set',
+		'vec',
 	],
 
-	constants: ['#t', '#f'],
+	constants: ['true', 'false'],
 
-	operators: ['eq?', 'eqv?', 'equal?', 'and', 'or', 'not', 'null?'],
+	operators: ['eq?', 'eqv?', 'equal?', 'and', 'or', 'not', 'null?'], // TODO
 
 	tokenizer: {
 		root: [
