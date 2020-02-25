@@ -6,7 +6,7 @@ const languageId = 'kanteraScript';
 monaco.languages.register({
   id: languageId,
   extensions: ['.kntr'],
-  aliases: ['kantera script']
+  aliases: ['kanteraScript', 'kantera script']
 });
 
 function createSymbolProposals<T>(range: T) {
