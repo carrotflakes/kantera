@@ -1013,7 +1013,7 @@ dependencies = [
 [[package]]
 name = "kantera"
 version = "0.0.1"
-source = "git+https://github.com/carrotflakes/kantera.git#bbfdeacf0102561de5eab1e36a7b52864c6bc988"
+source = "git+https://github.com/carrotflakes/kantera.git#837b876dfbcd07eb27ae85d092f8b3a2cb9a3079"
 dependencies = [
  "cairo-rs 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "gluten 0.1.0 (git+https://github.com/carrotflakes/gluten.git?branch=kantera)",
