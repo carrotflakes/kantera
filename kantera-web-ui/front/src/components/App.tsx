@@ -16,10 +16,10 @@ padding: 2px 4px;
 
 type Props = {
   ready: boolean,
-  connect: any,
-  disconnect: any,
-  init: any,
-  send: any
+  connect: () => void,
+  disconnect: () => void,
+  init: (imgEl: HTMLElement) => void,
+  send: (text: string) => void
 };
 
 export default ({
