@@ -1,4 +1,5 @@
 import * as monaco from 'monaco-editor';
+import langSpecs from './langSpecs.md';
 
 function createSymbolProposals<T>(range: T) {
   const symbolProposals = Object.entries({
@@ -120,7 +121,6 @@ function createFormProposals<T>(range: T) {
   }));
 }
 
-
 monaco.languages.registerCompletionItemProvider('scheme', {
   provideCompletionItems: function(model, position) {
     const textUntilPosition = model.getValueInRange({startLineNumber: 1, startColumn: 1, endLineNumber: position.lineNumber, endColumn: position.column});
@@ -153,4 +153,39 @@ monaco.languages.registerCompletionItemProvider('scheme', {
 
     return { suggestions };
   }
+});
+
+// TODO: Refactor me!
+const symbolDescriptions: {[key: string]: string} = {};
+const ls = langSpecs.split(/^# (.+)$/m);
+const a: {[key: string]: string} = {};
+for (let i = 1; ls[i]; i += 2) {
+  a[ls[i]] = ls[i + 1];
+}
+if (a['symbolDescriptions']) {
+  const ls = a['symbolDescriptions'].split(/^## (.+)$/m);
+  for (let i = 1; ls[i]; i += 2) {
+    symbolDescriptions[ls[i]] = ls[i + 1];
+  }
+}
+
+monaco.languages.registerHoverProvider('scheme', {
+	provideHover(model, position) {
+    const word = model.getWordAtPosition(position);
+    if (word && symbolDescriptions[word.word]) {
+      return {
+        range: new monaco.Range(
+          position.lineNumber,
+          word.startColumn,
+          position.lineNumber,
+          word.endColumn),
+        contents: [
+          { value: `**${word.word}**` },
+          { value: symbolDescriptions[word.word] }
+        ]
+      };
+    } else {
+      return null;
+    }
+	}
 });

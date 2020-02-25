@@ -34,7 +34,12 @@ module.exports = {
       {
         test: /\.ttf$/,
         include: path.resolve(__dirname, './node_modules/monaco-editor'),
-        use: ["file-loader"]
+        use: ['file-loader']
+      },
+      {
+        test: /\.md$/,
+        exclude: /node_modules/,
+        use: ['raw-loader']
       }
     ]
   },
