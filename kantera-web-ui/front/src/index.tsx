@@ -5,8 +5,7 @@ import { Provider } from 'react-redux';
 import createSagaMiddleware from 'redux-saga';
 import { createGlobalStyle } from 'styled-components';
 import 'ress';
-import rootReducer from 'src/modules/reducer';
-import rootSaga from 'src/modules/saga';
+import { rootReducer, rootSaga } from 'src/modules';
 import App from 'containers/App';
 import './monaco';
 
