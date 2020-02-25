@@ -1,5 +1,13 @@
 import * as monaco from 'monaco-editor';
+import * as kanteraScript from './kanteraScript';
 import langSpecs from './langSpecs.md';
+
+const languageId = 'kanteraScript';
+monaco.languages.register({
+  id: languageId,
+  extensions: ['.kntr'],
+  aliases: ['kantera script']
+});
 
 function createSymbolProposals<T>(range: T) {
   const symbolProposals = Object.entries({
@@ -121,7 +129,7 @@ function createFormProposals<T>(range: T) {
   }));
 }
 
-monaco.languages.registerCompletionItemProvider('scheme', {
+monaco.languages.registerCompletionItemProvider(languageId, {
   provideCompletionItems: function(model, position) {
     const textUntilPosition = model.getValueInRange({startLineNumber: 1, startColumn: 1, endLineNumber: position.lineNumber, endColumn: position.column});
     const suggestions = [];
@@ -169,7 +177,7 @@ if (a['symbolDescriptions']) {
   }
 }
 
-monaco.languages.registerHoverProvider('scheme', {
+monaco.languages.registerHoverProvider(languageId, {
 	provideHover(model, position) {
     const word = model.getWordAtPosition(position);
     if (word && symbolDescriptions[word.word]) {
@@ -188,4 +196,10 @@ monaco.languages.registerHoverProvider('scheme', {
       return null;
     }
 	}
+});
+
+monaco.languages.setMonarchTokensProvider(languageId, kanteraScript.language);
+
+monaco.languages.onLanguage(languageId, () => {
+  monaco.languages.setLanguageConfiguration(languageId, kanteraScript.conf);
 });

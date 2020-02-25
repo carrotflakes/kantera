@@ -1,7 +1,6 @@
-const webpack = require('webpack');
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
-const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
+//const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
 
 module.exports = {
   entry: './src/index.tsx',
@@ -68,8 +67,8 @@ module.exports = {
       template: './src/index.html',
       filename: 'index.html'
     }),
-    new MonacoWebpackPlugin({
-      languages: ['scheme']
-    })
+    // new MonacoWebpackPlugin({
+    //   languages: ['scheme']
+    // })
   ]
 };

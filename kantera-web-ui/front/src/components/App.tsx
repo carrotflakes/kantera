@@ -101,7 +101,7 @@ export default ({
       <MonacoEditor
         width="800"
         height="400"
-        language="scheme"
+        language="kanteraScript"
         theme="vs-dark"
         value={code}
         onChange={(newValue) => setCode(newValue)}
