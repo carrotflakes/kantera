@@ -47,6 +47,17 @@ module.exports = {
     },
     extensions: ['.tsx', '.ts', '.js'],
   },
+  optimization: {
+    splitChunks: {
+      cacheGroups: {
+        monacoCommon: {
+          test: /[\\/]node_modules[\\/]monaco\-editor/,
+          name: 'monaco-editor-common',
+          chunks: 'async'
+        }
+      }
+    }
+  },
   plugins: [
     new HtmlWebpackPlugin({
       template: './src/index.html',
