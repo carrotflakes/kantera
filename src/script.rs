@@ -4,7 +4,8 @@ use std::fmt::Write;
 use gluten::{
     reader::{Reader, default_atom_reader},
     core::{eval, Env, macro_expand, Macro},
-    StringPool
+    StringPool,
+    val_helper::Get
 };
 pub use gluten::{
     data::*,
@@ -97,12 +98,12 @@ fn init_runtime(rt: &mut Runtime) {
     rt.insert("true", r(true));
     rt.insert("false", r(false));
     rt.insert("first", r(Box::new(|vec: Vec<Val>| {
-        vec[0].clone()
-    }) as MyFn));
+        vec.get(0).cloned().ok_or_else(|| GlutenError::Str("no argument given".to_owned()))
+    }) as NativeFn));
     rt.insert("vec", r(Box::new(|vec: Vec<Val>| {
-        r(vec)
-    }) as MyFn));
-    rt.insert("+", r(Box::new(|vec: Vec<Val>| -> Val {
+        Ok(r(vec))
+    }) as NativeFn));
+    rt.insert("+", r(Box::new(|vec: Vec<Val>| {
         fn f<T: num_traits::Num + Copy + 'static>(vec: &Vec<Val>) -> Option<Val> {
             let mut acc = T::zero();
             for rv in vec.iter() {
@@ -110,19 +111,19 @@ fn init_runtime(rt: &mut Runtime) {
             }
             Some(r(acc))
         }
-        f::<f64>(&vec).or_else(|| f::<i32>(&vec)).or_else(|| f::<Vec2<f64>>(&vec)).or_else(|| f::<Vec3<f64>>(&vec)).unwrap()
-    }) as MyFn));
-    rt.insert("-", r(Box::new(|vec: Vec<Val>| -> Val {
+        f::<f64>(&vec).or_else(|| f::<i32>(&vec)).or_else(|| f::<Vec2<f64>>(&vec)).or_else(|| f::<Vec3<f64>>(&vec)).ok_or_else(|| GlutenError::Str("arguments mismatch".to_owned()))
+    }) as NativeFn));
+    rt.insert("-", r(Box::new(|vec: Vec<Val>| {
         fn f<T: num_traits::Num + Copy + 'static>(vec: &Vec<Val>) -> Option<Val> {
-            let mut acc = *vec[0].borrow().downcast_ref::<T>()?;
+            let mut acc = *vec.get(0)?.borrow().downcast_ref::<T>()?;
             for rv in vec.iter().skip(1) {
                 acc = acc - *rv.borrow().downcast_ref::<T>()?;
             }
             Some(r(acc))
         }
-        f::<f64>(&vec).or_else(|| f::<i32>(&vec)).or_else(|| f::<Vec2<f64>>(&vec)).or_else(|| f::<Vec3<f64>>(&vec)).unwrap()
-    }) as MyFn));
-    rt.insert("*", r(Box::new(|vec: Vec<Val>| -> Val {
+        f::<f64>(&vec).or_else(|| f::<i32>(&vec)).or_else(|| f::<Vec2<f64>>(&vec)).or_else(|| f::<Vec3<f64>>(&vec)).ok_or_else(|| GlutenError::Str("arguments mismatch".to_owned()))
+    }) as NativeFn));
+    rt.insert("*", r(Box::new(|vec: Vec<Val>| {
         fn f<T: num_traits::Num + Copy + 'static>(vec: &Vec<Val>) -> Option<Val> {
             let mut acc = T::one();
             for rv in vec.iter() {
@@ -130,27 +131,27 @@ fn init_runtime(rt: &mut Runtime) {
             }
             Some(r(acc))
         }
-        f::<f64>(&vec).or_else(|| f::<i32>(&vec)).or_else(|| f::<Vec2<f64>>(&vec)).or_else(|| f::<Vec3<f64>>(&vec)).unwrap()
-    }) as MyFn));
-    rt.insert("/", r(Box::new(|vec: Vec<Val>| -> Val {
+        f::<f64>(&vec).or_else(|| f::<i32>(&vec)).or_else(|| f::<Vec2<f64>>(&vec)).or_else(|| f::<Vec3<f64>>(&vec)).ok_or_else(|| GlutenError::Str("arguments mismatch".to_owned()))
+    }) as NativeFn));
+    rt.insert("/", r(Box::new(|vec: Vec<Val>| {
         fn f<T: num_traits::Num + Copy + 'static>(vec: &Vec<Val>) -> Option<Val> {
-            let mut acc = *vec[0].borrow().downcast_ref::<T>()?;
+            let mut acc = *vec.get(0)?.borrow().downcast_ref::<T>()?;
             for rv in vec.iter().skip(1) {
                 acc = acc / *rv.borrow().downcast_ref::<T>()?;
             }
             Some(r(acc))
         }
-        f::<f64>(&vec).or_else(|| f::<i32>(&vec)).or_else(|| f::<Vec2<f64>>(&vec)).or_else(|| f::<Vec3<f64>>(&vec)).unwrap()
-    }) as MyFn));
-    rt.insert("stringify", r(Box::new(|vec: Vec<Val>| -> Val {
+        f::<f64>(&vec).or_else(|| f::<i32>(&vec)).or_else(|| f::<Vec2<f64>>(&vec)).or_else(|| f::<Vec3<f64>>(&vec)).ok_or_else(|| GlutenError::Str("arguments mismatch".to_owned()))
+    }) as NativeFn));
+    rt.insert("stringify", r(Box::new(|vec: Vec<Val>| {
         fn f<T: std::fmt::Debug + 'static>(vec: &Vec<Val>) -> Option<Val> {
-            Some(r(format!("{:?}", vec[0].borrow().downcast_ref::<T>()?)))
+            Some(r(format!("{:?}", vec.get(0)?.borrow().downcast_ref::<T>()?)))
         }
         f::<String>(&vec).or_else(|| f::<Symbol>(&vec))
         .or_else(|| f::<f64>(&vec)).or_else(|| f::<i32>(&vec)).or_else(|| f::<Vec2<f64>>(&vec)).or_else(|| f::<Vec3<f64>>(&vec))
         .or_else(|| f::<Rgba>(&vec))
-        .unwrap()
-    }) as MyFn));
+        .ok_or_else(|| GlutenError::Str("arguments mismatch".to_owned()))
+    }) as NativeFn));
     rt.insert("rgb", r(Box::new(|vec: Vec<Val>| {
         use regex::Regex;
         if let Some(string) = vec[0].borrow().downcast_ref::<String>() {
@@ -206,26 +207,27 @@ fn init_runtime(rt: &mut Runtime) {
         }
     }) as MyFn));
     rt.insert("plain", r(Box::new(|vec: Vec<Val>| {
-        if let Some(p) = vec[0].borrow().downcast_ref::<Rgba>() {
-            r(Rc::new(crate::renders::plain::Plain::new(*p)) as Rc<dyn Render<Rgba>>)
-        } else if let Some(p) = borrow_timed(&vec[0]) {
-            r(Rc::new(crate::renders::plain::Plain::new(p.clone())) as Rc<dyn Render<Rgba>>)
+        let first = vec.get_(0)?;
+        if let Some(p) = first.copy_as::<Rgba>() {
+            Ok(r(Rc::new(crate::renders::plain::Plain::new(p)) as Rc<dyn Render<Rgba>>))
+        } else if let Some(p) = clone_timed(first) {
+            Ok(r(Rc::new(crate::renders::plain::Plain::new(p.clone())) as Rc<dyn Render<Rgba>>))
         } else {
-            panic!()
+            Err(GlutenError::Str("arguments mismatch".to_owned()))
         }
-    }) as MyFn));
+    }) as NativeFn));
     rt.insert("frame", r(Box::new(|vec: Vec<Val>| {
         use crate::renders::frame::{Frame, FrameType};
-        let render = vec[0].borrow().downcast_ref::<Rc<dyn Render<Rgba>>>().unwrap().clone();
-        let frame_type = match vec[1].borrow().downcast_ref::<Symbol>().unwrap().0.as_str() {
-            "constant" => FrameType::Constant(*vec[2].borrow().downcast_ref::<Rgba>().unwrap()),
+        let render = vec.get_(0)?.clone_as::<Rc<dyn Render<Rgba>>>().ok_or_else(|| GlutenError::Str("type mismatch".to_owned()))?;
+        let frame_type = match vec.get_(1)?.borrow().downcast_ref::<Symbol>().unwrap().0.as_str() {
+            "constant" => FrameType::Constant(vec.get_(2)?.copy_as::<Rgba>().ok_or_else(|| GlutenError::Str("type mismatch".to_owned()))?),
             "extend" => FrameType::Extend,
             "repeat" => FrameType::Repeat,
             "reflect" => FrameType::Reflect,
-            _ => panic!("invalid frame_type")
+            _ => { return Err(GlutenError::Str(format!("invalid frame_type"))) }
         };
-        r(Rc::new(Frame {render, frame_type}) as Rc<dyn Render<Rgba>>)
-    }) as MyFn));
+        Ok(r(Rc::new(Frame {render, frame_type}) as Rc<dyn Render<Rgba>>))
+    }) as NativeFn));
     rt.insert("sequence", r(Box::new(|vec: Vec<Val>| {
         let mut sequence = crate::renders::sequence::Sequence::new();
         for p in vec.into_iter() {
@@ -266,7 +268,7 @@ fn init_runtime(rt: &mut Runtime) {
             let mode = match mode.as_str() {
                 "none" => CompositeMode::None,
                 "normal" => CompositeMode::Normal(
-                    p.get(2).and_then(borrow_timed::<f64>).unwrap_or_else(|| Rc::new(1.0))
+                    p.get(2).and_then(clone_timed::<f64>).unwrap_or_else(|| Rc::new(1.0))
                 ),
                 _ => panic!("illegal CompositeMode")
             };
@@ -335,7 +337,7 @@ fn init_runtime(rt: &mut Runtime) {
     rt.insert("cycle", r(Box::new(|vec: Vec<Val>| {
         use crate::timed::Cycle;
         fn f<T: 'static + Lerp>(vec: &Vec<Val>) -> Option<Val> {
-            let timed = borrow_timed(&vec[0])?;
+            let timed = clone_timed(&vec[0])?;
             let duration = *vec[1].borrow().downcast_ref::<f64>().unwrap();
             Some(r(Rc::new(Cycle::new(timed, duration)) as Rc<dyn Timed<T>>))
         }
@@ -353,8 +355,8 @@ fn init_runtime(rt: &mut Runtime) {
     }) as MyFn));
     rt.insert("timed/add", r(Box::new(|vec: Vec<Val>| {
         fn f<T: 'static + Lerp>(vec: &Vec<Val>) -> Option<Val> {
-            let a = borrow_timed(&vec[0])?;
-            let b = borrow_timed(&vec[1])?;
+            let a = clone_timed(&vec[0])?;
+            let b = clone_timed(&vec[1])?;
             Some(r(Rc::new(crate::timed::Add::new(a, b)) as Rc<dyn Timed<T>>))
         }
         f::<f64>(&vec).or_else(|| f::<Vec2<f64>>(&vec)).or_else(|| f::<Vec3<f64>>(&vec)).unwrap()
@@ -363,7 +365,7 @@ fn init_runtime(rt: &mut Runtime) {
         use crate::{renders::transform::{Transform, timed_to_transformer}};
         let render = vec[0].borrow_mut().downcast_mut::<Rc<dyn Render<Rgba>>>().unwrap().clone();
         fn get_timed_vec2(val: &Val) -> Rc<dyn Timed<Vec2<f64>>> {
-            if let Some(timed) = borrow_timed::<Vec2<f64>>(val) {
+            if let Some(timed) = clone_timed::<Vec2<f64>>(val) {
                 timed
             } else {
                 let val = val.borrow();
@@ -374,7 +376,7 @@ fn init_runtime(rt: &mut Runtime) {
             }
         }
         fn get_timed_f64(val: &Val) -> Rc<dyn Timed<f64>> {
-            if let Some(timed) = borrow_timed::<f64>(val) {
+            if let Some(timed) = clone_timed::<f64>(val) {
                 timed
             } else {
                 Rc::new(val.borrow().downcast_ref::<f64>().unwrap().clone())
@@ -524,7 +526,16 @@ fn init_runtime(rt: &mut Runtime) {
     }))));
 }
 
-fn borrow_timed<'a, T: 'static + Lerp>(val: &Val) -> Option<Rc<dyn Timed<T>>> {
+fn clone_timed<T: 'static + Lerp>(val: &Val) -> Option<Rc<dyn Timed<T>>> {
     val.borrow().downcast_ref::<Rc<dyn Timed<T>>>().cloned()
         .or_else(|| val.borrow().downcast_ref::<Rc<Path<T>>>().map(|x| x.clone() as Rc<dyn Timed<T>>))
+}
+
+trait FnArgs {
+    fn get_(&self, i: usize) -> Result<&Val, GlutenError>;
+}
+impl FnArgs for Vec<Val> {
+    fn get_(&self, i: usize) -> Result<&Val, GlutenError> {
+        self.get(i).ok_or_else(|| GlutenError::Str("argument missing".to_owned()))
+    }
 }

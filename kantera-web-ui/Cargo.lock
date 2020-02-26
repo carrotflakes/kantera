@@ -857,7 +857,7 @@ dependencies = [
 [[package]]
 name = "gluten"
 version = "0.1.0"
-source = "git+https://github.com/carrotflakes/gluten.git?branch=kantera#c8134e44edf9755084707612c8af87d43878d5b5"
+source = "git+https://github.com/carrotflakes/gluten.git?branch=kantera#1883fcaf9357a1647ac3cba8ccb829ef1eb12b2a"
 
 [[package]]
 name = "gobject-sys"
@@ -1013,7 +1013,6 @@ dependencies = [
 [[package]]
 name = "kantera"
 version = "0.0.1"
-source = "git+https://github.com/carrotflakes/kantera.git#837b876dfbcd07eb27ae85d092f8b3a2cb9a3079"
 dependencies = [
  "cairo-rs 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "gluten 0.1.0 (git+https://github.com/carrotflakes/gluten.git?branch=kantera)",
@@ -1040,7 +1039,7 @@ dependencies = [
  "env_logger 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "image 0.22.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "kantera 0.0.1 (git+https://github.com/carrotflakes/kantera.git)",
+ "kantera 0.0.1",
 ]
 
 [[package]]
@@ -2063,7 +2062,6 @@ dependencies = [
 "checksum ipconfig 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)" = "aa79fa216fbe60834a9c0737d7fcd30425b32d1c58854663e24d4c4b328ed83f"
 "checksum itoa 0.4.5 (registry+https://github.com/rust-lang/crates.io-index)" = "b8b7a7c0c47db5545ed3fef7468ee7bb5b74691498139e4b3f6a20685dc6dd8e"
 "checksum jpeg-decoder 0.1.18 (registry+https://github.com/rust-lang/crates.io-index)" = "0256f0aec7352539102a9efbcb75543227b7ab1117e0f95450023af730128451"
-"checksum kantera 0.0.1 (git+https://github.com/carrotflakes/kantera.git)" = "<none>"
 "checksum kernel32-sys 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "7507624b29483431c0ba2d82aece8ca6cdba9382bff4ddd0f7490560c056098d"
 "checksum language-tags 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "a91d884b6667cd606bb5a69aa0c99ba811a115fc68915e7056ec08a46e93199a"
 "checksum lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
