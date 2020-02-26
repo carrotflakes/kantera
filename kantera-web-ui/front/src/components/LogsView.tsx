@@ -4,6 +4,7 @@ import styled from 'styled-components';
 const Container = styled.div`
 background: #333;
 padding: 4px;
+white-space: pre-wrap;
 `;
 
 type Props = {
@@ -16,7 +17,7 @@ export default ({
   return (
     <Container>
       {
-        logs.map(log => <div>{log.replace(/\n/g, '<br/>')}</div>)
+        logs.map(log => <div>{log}</div>)
       }
     </Container>
   );
