@@ -538,6 +538,7 @@ fn init_runtime(rt: &mut Runtime) {
 fn clone_timed<T: 'static + Lerp>(val: &Val) -> Option<Rc<dyn Timed<T>>> {
     val.borrow().downcast_ref::<Rc<dyn Timed<T>>>().cloned()
         .or_else(|| val.borrow().downcast_ref::<Rc<Path<T>>>().map(|x| x.clone() as Rc<dyn Timed<T>>))
+        .or_else(|| val.borrow().downcast_ref::<T>().map(|x| Rc::new(*x) as Rc<dyn Timed<T>>))
 }
 
 trait FnArgs {
