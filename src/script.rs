@@ -143,6 +143,15 @@ fn init_runtime(rt: &mut Runtime) {
         }
         f::<f64>(&vec).or_else(|| f::<i32>(&vec)).or_else(|| f::<Vec2<f64>>(&vec)).or_else(|| f::<Vec3<f64>>(&vec)).ok_or_else(|| GlutenError::Str("arguments mismatch".to_owned()))
     }) as NativeFn));
+    rt.insert("PI", r(std::f64::consts::PI));
+    rt.insert("sin", r(Box::new(|vec: Vec<Val>| {
+        let v = vec.get_(0)?.copy_as::<f64>().ok_or_else(|| GlutenError::Str("arguments mismatch".to_owned()))?;
+        Ok(r(v.sin()))
+    }) as NativeFn));
+    rt.insert("cos", r(Box::new(|vec: Vec<Val>| {
+        let v = vec.get_(0)?.copy_as::<f64>().ok_or_else(|| GlutenError::Str("arguments mismatch".to_owned()))?;
+        Ok(r(v.cos()))
+    }) as NativeFn));
     rt.insert("stringify", r(Box::new(|vec: Vec<Val>| {
         fn f<T: std::fmt::Debug + 'static>(vec: &Vec<Val>) -> Option<Val> {
             Some(r(format!("{:?}", vec.get(0)?.borrow().downcast_ref::<T>()?)))
