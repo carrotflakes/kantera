@@ -3,24 +3,18 @@ import { eventChannel, END } from 'redux-saga';
 import AudioManager from 'src/audioManager';
 import config from 'src/config';
 
-export const CONNECT = 'MAIN_PROCESS/CONNECT' as const;
-export const DISCONNECT = 'MAIN_PROCESS/DISCONNECT' as const;
-export const CONNECTED = 'MAIN_PROCESS/CONNECTED' as const;
-export const DISCONNECTED = 'MAIN_PROCESS/DISCONNECTED' as const;
-export const SEND = 'MAIN_PROCESS/SEND' as const;
-export const INIT = 'MAIN_PROCESS/INIT' as const;
-export const SET_AUDIO_MANAGER = 'MAIN_PROCESS/SET_AUDIO_MANAGER' as const;
-
 export interface State {
   ws: WebSocket | null,
   imgEl: HTMLElement | null,
-  audioManager: AudioManager | null
+  audioManager: AudioManager | null,
+  logs: string[],
 }
 
 const initialState: State = {
   ws: null,
   imgEl: null,
-  audioManager: null
+  audioManager: null,
+  logs: []
 };
 
 
@@ -33,18 +27,21 @@ type Action
 
 const reducers: { [key: string]: (state: State, action: any) => State } = {};
 
+export const CONNECT = 'MAIN_PROCESS/CONNECT' as const;
 export const connect = () => {
   return {
     type: CONNECT
   };
 }
 
+export const DISCONNECT = 'MAIN_PROCESS/DISCONNECT' as const;
 export const disconnect = () => {
   return {
     type: DISCONNECT
   };
 }
 
+export const CONNECTED = 'MAIN_PROCESS/CONNECTED' as const;
 const connected = (ws: WebSocket) => {
   return {
     type: CONNECTED,
@@ -58,6 +55,7 @@ reducers[CONNECTED] = (state: State, action: ReturnType<typeof connected>): Stat
   };
 };
 
+export const DISCONNECTED = 'MAIN_PROCESS/DISCONNECTED' as const;
 const disconnected = () => {
   return {
     type: DISCONNECTED
@@ -70,6 +68,7 @@ reducers[DISCONNECTED] = (state: State, action: ReturnType<typeof disconnected>)
   };
 };
 
+export const SEND = 'MAIN_PROCESS/SEND' as const;
 export const send = (text: string) => {
   return {
     type: SEND,
@@ -77,6 +76,7 @@ export const send = (text: string) => {
   };
 }
 
+export const INIT = 'MAIN_PROCESS/INIT' as const;
 export const init = (imgEl: HTMLElement) => {
   return {
     type: INIT,
@@ -90,6 +90,7 @@ reducers[INIT] = (state: State, action: ReturnType<typeof init>): State => {
   };
 };
 
+export const SET_AUDIO_MANAGER = 'MAIN_PROCESS/SET_AUDIO_MANAGER' as const;
 export const setAudioManager = (audioManager: AudioManager) => {
   return {
     type: SET_AUDIO_MANAGER,
@@ -100,6 +101,20 @@ reducers[SET_AUDIO_MANAGER] = (state: State, action: ReturnType<typeof setAudioM
   return {
     ...state,
     audioManager: action.audioManager
+  };
+};
+
+export const PUSH_LOG = 'MAIN_PROCESS/PUSH_LOG' as const;
+export const pushLog = (log: string) => {
+  return {
+    type: PUSH_LOG,
+    log
+  };
+}
+reducers[PUSH_LOG] = (state: State, action: ReturnType<typeof pushLog>): State => {
+  return {
+    ...state,
+    logs: [...state.logs, action.log]
   };
 };
 
@@ -161,6 +176,7 @@ function* handleConnect(action: ReturnType<typeof connect>) {
           //syncObj = {...syncObj, ...data, type: undefined};
         } else if (data.type === 'parseFailed') {
           //document.getElementById('parseError').textContent = data.error;
+          yield put(pushLog(data.error)); // TODO
         } else if (data.type === 'frame') {
           binaryType = 'frame';
         } else if (data.type === 'audio') {
@@ -171,7 +187,7 @@ function* handleConnect(action: ReturnType<typeof connect>) {
             audioManager.setSamplerate(streamInfo.samplerate);
           }
         } else if (data.type === 'log') {
-          //logEl.innerHTML += (data.log + '\n').replace(/\n/, '</br>');
+          yield put(pushLog(data.log));
         }
         const mes = JSON.parse(message);
       } else {

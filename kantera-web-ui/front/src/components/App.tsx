@@ -4,14 +4,19 @@ import MonacoEditor from 'react-monaco-editor';
 import monacoEditor from 'monaco-editor';
 import axios from 'axios';
 import config from 'src/config';
+import LogsView from 'containers/LogsView';
 
 const localStorageCodeKey = 'kantera-web-ui/code';
 const initialCode = `(set framerate 20)\n(set transparent (rgba 0.0 0.0 0.0 1.0))\n(set font (import_ttf "./tmp/IPAexfont00401/ipaexg.ttf"))\n(set video\n  (composite\n    (vec (plain (rgb 0.0 1.0 0.0)) 'normal)\n    (vec (image_render (text_to_image "Hello, kantera!" 50.0 font) transparent) 'normal)))\n`;
 
 const Button = styled.button`
-background: #eee;
+background: #333;
 margin: 4px;
 padding: 2px 4px;
+
+&:hover {
+  background: #444;
+}
 `;
 
 type Props = {
@@ -108,6 +113,7 @@ export default ({
         options={{fontSize: 12, minimap: {enabled: false}}}
         editorDidMount={editorDidMount}/>
       <img ref={imgRef}></img>
+      <LogsView/>
     </div>
   );
 };

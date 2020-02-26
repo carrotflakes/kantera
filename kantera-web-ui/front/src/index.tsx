@@ -25,7 +25,10 @@ sagaMiddleWare.run(rootSaga);
 
 const GlobalStyle = createGlobalStyle`
 * {
-  color: #555;
+  color: #bbb;
+}
+html {
+  background: #222;
 }
 `;
 
