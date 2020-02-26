@@ -15,7 +15,7 @@ Process for make video from Rust code:
 TODO:
 
 - [x] Import videos
-- [ ] Import images
+- [x] Import images
 - [x] Text rendering with any font
 - [x] Output video with audio
 - [ ] Web-UI as GUI
@@ -23,6 +23,7 @@ TODO:
 - [ ] DSL for building renderer
 - [ ] Multi-thread rendering
 - [ ] Realtime hosting via WebRTC
+- [ ] Documentation...
 
 ## Concepts
 - Orthogonal APIs
@@ -67,7 +68,7 @@ e.g. https://twitter.com/carrotflakes/status/1213135191125872642
 
 ## Copyright
 
-Copyright (c) 2019 carrotflakes (carrotflakes@gmail.com)
+Copyright (c) 2020 carrotflakes (carrotflakes@gmail.com)
 
 ## License
 
