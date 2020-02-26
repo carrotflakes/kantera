@@ -334,7 +334,7 @@ fn init_runtime(rt: &mut Runtime) {
             panic!("path requires at least one argument")
         }
     }) as MyFn));
-    rt.insert("cycle", r(Box::new(|vec: Vec<Val>| {
+    rt.insert("timed/cycle", r(Box::new(|vec: Vec<Val>| {
         use crate::timed::Cycle;
         fn f<T: 'static + Lerp>(vec: &Vec<Val>) -> Option<Val> {
             let timed = clone_timed(&vec[0])?;
@@ -343,7 +343,7 @@ fn init_runtime(rt: &mut Runtime) {
         }
         f::<f64>(&vec).or_else(|| f::<Vec2<f64>>(&vec)).or_else(|| f::<Vec3<f64>>(&vec)).or_else(|| f::<Rgba>(&vec)).unwrap()
     }) as MyFn));
-    rt.insert("sin", r(Box::new(|vec: Vec<Val>| {
+    rt.insert("timed/sin", r(Box::new(|vec: Vec<Val>| {
         use crate::timed::Sine;
         fn f<T: 'static + Clone + Timed<f64>>(vec: &Vec<Val>) -> Option<Val> {
             let initial_phase = *vec[0].borrow().downcast_ref::<f64>().unwrap();
