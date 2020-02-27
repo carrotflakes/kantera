@@ -225,6 +225,12 @@ fn init_runtime(rt: &mut Runtime) {
             Err(GlutenError::Str("arguments mismatch".to_owned()))
         }
     }) as NativeFn));
+    rt.insert("clip", r(Box::new(|vec: Vec<Val>| {
+        let render = vec.get_(0)?.clone_as::<Rc<dyn Render<Rgba>>>().ok_or_else(|| GlutenError::Str("type mismatch".to_owned()))?;
+        let start = vec.get_(1)?.copy_as::<f64>().ok_or_else(|| GlutenError::Str("arguments mismatch".to_owned()))?;
+        let end = vec.get_(2)?.copy_as::<f64>().ok_or_else(|| GlutenError::Str("arguments mismatch".to_owned()))?;
+        Ok(r(Rc::new(crate::renders::clip::Clip::new(render, start, end)) as Rc<dyn Render<Rgba>>))
+    }) as NativeFn));
     rt.insert("frame", r(Box::new(|vec: Vec<Val>| {
         use crate::renders::frame::{Frame, FrameType};
         let render = vec.get_(0)?.clone_as::<Rc<dyn Render<Rgba>>>().ok_or_else(|| GlutenError::Str("type mismatch".to_owned()))?;
