@@ -20,6 +20,10 @@ impl <T: Default + Clone, U: From<T>, R: Render<T>> Render<U> for PixelInto<T, U
             buffer[i] = inner_buffer[i].clone().into();
         }
     }
+
+    fn duration(&self) -> f64 {
+        self.render.duration()
+    }
 }
 
 impl <T: Default + Clone, U: From<T>, R: Render<T>> PixelInto<T, U, R> {

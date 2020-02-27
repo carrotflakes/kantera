@@ -33,6 +33,10 @@ pub trait Render<T> {
             }
         }
     }
+
+    fn duration(&self) -> f64 {
+        std::f64::INFINITY
+    }
 }
 
 impl<T> Render<T> for Box<dyn Render<T>> {
@@ -45,6 +49,11 @@ impl<T> Render<T> for Box<dyn Render<T>> {
     fn render(&self, ro: &RenderOpt, buffer: &mut [T]) {
         self.as_ref().render(ro, buffer);
     }
+
+    #[inline(always)]
+    fn duration(&self) -> f64 {
+        self.as_ref().duration()
+    }
 }
 impl<T> Render<T> for std::rc::Rc<dyn Render<T>> {
     #[inline(always)]
@@ -55,6 +64,11 @@ impl<T> Render<T> for std::rc::Rc<dyn Render<T>> {
     #[inline(always)]
     fn render(&self, ro: &RenderOpt, buffer: &mut [T]) {
         self.as_ref().render(ro, buffer);
+    }
+
+    #[inline(always)]
+    fn duration(&self) -> f64 {
+        self.as_ref().duration()
     }
 }
 
@@ -79,6 +93,10 @@ impl Render<Rgba> for Dummy {
                 }
             }
         }
+    }
+
+    fn duration(&self) -> f64 {
+        std::f64::INFINITY
     }
 }
 

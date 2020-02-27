@@ -96,4 +96,8 @@ impl<R: Render<Rgba>> Render<Rgba> for Bokeh<R> {
             }
         }
     }
+
+    fn duration(&self) -> f64 {
+        self.render.duration()
+    }
 }

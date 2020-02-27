@@ -52,6 +52,10 @@ impl<R: Render<Rgba>> Render<Rgba> for Filter<R> {
             }
         }
     }
+
+    fn duration(&self) -> f64 {
+        self.render.duration()
+    }
 }
 
 pub fn make_gaussian_filter(w: usize, h: usize, d: f64) -> Image<Rgba> {

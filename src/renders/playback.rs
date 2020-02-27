@@ -43,6 +43,10 @@ impl <T: Default + Clone> Render<T> for Playback<T> {
         }
 
    /}*/
+
+    fn duration(&self) -> f64 {
+        self.buffer.frame_num as f64 * self.buffer.framerate as f64
+    }
 }
 
 impl<T: Default + Clone> From<Buffer<T>> for Playback<T> {

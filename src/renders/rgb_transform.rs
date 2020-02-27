@@ -16,5 +16,8 @@ impl<R: Render<Rgba>> Render<Rgba> for RgbTransform<R> {
         let b = self.render.sample(b.0, b.1, b.2, res).2;
         Rgba(r, g, b, 1.0)
     }
-}
 
+    fn duration(&self) -> f64 {
+        self.render.duration()
+    }
+}

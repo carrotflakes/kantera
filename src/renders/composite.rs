@@ -37,6 +37,10 @@ impl<R: Render<Rgba>> Render<Rgba> for Composite<R> {
             }
         }
     }
+
+    fn duration(&self) -> f64 {
+        self.layers.iter().map(|x| x.0.duration()).fold(std::f64::INFINITY, |x, y| x.min(y))
+    }
 }
 
 #[inline(always)]

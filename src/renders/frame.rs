@@ -38,4 +38,8 @@ impl <T: Copy, R: Render<T>> Render<T> for Frame<T, R> {
     }
 
     // TODO render?
+
+    fn duration(&self) -> f64 {
+        self.render.duration()
+    }
 }

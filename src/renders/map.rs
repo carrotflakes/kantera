@@ -20,4 +20,7 @@ impl <T: Copy, R: Render<T>> Render<T> for Map<T, R> {
         }
     }
 
+    fn duration(&self) -> f64 {
+        self.render.duration()
+    }
 }
