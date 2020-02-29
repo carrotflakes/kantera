@@ -387,6 +387,24 @@ fn init_runtime(rt: &mut Runtime) {
         }
         f::<f64>(&vec).or_else(|| f::<Vec2<f64>>(&vec)).or_else(|| f::<Vec3<f64>>(&vec)).unwrap()
     }) as MyFn));
+    rt.insert("timed/mul", r(Box::new(|vec: Vec<Val>| {
+        fn f<T: 'static + Lerp + std::ops::Mul<Output = T>>(vec: &Vec<Val>) -> Option<Val> {
+            let a = clone_timed(&vec[0])?;
+            let b = clone_timed(&vec[1])?;
+            Some(r(Rc::new(crate::timed::Mul::new(a, b)) as Rc<dyn Timed<T>>))
+        }
+        f::<f64>(&vec).or_else(|| f::<Vec2<f64>>(&vec)).or_else(|| f::<Vec3<f64>>(&vec)).unwrap()
+    }) as MyFn));
+    rt.insert("timed/map_sin", r(Box::new(|vec: Vec<Val>| {
+        use crate::timed::Map;
+        fn f<T: 'static + Clone + Timed<f64>>(vec: &Vec<Val>) -> Option<Val> {
+            let timed = vec[0].borrow().downcast_ref::<T>()?.clone();
+            Some(r(Rc::new(Map::new(timed, |x| x.sin())) as Rc<dyn Timed<f64>>))
+        }
+        f::<f64>(&vec).or_else(|| f::<Rc<dyn Timed<f64>>>(&vec)).or_else(
+            || Some(r(Rc::new(Map::new(clone_timed(&vec[0])?, |x| x.sin())) as Rc<dyn Timed<f64>>))
+        ).unwrap()
+    }) as MyFn));
     rt.insert("transform", r(Box::new(|vec: Vec<Val>| {
         use crate::{renders::transform::{Transform, timed_to_transformer}};
         let render = vec[0].borrow_mut().downcast_mut::<Rc<dyn Render<Rgba>>>().unwrap().clone();

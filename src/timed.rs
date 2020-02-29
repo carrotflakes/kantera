@@ -66,6 +66,24 @@ impl<T: Timed<f64>> Timed<f64> for Sine<T> {
 }
 
 #[derive(Debug)]
+pub struct Map<T: Timed<f64>, F: Fn(f64) -> f64> {
+    timed: T,
+    f: F
+}
+
+impl<T: Timed<f64>, F: Fn(f64) -> f64> Map<T, F> {
+    pub fn new(timed: T, f: F) -> Self {
+        Map { timed, f }
+    }
+}
+
+impl<T: Timed<f64>, F: Fn(f64) -> f64> Timed<f64> for Map<T, F> {
+    fn get_value(&self, time: f64) -> f64 {
+        (self.f)(self.timed.get_value(time))
+    }
+}
+
+#[derive(Debug)]
 pub struct Add<T: std::ops::Add<Output = T>, A: Timed<T>, B: Timed<T>> {
     pub a: A,
     pub b: B,
@@ -84,5 +102,27 @@ impl<T: std::ops::Add<Output = T>, A: Timed<T>, B: Timed<T>> Add<T, A, B> {
 impl<T: std::ops::Add<Output = T>, A: Timed<T>, B: Timed<T>> Timed<T> for Add<T, A, B> {
     fn get_value(&self, time: f64) -> T {
         self.a.get_value(time) + self.b.get_value(time)
+    }
+}
+
+#[derive(Debug)]
+pub struct Mul<T: std::ops::Mul<Output = T>, A: Timed<T>, B: Timed<T>> {
+    pub a: A,
+    pub b: B,
+    pub t: std::marker::PhantomData<T>
+}
+
+impl<T: std::ops::Mul<Output = T>, A: Timed<T>, B: Timed<T>> Mul<T, A, B> {
+    pub fn new(a: A, b: B) -> Self {
+        Mul {
+            a, b,
+            t: std::marker::PhantomData
+        }
+    }
+}
+
+impl<T: std::ops::Mul<Output = T>, A: Timed<T>, B: Timed<T>> Timed<T> for Mul<T, A, B> {
+    fn get_value(&self, time: f64) -> T {
+        self.a.get_value(time) * self.b.get_value(time)
     }
 }
