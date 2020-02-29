@@ -194,7 +194,11 @@ function* handleConnect(action: ReturnType<typeof connect>) {
         } else if (data.type === 'log') {
           yield put(pushLog(data.log));
         } else if (data.type === 'renderSucceeded') {
-          yield put(pushLog(`render succeeded: ${data.path}`));
+          let path: string = data.path;
+          if (path.startsWith('./')) {
+            path = config.serverUrl + path.substr(2);
+          }
+          yield put(pushLog(`render succeeded: ${path}`));
         } else if (data.type === 'renderFailed') {
           yield put(pushLog(`render failed: ${data.error}`));
         } else {

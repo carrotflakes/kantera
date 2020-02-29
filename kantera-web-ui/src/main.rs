@@ -63,6 +63,7 @@ async fn main() -> std::io::Result<()> {
         .wrap(middleware::Logger::default())
         .service(web::resource("/ws/").route(web::get().to(ws_index)))
         .service(web::resource("/upload").route(web::post().to(save_file)))
+        .service(fs::Files::new("/tmp", "tmp/"))
         .service(fs::Files::new("/", "static/").index_file("index.html"))
     })
     .bind(addr)?
