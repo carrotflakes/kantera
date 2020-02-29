@@ -4,11 +4,13 @@ export default class AudioManager {
   buffers: Buffer[];
   i: number;
   remoteSampleRate: number;
+  channelNum: number;
 
   constructor() {
     this.buffers = [];
     this.i = 0;
     this.remoteSampleRate = 4000;
+    this.channelNum = 2;
 
     const ctx = new AudioContext();
     console.log('sampleRate: ' + ctx.sampleRate);
@@ -21,18 +23,38 @@ export default class AudioManager {
       const sampleRate = ctx.sampleRate;
       const remoteSampleRate = this.remoteSampleRate;
 
-      for (let i = 0; i < bufferSize; ++i) {
-        if (this.buffers.length) {
-          const bufLen = this.buffers[0].length / 2;
-          const j = this.i++ * remoteSampleRate / sampleRate | 0;
-          array0[i] = this.buffers[0][j] / 2**15 - 1.0;
-          array1[i] = this.buffers[0][bufLen + j] / 2**15 - 1.0;
-          if (bufLen <= (this.i * remoteSampleRate / sampleRate | 0)) {
-            this.buffers.shift();
-            this.i = 0;
-          }
-        } else {
+      if (this.channelNum === 0) {
+        for (let i = 0; i < bufferSize; ++i) {
           array1[i] = array0[i] = 0;
+        }
+      } else if (this.channelNum === 1) {
+        for (let i = 0; i < bufferSize; ++i) {
+          if (this.buffers.length) {
+            const bufLen = this.buffers[0].length;
+            const j = this.i++ * remoteSampleRate / sampleRate | 0;
+            array1[i] = array0[i] = this.buffers[0][j] / 2**15 - 1.0;
+            if (bufLen <= (this.i * remoteSampleRate / sampleRate | 0)) {
+              this.buffers.shift();
+              this.i = 0;
+            }
+          } else {
+            array1[i] = array0[i] = 0;
+          }
+        }
+      } else {
+        for (let i = 0; i < bufferSize; ++i) {
+          if (this.buffers.length) {
+            const bufLen = this.buffers[0].length / 2;
+            const j = this.i++ * remoteSampleRate / sampleRate | 0;
+            array0[i] = this.buffers[0][j] / 2**15 - 1.0;
+            array1[i] = this.buffers[0][bufLen + j] / 2**15 - 1.0;
+            if (bufLen <= (this.i * remoteSampleRate / sampleRate | 0)) {
+              this.buffers.shift();
+              this.i = 0;
+            }
+          } else {
+            array1[i] = array0[i] = 0;
+          }
         }
       }
     };
@@ -41,6 +63,10 @@ export default class AudioManager {
 
   setSamplerate(sampleRate: number) {
     this.remoteSampleRate = sampleRate;
+  }
+
+  setChannelNum(channelNum: number) {
+    this.channelNum = channelNum;
   }
 
   push(buffer: Buffer) {

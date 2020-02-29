@@ -201,7 +201,8 @@ impl MyWebSocket {
                 self.end_frame = rt.get("end_frame").and_then(|val| val.borrow().downcast_ref::<i32>().copied()).map(|val| val.max(1));
                 self.loop_ = rt.get("loop").and_then(|val| val.borrow().downcast_ref::<bool>().copied()).unwrap_or(false);
                 self.current_frame = Some(self.start_frame);
-                ctx.text(format!(r#"{{"type":"streamInfo","framerate":{:?},"samplerate":{:?}}}"#, self.framerate, self.samplerate));
+                let channel_num = self.audio_render.as_ref().map(|r| r.channel_num()).unwrap_or(0);
+                ctx.text(format!(r#"{{"type":"streamInfo","framerate":{:?},"samplerate":{:?},"channelNum":{:?}}}"#, self.framerate, self.samplerate, channel_num));
             },
             Err(mes) => ctx.text(format!(r#"{{"type":"parseFailed","error":{:?}}}"#, format!("{}", mes)))
         }

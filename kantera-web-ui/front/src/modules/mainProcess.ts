@@ -185,6 +185,7 @@ function* handleConnect(action: ReturnType<typeof connect>) {
           streamInfo = data;
           if (streamInfo.samplerate) {
             audioManager.setSamplerate(streamInfo.samplerate);
+            audioManager.setChannelNum(streamInfo.channelNum);
           }
         } else if (data.type === 'log') {
           yield put(pushLog(data.log));
