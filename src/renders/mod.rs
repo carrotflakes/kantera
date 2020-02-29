@@ -1,6 +1,7 @@
 pub mod pixel_into;
 pub mod plain;
 pub mod clip;
+pub mod sequencer;
 pub mod sequence;
 pub mod playback;
 pub mod image_render;

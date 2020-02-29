@@ -254,6 +254,17 @@ fn init_runtime(rt: &mut Runtime) {
         }
         r(Rc::new(sequence) as Rc<dyn Render<Rgba>>)
     }) as MyFn));
+    rt.insert("sequencer", r(Box::new(|vec: Vec<Val>| {
+        let mut sequencer = crate::renders::sequencer::Sequencer::new(Rgba(0.0, 0.0, 0.0, 0.0)); // TODO
+        for p in vec.get_(0)?.clone_as::<Vec<Val>>().ok_or_else(|| GlutenError::Str("type mismatch".to_owned()))? {
+            let p = p.clone_as::<Vec<Val>>().ok_or_else(|| GlutenError::Str("type mismatch".to_owned()))?;
+            let time = p.get_(0)?.copy_as::<f64>().ok_or_else(|| GlutenError::Str("type mismatch".to_owned()))?;
+            let z = p.get_(1)?.copy_as::<i32>().ok_or_else(|| GlutenError::Str("type mismatch".to_owned()))?;
+            let render = p.get_(2)?.clone_as::<Rc<dyn Render<Rgba>>>().ok_or_else(|| GlutenError::Str("type mismatch".to_owned()))?;
+            sequencer = sequencer.append(time, z as usize, render);
+        }
+        Ok(r(Rc::new(sequencer) as Rc<dyn Render<Rgba>>))
+    }) as NativeFn));
     rt.insert("image_render", r(Box::new(|vec: Vec<Val>| {
         let image = vec[0].borrow().downcast_ref::<Rc<Image<Rgba>>>().unwrap().clone();
         let default = *vec[1].borrow().downcast_ref::<Rgba>().unwrap();
