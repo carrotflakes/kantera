@@ -22,7 +22,8 @@ impl<R: Render<Rgba>> Render<Rgba> for Sequencer<Rgba, R> {
         let mut inner_buffer = vec![self.default; buffer.len()];
         for (start, _, ref render) in self.clips.iter() {
             let start_frame = ro.frame_range.start - (start * *framerate as f64) as i32;
-            let frame_range = start_frame.max(0)..((render.duration() * *framerate as f64) as i32).min(frame_range.end - (start * *framerate as f64) as i32);
+            let end_frame = if render.duration().is_infinite() { std::i32::MAX } else { (render.duration() * *framerate as f64) as i32 };
+            let frame_range = start_frame.max(0)..end_frame.min(frame_range.end - (start * *framerate as f64) as i32);
             if frame_range.start >= frame_range.end {
                 continue;
             }
@@ -37,6 +38,10 @@ impl<R: Render<Rgba>> Render<Rgba> for Sequencer<Rgba, R> {
                 buffer[j] = buffer[j].normal_blend(&inner_buffer[i], 1.0);
             }
         }
+    }
+
+    fn duration(&self) -> f64 {
+        self.clips.iter().fold(0.0, |acc, x| acc.max(x.0 + x.2.duration()))
     }
 }
 
