@@ -463,6 +463,10 @@ fn init_runtime(rt: &mut Runtime) {
         }).collect();
         r(Rc::new(audio_renders::sequencer::Sequencer {renders}) as Rc<dyn AudioRender>)
     }) as MyFn));
+    rt.insert("audio/timed", r(Box::new(|vec: Vec<Val>| {
+        let timed = vec.get_(0)?.clone_as::<Rc<dyn Timed<f64>>>().ok_or_else(|| GlutenError::Str("arguments mismatch".to_owned()))?;
+        Ok(r(Rc::new(timed) as Rc<dyn AudioRender>))
+    }) as NativeFn));
     rt.insert("test_audio", r(Box::new(|_vec: Vec<Val>| {
         use crate::audio_renders::{note::Note, sequencer::Sequencer};
         fn note(dur: f64, nn: i32, vel: f64, pan: f64) -> Box<dyn AudioRender> {
