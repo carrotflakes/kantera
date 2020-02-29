@@ -22,9 +22,18 @@ impl<R: AudioRender> AudioRender for Sequencer<R> {
                 sample_rate: ro.sample_rate
             });
             let offset = ((time * ro.sample_rate as f64) as i64 + ro_start as i64 - ro.sample_range.start as i64).max(0) as usize;
-            for c in 0..channel_num {
-                for i in 0..((ro_end - ro_start) as usize).min(size - offset) {
-                    vec[c * size + offset + i] += rendered_vec[c * (ro_end - ro_start) as usize + i];
+            if render.channel_num() == 1 {
+                // Auto channel expansion
+                for c in 0..channel_num {
+                    for i in 0..((ro_end - ro_start) as usize).min(size - offset) {
+                        vec[c * size + offset + i] += rendered_vec[i];
+                    }
+                }
+            } else {
+                for c in 0..channel_num {
+                    for i in 0..((ro_end - ro_start) as usize).min(size - offset) {
+                        vec[c * size + offset + i] += rendered_vec[c * (ro_end - ro_start) as usize + i];
+                    }
                 }
             }
         }
