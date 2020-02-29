@@ -24,7 +24,8 @@ type Props = {
   connect: () => void,
   disconnect: () => void,
   init: (imgEl: HTMLElement) => void,
-  send: (text: string) => void
+  send: (text: string) => void,
+  requestRender: (fileName: string) => void
 };
 
 export default ({
@@ -32,7 +33,8 @@ export default ({
   connect,
   disconnect,
   init,
-  send
+  send,
+  requestRender
 }: Props) => {
   const [code, setCode] = React.useState(localStorage.getItem(localStorageCodeKey) || initialCode);
   const selectFileRef = React.useRef<HTMLInputElement>(null);
@@ -103,6 +105,7 @@ export default ({
         <input type="file" id="uploadFile" ref={selectFileRef} name="file" accept=".png,.jpg,.jpeg,.gif,.mp3,.wav,.ogg,.ttf" style={{display: "none"}}/>
         <Button onClick={fileUpload}>submit</Button>
       </form>
+      <Button onClick={() => requestRender('video.mp4')}>rendering</Button>
       <MonacoEditor
         width="800"
         height="400"

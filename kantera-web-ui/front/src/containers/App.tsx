@@ -13,5 +13,6 @@ export default connect(
     connect: mainProcess.connect,
     disconnect: mainProcess.disconnect,
     init: mainProcess.init,
-    send: mainProcess.send
+    send: mainProcess.send,
+    requestRender: mainProcess.requestRender
   })(App);

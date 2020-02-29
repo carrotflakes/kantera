@@ -118,6 +118,10 @@ reducers[PUSH_LOG] = (state: State, action: ReturnType<typeof pushLog>): State =
   };
 };
 
+export const requestRender = (fileName: string) => {
+  return send(`render: ${fileName}`);
+};
+
 export function reducer(state: State = initialState, action: Action): State {
   const reducer = reducers[action.type] || ((state, _action) => state) as (state: State, action: Action) => State;
   return reducer(state, action);
@@ -189,8 +193,13 @@ function* handleConnect(action: ReturnType<typeof connect>) {
           }
         } else if (data.type === 'log') {
           yield put(pushLog(data.log));
+        } else if (data.type === 'renderSucceeded') {
+          yield put(pushLog(`render succeeded: ${data.path}`));
+        } else if (data.type === 'renderFailed') {
+          yield put(pushLog(`render failed: ${data.error}`));
+        } else {
+          console.warn('unhandled message from ws', data);
         }
-        const mes = JSON.parse(message);
       } else {
         console.log(message);
       }

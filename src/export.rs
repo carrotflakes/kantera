@@ -20,6 +20,7 @@ pub fn render_to_mp4(
     buffer_frame_num: usize,
     file_name: &str,
     render: &dyn Render<Rgba>) {
+    assert!(sec.is_finite());
     let frames: usize = (framerate as f64 * sec).floor() as usize;
     let mut buffer = vec![Rgba::default(); width * height * buffer_frame_num];
     let mut exporter = crate::ffmpeg::Exporter::new(width, height, framerate, file_name, true);

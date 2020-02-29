@@ -65,6 +65,29 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWebSocket {
                     let src = &text["script: ".len()..];
                     self.run_script(src, ctx);
                 }
+                if text.starts_with("render: ") {
+                    let file_name = &text["script: ".len()..];
+                    let file_path = format!("./tmp/{}", file_name);
+                    if let Some(ref render) = self.render {
+                        let duration = render.duration();
+                        if duration.is_infinite() {
+                            ctx.text(format!(r#"{{"type":"renderFailed","error":"Render duration must be finite"}}"#));
+                            return;
+                        }
+                        kantera::export::render_to_mp4(
+                            duration,
+                            self.size.0,
+                            self.size.1,
+                            self.framerate,
+                            10,
+                            &file_path,
+                            render.as_ref()
+                        );
+                        ctx.text(format!(r#"{{"type":"renderSucceeded","path":{:?}}}"#, format!("{}", file_path)));
+                    } else {
+                        ctx.text(format!(r#"{{"type":"renderFailed","error":"Render is None"}}"#));
+                    }
+                }
             },
             Ok(ws::Message::Binary(bin)) => ctx.binary(bin),
             Ok(ws::Message::Close(_)) => ctx.stop(),
