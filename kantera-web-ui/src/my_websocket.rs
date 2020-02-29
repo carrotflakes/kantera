@@ -71,7 +71,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWebSocket {
                     if let Some(ref render) = self.render {
                         let duration = render.duration();
                         if duration.is_infinite() {
-                            ctx.text(format!(r#"{{"type":"renderFailed","error":"Render duration must be finite"}}"#));
+                            ctx.text(format!(r#"{{"type":"renderFailed","error":"Video duration must be finite"}}"#));
                             return;
                         }
                         kantera::export::render_to_mp4(
@@ -83,6 +83,20 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWebSocket {
                             &file_path,
                             render.as_ref()
                         );
+                        if let Some(ref audio_render) = self.audio_render {
+                            if audio_render.duration().is_infinite() {
+                                ctx.text(format!(r#"{{"type":"renderFailed","error":"Audio duration must be finite"}}"#));
+                                return;
+                            }
+                            let buffer = kantera::audio_render::render_to_buffer(audio_render.as_ref(), self.samplerate);
+                            println!("{} {}", buffer.sample_num, buffer.vec[0].iter().fold(-1.0f64, |a, b| a.max(*b)));
+                            kantera::ffmpeg::export_audio(&(&buffer).into(), "/tmp/kantera_audio.mp3", true);
+                            if std::fs::rename(&file_path, "/tmp/kantera_video.mp4").is_err() {
+                                ctx.text(format!(r#"{{"type":"renderFailed","error":"Internal error"}}"#));
+                                return;
+                            }
+                            kantera::ffmpeg::combine("/tmp/kantera_video.mp4", "/tmp/kantera_audio.mp3", &file_path, true);
+                        }
                         ctx.text(format!(r#"{{"type":"renderSucceeded","path":{:?}}}"#, format!("{}", file_path)));
                     } else {
                         ctx.text(format!(r#"{{"type":"renderFailed","error":"Render is None"}}"#));

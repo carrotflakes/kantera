@@ -70,6 +70,7 @@ impl AudioRender for Dummy {
 }
 
 pub fn render_to_buffer(render: &dyn AudioRender, sample_rate: usize) -> AudioBuffer<f64> {
+    assert!(render.duration().is_finite());
     // TODO: support step_sample_size for rendering large buffer
     let channel_num = render.channel_num();
     let size = (render.duration() * sample_rate as f64).floor() as usize;
