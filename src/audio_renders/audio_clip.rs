@@ -78,7 +78,7 @@ impl<T: AudioRender> AudioRender for AudioClip<T> {
             }
         }
         // FIXME
-        for i in ((self.duration() * ro.sample_rate as f64) as usize).saturating_sub(ro.sample_range.end as usize)..size {
+        for i in ((self.duration() * ro.sample_rate as f64) as usize).saturating_sub(ro.sample_range.start as usize)..size {
             vec[i] = 0.0;
             vec[size + i] = 0.0;
         }
