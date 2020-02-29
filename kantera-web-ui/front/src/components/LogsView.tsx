@@ -17,7 +17,7 @@ export default ({
   return (
     <Container>
       {
-        logs.map(log => <div>{log}</div>)
+        logs.map((log, i) => <div key={i}>{log}</div>)
       }
     </Container>
   );
