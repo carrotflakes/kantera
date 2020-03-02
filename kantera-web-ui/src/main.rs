@@ -43,6 +43,9 @@ async fn save_file(mut payload: Multipart) -> Result<HttpResponse, Error> {
 
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
+    #[cfg(debug_assertions)]
+    println!("\x1b[31mThis is built without optimization! Kantera recommends release build.\x1b[0m");
+
     unsafe {
         kantera::export::DEBUG_PRINT = false;
     }
