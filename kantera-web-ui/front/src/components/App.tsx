@@ -1,7 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
-import MonacoEditor from 'react-monaco-editor';
-import monacoEditor from 'monaco-editor';
+import MonacoEditor from 'components/MonacoEditor';
 import axios from 'axios';
 import config from 'src/config';
 import LogsView from 'containers/LogsView';
@@ -50,25 +49,6 @@ export default ({
   });
 
   const apply = (code: string) => {send('script: ' + code);};
-  const editorDidMount = (editor: monacoEditor.editor.IStandaloneCodeEditor, monaco: typeof monacoEditor) => {
-    const model = editor.getModel();
-    model?.updateOptions(config.monacoEditorModelOption);
-    editor.setModel(model);
-    editor.addAction({
-      id: 'apply kantera code',
-      label: 'apply',
-      keybindings: [
-        monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter
-      ],
-      precondition: undefined,
-      keybindingContext: undefined,
-      contextMenuGroupId: 'development', // ?
-      contextMenuOrder: 2.0,
-      run(editor: monacoEditor.editor.IStandaloneCodeEditor) {
-        apply(editor.getValue());
-      }
-    });
-  };
   const fileUpload = async (e: React.SyntheticEvent) => {
     e.preventDefault();
     if (selectFileRef.current === null || !selectFileRef.current.files)
@@ -107,14 +87,9 @@ export default ({
       </form>
       <Button onClick={() => requestRender('video.mp4')}>rendering</Button>
       <MonacoEditor
-        width="800"
-        height="400"
-        language="kanteraScript"
-        theme="vs-dark"
         value={code}
-        onChange={(newValue) => setCode(newValue)}
-        options={{fontSize: 12, minimap: {enabled: false}}}
-        editorDidMount={editorDidMount}/>
+        apply={apply}
+        onChange={(newValue) => setCode(newValue)}/>
       <img ref={imgRef}></img>
       <LogsView/>
     </div>
