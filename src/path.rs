@@ -43,7 +43,8 @@ impl<T: Lerp> Timed<T> for Path<T> {
                     },
                     Point::Bezier(left_handle, right_handle) => {
                         let v = (time - left.0) / (right.0 - left.0);
-                        Lerp::bezier(&left.1, &left_handle, &right.1, &right_handle, v)
+                        let iv = 1.0 - v;
+                        (left.1 + left_handle * v) * iv + (right.1 + right_handle * iv) * v
                     }
                 };
             }

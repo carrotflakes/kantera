@@ -120,9 +120,9 @@ impl<T: Lerp> Interpolation<T> for Bicubic {
             cubic_bc((y_floor + 1) as f64 - y),
             cubic_bc((y_floor + 2) as f64 - y)
         ];
-        (pixel(-1, -1).scale(hx[0]) + pixel(0, -1).scale(hx[1]) + pixel(1, -1).scale(hx[2]) + pixel(2, -1).scale(hx[3])).scale(hy[0])
-        + (pixel(-1, 0).scale(hx[0]) + pixel(0, 0).scale(hx[1]) + pixel(1, 0).scale(hx[2]) + pixel(2, 0).scale(hx[3])).scale(hy[1])
-        + (pixel(-1, 1).scale(hx[0]) + pixel(0, 1).scale(hx[1]) + pixel(1, 1).scale(hx[2]) + pixel(2, 1).scale(hx[3])).scale(hy[2])
-        + (pixel(-1, 2).scale(hx[0]) + pixel(0, 2).scale(hx[1]) + pixel(1, 2).scale(hx[2]) + pixel(2, 2).scale(hx[3])).scale(hy[3])
+        (pixel(-1, -1) * hx[0] + pixel(0, -1) * hx[1] + pixel(1, -1) * hx[2] + pixel(2, -1) * hx[3]) * hy[0]
+        + (pixel(-1, 0) * hx[0] + pixel(0, 0) * hx[1] + pixel(1, 0) * hx[2] + pixel(2, 0) * hx[3]) * hy[1]
+        + (pixel(-1, 1) * hx[0] + pixel(0, 1) * hx[1] + pixel(1, 1) * hx[2] + pixel(2, 1) * hx[3]) * hy[2]
+        + (pixel(-1, 2) * hx[0] + pixel(0, 2) * hx[1] + pixel(1, 2) * hx[2] + pixel(2, 2) * hx[3]) * hy[3]
     }
 }
