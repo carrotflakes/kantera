@@ -15,7 +15,7 @@ use kantera::{
 fn main() {
     let path = Path::new(Vec2(50.0, 100.0))
         .append(1.0, Vec2(50.0, 50.0), Point::Linear)
-        .append(1.0, Vec2(100.0, 50.0), Point::Bezier(Vec2(0.0, 0.0), Vec2(0.0, 20.0)))
+        .append(1.0, Vec2(100.0, 50.0), Point::Bezier(Vec2(0.0, -20.0), Vec2(0.0, 20.0)))
         .append(1.0, Vec2(150.0, 50.0), Point::Bezier(Vec2(0.0, -20.0), Vec2(-15.0, -15.0)))
         .append(1.0, Vec2(150.0, 100.0), Point::Bezier(Vec2(15.0, 15.0), Vec2(60.0, 0.0)))
         .append(1.0, Vec2(50.0, 150.0), Point::Constant)
@@ -32,7 +32,8 @@ fn main() {
             match right.2 {
                 Point::Constant => ctx.set_source_rgb(0.6, 0.2, 0.2),
                 Point::Linear => ctx.set_source_rgb(0.2, 0.6, 0.2),
-                Point::Bezier(_, _) => ctx.set_source_rgb(0.2, 0.2, 0.6)
+                Point::Bezier(_, _) => ctx.set_source_rgb(0.2, 0.2, 0.6),
+                _ => panic!()
             }
             ctx.stroke();
         }

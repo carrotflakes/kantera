@@ -5,7 +5,9 @@ pub use crate::timed::Timed;
 pub enum Point<T: Clone> {
     Constant,
     Linear,
-    Bezier(T, T)
+    Bezier(T, T), // deprecated
+    Bezier2(T),
+    Bezier3(T, T)
 }
 
 #[derive(Debug, Clone)]
@@ -44,7 +46,18 @@ impl<T: Lerp> Timed<T> for Path<T> {
                     Point::Bezier(left_handle, right_handle) => {
                         let v = (time - left.0) / (right.0 - left.0);
                         let iv = 1.0 - v;
-                        (left.1 + left_handle * v) * iv + (right.1 + right_handle * iv) * v
+                        left.1 * iv.powi(3) + (left.1 + left_handle) * (3.0 * v * iv.powi(2)) +
+                            (right.1 + right_handle) * (3.0 * v.powi(2) * iv) + right.1 * v.powi(3)
+                    },
+                    Point::Bezier2(handle) => {
+                        let v = (time - left.0) / (right.0 - left.0);
+                        let iv = 1.0 - v;
+                        left.1 * iv.powi(2) + handle * (v * iv * 2.0) + right.1 * v.powi(2)
+                    },
+                    Point::Bezier3(handle_1, handle_2) => {
+                        let v = (time - left.0) / (right.0 - left.0);
+                        let iv = 1.0 - v;
+                        left.1 * iv.powi(3) + handle_1 * (3.0 * v * iv.powi(2)) + handle_2 * (3.0 * v.powi(2) * iv) + right.1 * v.powi(3)
                     }
                 };
             }
