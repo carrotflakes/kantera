@@ -89,13 +89,13 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWebSocket {
                                 return;
                             }
                             let buffer = kantera::audio_render::render_to_buffer(audio_render.as_ref(), self.samplerate);
-                            println!("{} {}", buffer.sample_num, buffer.vec[0].iter().fold(-1.0f64, |a, b| a.max(*b)));
                             kantera::ffmpeg::export_audio(&(&buffer).into(), "/tmp/kantera_audio.mp3", true);
                             if std::fs::rename(&file_path, "/tmp/kantera_video.mp4").is_err() {
                                 ctx.text(format!(r#"{{"type":"renderFailed","error":"Internal error"}}"#));
                                 return;
                             }
                             kantera::ffmpeg::combine("/tmp/kantera_video.mp4", "/tmp/kantera_audio.mp3", &file_path, true);
+                            println!("Rendering done");
                         }
                         ctx.text(format!(r#"{{"type":"renderSucceeded","path":{:?}}}"#, format!("{}", file_path)));
                     } else {
