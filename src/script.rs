@@ -331,7 +331,8 @@ fn init_runtime(rt: &mut Runtime) {
                 let point = match p[2].borrow().downcast_ref::<Symbol>().unwrap().0.as_str() {
                     "constant" => Point::Constant,
                     "linear" => Point::Linear,
-                    "bezier" => Point::Bezier(vectorize(&p[3]), vectorize(&p[4])),
+                    "bezier2" => Point::Bezier2(vectorize(&p[3])),
+                    "bezier3" => Point::Bezier3(vectorize(&p[3]), vectorize(&p[4])),
                     _ => panic!("invalid point type")
                 };
                 path = path.append(d_time, vec, point);

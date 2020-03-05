@@ -10,12 +10,10 @@ pub fn closed_path_to_image(rect: [i32; 4], stroke_color: Rgba, fill_color: Rgba
         ctx.translate(-rect[0] as f64, -rect[1] as f64);
         ctx.move_to((path.points[0].1).0, (path.points[0].1).1);
         for pair in path.points.windows(2) {
-            let prev = pair[0];
             let p = pair[1];
             match p.2 {
                 Point::Constant => ctx.line_to((p.1).0, (p.1).1), // ?
                 Point::Linear => ctx.line_to((p.1).0, (p.1).1),
-                Point::Bezier(lh, rh) => ctx.curve_to((prev.1).0 + lh.0, (prev.1).1 + lh.1, (p.1).0 + rh.0, (p.1).1 + rh.1, (p.1).0, (p.1).1),
                 Point::Bezier2(_) => panic!("closed_path_to_image not support Bezier2"),
                 Point::Bezier3(h1, h2) => ctx.curve_to(h1.0, h1.1, h2.0, h2.1, (p.1).0, (p.1).1)
             }
@@ -50,12 +48,6 @@ pub fn closed_path_rect(path: &Path<Vec2<f64>>) -> [i32; 4] {
                 rect[1] = rect[1].min((p.1).1);
                 rect[2] = rect[2].max((p.1).0);
                 rect[3] = rect[3].max((p.1).1);
-            },
-            Point::Bezier(lh, rh) => {
-                rect[0] = rect[0].min((prev.1).0).min((prev.1).0 + lh.0).min((p.1).0 + rh.0).min((p.1).0);
-                rect[1] = rect[1].min((prev.1).1).min((prev.1).1 + lh.1).min((p.1).1 + rh.1).min((p.1).1);
-                rect[2] = rect[2].max((prev.1).0).max((prev.1).0 + lh.0).max((p.1).0 + rh.0).max((p.1).0);
-                rect[3] = rect[3].max((prev.1).1).max((prev.1).1 + lh.1).max((p.1).1 + rh.1).max((p.1).1);
             },
             Point::Bezier2(_) => {
                 panic!("closed_path_to_image not support Bezier2");

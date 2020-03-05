@@ -15,14 +15,14 @@ use kantera::{
 fn main() {
     let path = Path::new(Vec2(50.0, 100.0))
         .append(1.0, Vec2(50.0, 50.0), Point::Linear)
-        .append(1.0, Vec2(100.0, 50.0), Point::Bezier(Vec2(0.0, -20.0), Vec2(0.0, 20.0)))
-        .append(1.0, Vec2(150.0, 50.0), Point::Bezier(Vec2(0.0, -20.0), Vec2(-15.0, -15.0)))
-        .append(1.0, Vec2(150.0, 100.0), Point::Bezier(Vec2(15.0, 15.0), Vec2(60.0, 0.0)))
+        .append(1.0, Vec2(100.0, 50.0), Point::Bezier3(Vec2(50.0, 30.0), Vec2(100.0, 70.0)))
+        .append(1.0, Vec2(150.0, 50.0), Point::Bezier3(Vec2(100.0, 30.0), Vec2(135.0, 35.0)))
+        .append(1.0, Vec2(150.0, 100.0), Point::Bezier3(Vec2(165.0, 65.0), Vec2(210.0, 100.0)))
         .append(1.0, Vec2(50.0, 150.0), Point::Constant)
-        .append(1.0, Vec2(75.0, 150.0), Point::Bezier(Vec2(0.0, 0.0), Vec2(0.0, -40.0)))
-        .append(1.0, Vec2(100.0, 150.0), Point::Bezier(Vec2(0.0, -40.0), Vec2(0.0, -40.0)))
-        .append(1.0, Vec2(125.0, 150.0), Point::Bezier(Vec2(0.0, -40.0), Vec2(0.0, -40.0)))
-        .append(1.0, Vec2(130.0, 150.0), Point::Bezier(Vec2(0.0, -80.0), Vec2(0.0, -80.0)));
+        .append(1.0, Vec2(75.0, 150.0), Point::Bezier3(Vec2(50.0, 150.0), Vec2(75.0, 110.0)))
+        .append(1.0, Vec2(100.0, 150.0), Point::Bezier3(Vec2(75.0, 110.0), Vec2(100.0, 110.0)))
+        .append(1.0, Vec2(125.0, 150.0), Point::Bezier3(Vec2(100.0, 110.0), Vec2(125.0, 110.0)))
+        .append(1.0, Vec2(130.0, 150.0), Point::Bezier3(Vec2(125.0, 70.0), Vec2(130.0, 70.0)));
 
     let image = Rc::new(kantera::cairo::render_image(320, 240, &|ctx| {
         for w in path.points.windows(2) {
@@ -32,7 +32,7 @@ fn main() {
             match right.2 {
                 Point::Constant => ctx.set_source_rgb(0.6, 0.2, 0.2),
                 Point::Linear => ctx.set_source_rgb(0.2, 0.6, 0.2),
-                Point::Bezier(_, _) => ctx.set_source_rgb(0.2, 0.2, 0.6),
+                Point::Bezier3(_, _) => ctx.set_source_rgb(0.2, 0.2, 0.6),
                 _ => panic!()
             }
             ctx.stroke();
@@ -40,11 +40,11 @@ fn main() {
         for w in path.points.windows(2) {
             let (left, right) = (w[0], w[1]);
             match right.2 {
-                Point::Bezier(lh, rh) => {
+                Point::Bezier3(h1, h2) => {
                     ctx.move_to((left.1).0, (left.1).1);
-                    ctx.line_to((left.1).0 + lh.0, (left.1).1 + lh.1);
+                    ctx.line_to(h1.0, h1.1);
                     ctx.move_to((right.1).0, (right.1).1);
-                    ctx.line_to((right.1).0 + rh.0, (right.1).1 + rh.1);
+                    ctx.line_to(h2.0, h2.1);
                     ctx.set_source_rgb(0.4, 0.4, 0.4);
                     ctx.stroke();
                 },
