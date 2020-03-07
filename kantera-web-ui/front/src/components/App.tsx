@@ -18,6 +18,16 @@ padding: 2px 4px;
 }
 `;
 
+const VerticalBox = styled.div`
+display: flex;
+flex-direction: row;
+
+& > div {
+  flex: 1 0 100px;
+  overflow: hidden;
+}
+`;
+
 type Props = {
   ready: boolean,
   connect: () => void,
@@ -86,11 +96,17 @@ export default ({
         <Button onClick={fileUpload}>submit</Button>
       </form>
       <Button onClick={() => requestRender('video.mp4')}>rendering</Button>
-      <MonacoEditor
-        value={code}
-        apply={apply}
-        onChange={(newValue) => setCode(newValue)}/>
-      <img ref={imgRef}></img>
+      <VerticalBox>
+        <div>
+          <MonacoEditor
+            value={code}
+            apply={apply}
+            onChange={(newValue) => setCode(newValue)}/>
+        </div>
+        <div>
+          <img ref={imgRef}></img>
+        </div>
+      </VerticalBox>
       <LogsView/>
     </div>
   );
