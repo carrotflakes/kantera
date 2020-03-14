@@ -857,7 +857,7 @@ dependencies = [
 [[package]]
 name = "gluten"
 version = "0.1.0"
-source = "git+https://github.com/carrotflakes/gluten.git?branch=kantera#7e55780ba38a4de4a5418839c62f2046885ec73c"
+source = "git+https://github.com/carrotflakes/gluten.git?branch=kantera#d555e3593a16ade6ca23322e19bf9984d069c3d1"
 
 [[package]]
 name = "gobject-sys"

@@ -1,9 +1,12 @@
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::fmt::Write;
+use std::iter::Peekable;
+use std::str::Chars;
 use gluten::{
     reader::{Reader, default_atom_reader},
-    core::{eval, Env, macro_expand, Macro},
+    env::Env,
+    macros::defmacro,
     StringPool,
     val_helper::Get
 };
@@ -29,7 +32,23 @@ pub struct Runtime(Env);
 
 impl Runtime {
     pub fn new() -> Runtime {
-        let reader = Reader::new(Box::new(atom_reader));
+        let mut reader = Reader::new(Box::new(atom_reader));
+        {
+            let mut read_table: gluten::reader::ReadTable = std::collections::HashMap::new();
+            read_table.insert('#', Rc::new(read_raw_string));
+            let r = move |reader: &mut Reader, cs: &mut Peekable<Chars>| {
+                if let Some(c) = cs.next() {
+                   if let Some(f) = read_table.get(&c).cloned() {
+                        f(reader, cs)
+                    } else {
+                        Err(GlutenError::ReadFailed(format!("Expect a read_table charactor")))
+                    }
+                } else {
+                    Err(GlutenError::ReadFailed(format!("Expect a read_table charactor, but found EOS")))
+                }
+            };
+            reader.read_table.insert('#', Rc::new(r));
+        }
         let mut env = Env::new(Rc::new(RefCell::new(reader)));
         gluten::special_operators::insert_all(&mut env);
         let mut rt = Runtime(env);
@@ -51,8 +70,8 @@ impl Runtime {
         let forms = self.0.reader().borrow_mut().parse_top_level(str)?;
         let mut last_val = None;
         for form in forms {
-            let form = macro_expand(&mut self.0, form)?;
-            last_val = Some(eval(self.0.clone(), form)?);
+            let form = self.0.macro_expand(form)?;
+            last_val = Some(self.0.eval(form)?);
         }
         last_val.ok_or(GlutenError::Str("no form".to_string()))
     }
@@ -95,6 +114,11 @@ fn write_val<T: Write>(write: &mut T, val: &Val) {
 }
 
 fn init_runtime(rt: &mut Runtime) {
+    rt.insert("read_and_eval", r(Box::new(|vec: Vec<Val>| {
+        let src = vec[0].downcast_ref::<String>().ok_or_else(|| GlutenError::Str("arguments mismatch".to_owned()))?;
+        let mut rt = Runtime::new(); // TODO: ?
+        rt.re(src)
+    }) as NativeFn));
     rt.insert("true", r(true));
     rt.insert("false", r(false));
     rt.insert("first", r(Box::new(|vec: Vec<Val>| {
@@ -556,7 +580,7 @@ fn init_runtime(rt: &mut Runtime) {
         }
         Ok(ret)
     }))));
-    rt.insert("defmacro", r(Macro(Box::new(gluten::core::defmacro))));
+    rt.insert("defmacro", r(Macro(Box::new(defmacro))));
     rt.insert("quasiquote", r(Macro(Box::new(gluten::quasiquote::quasiquote))));
     rt.insert("with_cache", r(Macro(Box::new(|env: &mut Env, vec: Vec<Val>| {
         let reader = env.reader();
@@ -570,6 +594,11 @@ fn init_runtime(rt: &mut Runtime) {
             r(vec![r(reader.intern("hash_map_set")), rt_cache, r(key), vec[0].clone()])
         ]))
     }))));
+
+    rt.insert("freeze", r(Box::new(|vec: Vec<Val>| {
+        let val = &vec[0];
+        Err(GlutenError::Frozen(val.clone(), val.clone()))
+    }) as NativeFn));
 }
 
 fn clone_timed<T: 'static + Lerp>(val: &Val) -> Option<Rc<dyn Timed<T>>> {
@@ -585,4 +614,47 @@ impl FnArgs for Vec<Val> {
     fn get_(&self, i: usize) -> Result<&Val, GlutenError> {
         self.get(i).ok_or_else(|| GlutenError::Str("argument missing".to_owned()))
     }
+}
+
+fn read_raw_string(_reader: &mut Reader, cs: &mut Peekable<Chars>) -> Result<Val, GlutenError> {
+    let mut numbers = 2;
+    while let Some('#') = cs.peek() {
+        cs.next();
+        numbers += 1;
+    }
+    match cs.next() {
+        Some('"') => {
+        }
+        Some(c) =>{
+            return Err(GlutenError::ReadFailed(format!("Expects '\"', but found {:?}", c)));
+        }
+        None => {
+            return Err(GlutenError::ReadFailed(format!("Expects '\"', but found EOS")));
+        }
+    }
+    let mut vec = Vec::new();
+    let mut continual_numbers = 0;
+    loop {
+        match cs.next() {
+            Some(c) if c == '#' => {
+                vec.push(c);
+                continual_numbers += 1;
+                if continual_numbers == numbers {
+                    if let Some('"') = vec.get(vec.len() - numbers - 1) {
+                        vec.resize(vec.len() - numbers - 1, ' ');
+                        break;
+                    }
+                }
+            }
+            Some(c) => {
+                vec.push(c);
+                continual_numbers = 0;
+            }
+            None => {
+                return Err(GlutenError::ReadFailed("raw_string is not closed".to_string()));
+            }
+        }
+    }
+    let s: String = vec.iter().collect();
+    Ok(r(s))
 }
