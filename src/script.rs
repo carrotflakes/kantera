@@ -30,7 +30,8 @@ pub struct Runtime(Env);
 impl Runtime {
     pub fn new() -> Runtime {
         let reader = Reader::new(Box::new(atom_reader));
-        let env = Env::new(Rc::new(RefCell::new(reader)));
+        let mut env = Env::new(Rc::new(RefCell::new(reader)));
+        gluten::special_operators::insert_all(&mut env);
         let mut rt = Runtime(env);
         init_runtime(&mut rt);
         rt
@@ -68,7 +69,6 @@ fn atom_reader(sp: &mut StringPool, s: &str) -> Result<Val, GlutenError> {
 }
 
 fn write_val<T: Write>(write: &mut T, val: &Val) {
-    let val = val.borrow();
     if let Some(s) = val.downcast_ref::<Symbol>() {
         write!(write, "{}", s.0.as_ref()).unwrap();
     } else if let Some(s) = val.downcast_ref::<String>() {
@@ -107,7 +107,7 @@ fn init_runtime(rt: &mut Runtime) {
         fn f<T: num_traits::Num + Copy + 'static>(vec: &Vec<Val>) -> Option<Val> {
             let mut acc = T::zero();
             for rv in vec.iter() {
-                acc = acc + *rv.borrow().downcast_ref::<T>()?;
+                acc = acc + *rv.downcast_ref::<T>()?;
             }
             Some(r(acc))
         }
@@ -115,9 +115,9 @@ fn init_runtime(rt: &mut Runtime) {
     }) as NativeFn));
     rt.insert("-", r(Box::new(|vec: Vec<Val>| {
         fn f<T: num_traits::Num + Copy + 'static>(vec: &Vec<Val>) -> Option<Val> {
-            let mut acc = *vec.get(0)?.borrow().downcast_ref::<T>()?;
+            let mut acc = *vec.get(0)?.downcast_ref::<T>()?;
             for rv in vec.iter().skip(1) {
-                acc = acc - *rv.borrow().downcast_ref::<T>()?;
+                acc = acc - *rv.downcast_ref::<T>()?;
             }
             Some(r(acc))
         }
@@ -127,7 +127,7 @@ fn init_runtime(rt: &mut Runtime) {
         fn f<T: num_traits::Num + Copy + 'static>(vec: &Vec<Val>) -> Option<Val> {
             let mut acc = T::one();
             for rv in vec.iter() {
-                acc = acc * *rv.borrow().downcast_ref::<T>()?;
+                acc = acc * *rv.downcast_ref::<T>()?;
             }
             Some(r(acc))
         }
@@ -135,9 +135,9 @@ fn init_runtime(rt: &mut Runtime) {
     }) as NativeFn));
     rt.insert("/", r(Box::new(|vec: Vec<Val>| {
         fn f<T: num_traits::Num + Copy + 'static>(vec: &Vec<Val>) -> Option<Val> {
-            let mut acc = *vec.get(0)?.borrow().downcast_ref::<T>()?;
+            let mut acc = *vec.get(0)?.downcast_ref::<T>()?;
             for rv in vec.iter().skip(1) {
-                acc = acc / *rv.borrow().downcast_ref::<T>()?;
+                acc = acc / *rv.downcast_ref::<T>()?;
             }
             Some(r(acc))
         }
@@ -154,7 +154,7 @@ fn init_runtime(rt: &mut Runtime) {
     }) as NativeFn));
     rt.insert("stringify", r(Box::new(|vec: Vec<Val>| {
         fn f<T: std::fmt::Debug + 'static>(vec: &Vec<Val>) -> Option<Val> {
-            Some(r(format!("{:?}", vec.get(0)?.borrow().downcast_ref::<T>()?)))
+            Some(r(format!("{:?}", vec.get(0)?.downcast_ref::<T>()?)))
         }
         f::<String>(&vec).or_else(|| f::<Symbol>(&vec))
         .or_else(|| f::<f64>(&vec)).or_else(|| f::<i32>(&vec)).or_else(|| f::<Vec2<f64>>(&vec)).or_else(|| f::<Vec3<f64>>(&vec))
@@ -163,7 +163,7 @@ fn init_runtime(rt: &mut Runtime) {
     }) as NativeFn));
     rt.insert("rgb", r(Box::new(|vec: Vec<Val>| {
         use regex::Regex;
-        if let Some(string) = vec[0].borrow().downcast_ref::<String>() {
+        if let Some(string) = vec[0].downcast_ref::<String>() {
             let re = Regex::new(r"#([\da-fA-F]{2})([\da-fA-F]{2})([\da-fA-F]{2})").unwrap();
             if let Some(cap) = re.captures(string) {
                 fn f(s: &str) -> f64 {
@@ -181,16 +181,16 @@ fn init_runtime(rt: &mut Runtime) {
             }
         } else {
             r(Rgba(
-                *vec[0].borrow().downcast_ref::<f64>().unwrap(),
-                *vec[1].borrow().downcast_ref::<f64>().unwrap(),
-                *vec[2].borrow().downcast_ref::<f64>().unwrap(),
+                *vec[0].downcast_ref::<f64>().unwrap(),
+                *vec[1].downcast_ref::<f64>().unwrap(),
+                *vec[2].downcast_ref::<f64>().unwrap(),
                 1.0
             ))
         }
     }) as MyFn));
     rt.insert("rgba", r(Box::new(|vec: Vec<Val>| {
         use regex::Regex;
-        if let Some(string) = vec[0].borrow().downcast_ref::<String>() {
+        if let Some(string) = vec[0].downcast_ref::<String>() {
             let re = Regex::new(r"#([\da-fA-F]{2})([\da-fA-F]{2})([\da-fA-F]{2})([\da-fA-F]{2})").unwrap();
             if let Some(cap) = re.captures(string) {
                 fn f(s: &str) -> f64 {
@@ -208,10 +208,10 @@ fn init_runtime(rt: &mut Runtime) {
             }
         } else {
             r(Rgba(
-                *vec[0].borrow().downcast_ref::<f64>().unwrap(),
-                *vec[1].borrow().downcast_ref::<f64>().unwrap(),
-                *vec[2].borrow().downcast_ref::<f64>().unwrap(),
-                *vec[3].borrow().downcast_ref::<f64>().unwrap()
+                *vec[0].downcast_ref::<f64>().unwrap(),
+                *vec[1].downcast_ref::<f64>().unwrap(),
+                *vec[2].downcast_ref::<f64>().unwrap(),
+                *vec[3].downcast_ref::<f64>().unwrap()
             ))
         }
     }) as MyFn));
@@ -234,7 +234,7 @@ fn init_runtime(rt: &mut Runtime) {
     rt.insert("frame", r(Box::new(|vec: Vec<Val>| {
         use crate::renders::frame::{Frame, FrameType};
         let render = vec.get_(0)?.clone_as::<Rc<dyn Render<Rgba>>>().ok_or_else(|| GlutenError::Str("type mismatch".to_owned()))?;
-        let frame_type = match vec.get_(1)?.borrow().downcast_ref::<Symbol>().unwrap().0.as_str() {
+        let frame_type = match vec.get_(1)?.downcast_ref::<Symbol>().unwrap().0.as_str() {
             "constant" => FrameType::Constant(vec.get_(2)?.copy_as::<Rgba>().ok_or_else(|| GlutenError::Str("type mismatch".to_owned()))?),
             "extend" => FrameType::Extend,
             "repeat" => FrameType::Repeat,
@@ -246,10 +246,10 @@ fn init_runtime(rt: &mut Runtime) {
     rt.insert("sequence", r(Box::new(|vec: Vec<Val>| {
         let mut sequence = crate::renders::sequence::Sequence::new();
         for p in vec.into_iter() {
-            let p = p.borrow().downcast_ref::<Vec<Val>>().unwrap().clone();
-            let time = *p[0].borrow().downcast_ref::<f64>().unwrap();
-            let restart = *p[1].borrow().downcast_ref::<bool>().unwrap();
-            let render = p[2].borrow_mut().downcast_mut::<Rc<dyn Render<Rgba>>>().unwrap().clone();
+            let p = p.downcast_ref::<Vec<Val>>().unwrap().clone();
+            let time = *p[0].downcast_ref::<f64>().unwrap();
+            let restart = *p[1].downcast_ref::<bool>().unwrap();
+            let render = p[2].downcast_ref::<Rc<dyn Render<Rgba>>>().unwrap().clone();
             sequence = sequence.append(time, restart, render);
         }
         r(Rc::new(sequence) as Rc<dyn Render<Rgba>>)
@@ -266,8 +266,8 @@ fn init_runtime(rt: &mut Runtime) {
         Ok(r(Rc::new(sequencer) as Rc<dyn Render<Rgba>>))
     }) as NativeFn));
     rt.insert("image_render", r(Box::new(|vec: Vec<Val>| {
-        let image = vec[0].borrow().downcast_ref::<Rc<Image<Rgba>>>().unwrap().clone();
-        let default = *vec[1].borrow().downcast_ref::<Rgba>().unwrap();
+        let image = vec[0].downcast_ref::<Rc<Image<Rgba>>>().unwrap().clone();
+        let default = *vec[1].downcast_ref::<Rgba>().unwrap();
         r(Rc::new(crate::renders::image_render::ImageRender {
             image: image,
             sizing: crate::renders::image_render::Sizing::Contain,
@@ -276,9 +276,9 @@ fn init_runtime(rt: &mut Runtime) {
         }) as Rc<dyn Render<Rgba>>)
     }) as MyFn));
     rt.insert("text_to_image", r(Box::new(|vec: Vec<Val>| {
-        let string = vec[0].borrow().downcast_ref::<String>().unwrap().clone();
-        let scale = *vec[1].borrow().downcast_ref::<f64>().unwrap();
-        let font = vec.get(2).and_then(|v| v.borrow().downcast_ref::<Rc<crate::text::Font>>().cloned()).unwrap_or_else(|| {
+        let string = vec[0].downcast_ref::<String>().unwrap().clone();
+        let scale = *vec[1].downcast_ref::<f64>().unwrap();
+        let font = vec.get(2).and_then(|v| v.downcast_ref::<Rc<crate::text::Font>>().cloned()).unwrap_or_else(|| {
             let font_path = "./tmp/IPAexfont00401/ipaexg.ttf";
             let bytes = std::fs::read(font_path).unwrap();
             Rc::new(crate::text::Font::from_bytes(bytes).unwrap())
@@ -288,9 +288,9 @@ fn init_runtime(rt: &mut Runtime) {
     rt.insert("composite", r(Box::new(|vec: Vec<Val>| {
         use crate::renders::composite::{Composite, CompositeMode};
         let layers = vec.into_iter().map(|p| {
-            let p = p.borrow().downcast_ref::<Vec<Val>>().unwrap().clone();
-            let render = p[0].borrow_mut().downcast_mut::<Rc<dyn Render<Rgba>>>().unwrap().clone();
-            let mode = p[1].borrow().downcast_ref::<Symbol>().unwrap().0.to_owned();
+            let p = p.downcast_ref::<Vec<Val>>().unwrap().clone();
+            let render = p[0].downcast_ref::<Rc<dyn Render<Rgba>>>().unwrap().clone();
+            let mode = p[1].downcast_ref::<Symbol>().unwrap().0.to_owned();
             let mode = match mode.as_str() {
                 "none" => CompositeMode::None,
                 "normal" => CompositeMode::Normal(
@@ -305,18 +305,18 @@ fn init_runtime(rt: &mut Runtime) {
         }) as Rc<dyn Render<Rgba>>)
     }) as MyFn));
     fn vec_to_vec2<T: 'static + num_traits::Num + Lerp>(val: &Val) -> Vec2<T> {
-        let val = val.borrow();
+        let val = val;
         let vec = val.downcast_ref::<Vec<Val>>().unwrap();
-        let a = *vec[0].borrow().downcast_ref::<T>().unwrap();
-        let b = *vec[1].borrow().downcast_ref::<T>().unwrap();
+        let a = *vec[0].downcast_ref::<T>().unwrap();
+        let b = *vec[1].downcast_ref::<T>().unwrap();
         Vec2(a, b)
     }
     fn vec_to_vec3<T: 'static + num_traits::Num + Lerp>(val: &Val) -> Vec3<T> {
-        let val = val.borrow();
+        let val = val;
         let vec = val.downcast_ref::<Vec<Val>>().unwrap();
-        let a = *vec[0].borrow().downcast_ref::<T>().unwrap();
-        let b = *vec[1].borrow().downcast_ref::<T>().unwrap();
-        let c = *vec[2].borrow().downcast_ref::<T>().unwrap();
+        let a = *vec[0].downcast_ref::<T>().unwrap();
+        let b = *vec[1].downcast_ref::<T>().unwrap();
+        let c = *vec[2].downcast_ref::<T>().unwrap();
         Vec3(a, b, c)
     }
     rt.insert("path", r(Box::new(|vec: Vec<Val>| {
@@ -324,11 +324,11 @@ fn init_runtime(rt: &mut Runtime) {
         fn build_path<T: 'static + Clone + Lerp>(first_value: T, it: impl Iterator<Item = Val>, vectorize: &impl Fn(&Val) -> T) -> Val {
             let mut path = Path::new(first_value);
             for rp in it {
-                let rp = rp.borrow();
+                let rp = rp;
                 let p = rp.downcast_ref::<Vec<Val>>().unwrap();
-                let d_time = *p[0].borrow().downcast_ref::<f64>().unwrap();
+                let d_time = *p[0].downcast_ref::<f64>().unwrap();
                 let vec = vectorize(&p[1]);
-                let point = match p[2].borrow().downcast_ref::<Symbol>().unwrap().0.as_str() {
+                let point = match p[2].downcast_ref::<Symbol>().unwrap().0.as_str() {
                     "constant" => Point::Constant,
                     "linear" => Point::Linear,
                     "bezier2" => Point::Bezier2(vectorize(&p[3])),
@@ -339,19 +339,18 @@ fn init_runtime(rt: &mut Runtime) {
             }
             r(Rc::new(path))
         }
-        if let Some(first_value) = it.next() {
-            let v = first_value.borrow();
+        if let Some(v) = it.next() {
             if let Some(v) = v.downcast_ref::<f64>() {
-                return build_path(*v, it, &|val| *val.borrow().downcast_ref::<f64>().unwrap());
+                return build_path(*v, it, &|val| *val.downcast_ref::<f64>().unwrap());
             } else if let Some(v) = v.downcast_ref::<Rgba>() {
-                return build_path(*v, it, &|val| *val.borrow().downcast_ref::<Rgba>().unwrap());
+                return build_path(*v, it, &|val| *val.downcast_ref::<Rgba>().unwrap());
             } else if let Some(vec) = v.downcast_ref::<Vec<Val>>() {
                 match vec.len() {
                     2 => {
-                        return build_path(vec_to_vec2::<f64>(&first_value), it, &vec_to_vec2);
+                        return build_path(vec_to_vec2::<f64>(&v), it, &vec_to_vec2);
                     },
                     3 => {
-                        return build_path(vec_to_vec3::<f64>(&first_value), it, &vec_to_vec3);
+                        return build_path(vec_to_vec3::<f64>(&v), it, &vec_to_vec3);
                     },
                     _ => {}
                 }
@@ -365,7 +364,7 @@ fn init_runtime(rt: &mut Runtime) {
         use crate::timed::Cycle;
         fn f<T: 'static + Lerp>(vec: &Vec<Val>) -> Option<Val> {
             let timed = clone_timed(&vec[0])?;
-            let duration = *vec[1].borrow().downcast_ref::<f64>().unwrap();
+            let duration = *vec[1].downcast_ref::<f64>().unwrap();
             Some(r(Rc::new(Cycle::new(timed, duration)) as Rc<dyn Timed<T>>))
         }
         f::<f64>(&vec).or_else(|| f::<Vec2<f64>>(&vec)).or_else(|| f::<Vec3<f64>>(&vec)).or_else(|| f::<Rgba>(&vec)).unwrap()
@@ -373,9 +372,9 @@ fn init_runtime(rt: &mut Runtime) {
     rt.insert("timed/sin", r(Box::new(|vec: Vec<Val>| {
         use crate::timed::Sine;
         fn f<T: 'static + Clone + Timed<f64>>(vec: &Vec<Val>) -> Option<Val> {
-            let initial_phase = *vec[0].borrow().downcast_ref::<f64>().unwrap();
-            let frequency = vec[1].borrow().downcast_ref::<f64>().unwrap().clone();
-            let amplitude = vec[2].borrow().downcast_ref::<T>().unwrap().clone();
+            let initial_phase = *vec[0].downcast_ref::<f64>().unwrap();
+            let frequency = vec[1].downcast_ref::<f64>().unwrap().clone();
+            let amplitude = vec[2].downcast_ref::<T>().unwrap().clone();
             Some(r(Rc::new(Sine::new(initial_phase, frequency, amplitude)) as Rc<dyn Timed<f64>>))
         }
         f::<f64>(&vec).or_else(|| f::<Rc<dyn Timed<f64>>>(&vec)).unwrap()
@@ -399,7 +398,7 @@ fn init_runtime(rt: &mut Runtime) {
     rt.insert("timed/map_sin", r(Box::new(|vec: Vec<Val>| {
         use crate::timed::Map;
         fn f<T: 'static + Clone + Timed<f64>>(vec: &Vec<Val>) -> Option<Val> {
-            let timed = vec[0].borrow().downcast_ref::<T>()?.clone();
+            let timed = vec[0].downcast_ref::<T>()?.clone();
             Some(r(Rc::new(Map::new(timed, |x| x.sin())) as Rc<dyn Timed<f64>>))
         }
         f::<f64>(&vec).or_else(|| f::<Rc<dyn Timed<f64>>>(&vec)).or_else(
@@ -408,15 +407,15 @@ fn init_runtime(rt: &mut Runtime) {
     }) as MyFn));
     rt.insert("transform", r(Box::new(|vec: Vec<Val>| {
         use crate::{renders::transform::{Transform, timed_to_transformer}};
-        let render = vec[0].borrow_mut().downcast_mut::<Rc<dyn Render<Rgba>>>().unwrap().clone();
+        let render = vec[0].downcast_ref::<Rc<dyn Render<Rgba>>>().unwrap().clone();
         fn get_timed_vec2(val: &Val) -> Rc<dyn Timed<Vec2<f64>>> {
             if let Some(timed) = clone_timed::<Vec2<f64>>(val) {
                 timed
             } else {
-                let val = val.borrow();
+                let val = val;
                 let v = val.downcast_ref::<Vec<Val>>().unwrap();
-                let a = *v[0].borrow().downcast_ref::<f64>().unwrap();
-                let b = *v[1].borrow().downcast_ref::<f64>().unwrap();
+                let a = *v[0].downcast_ref::<f64>().unwrap();
+                let b = *v[1].downcast_ref::<f64>().unwrap();
                 Rc::new(Vec2(a, b))
             }
         }
@@ -424,7 +423,7 @@ fn init_runtime(rt: &mut Runtime) {
             if let Some(timed) = clone_timed::<f64>(val) {
                 timed
             } else {
-                Rc::new(val.borrow().downcast_ref::<f64>().unwrap().clone())
+                Rc::new(val.downcast_ref::<f64>().unwrap().clone())
             }
         }
         let translation_timed = get_timed_vec2(&vec[1]);
@@ -436,30 +435,30 @@ fn init_runtime(rt: &mut Runtime) {
         )) as Rc<dyn Render<Rgba>>)
     }) as MyFn));
     rt.insert("audio_buffer_render", r(Box::new(|vec: Vec<Val>| {
-        let audio_buffer = vec[0].borrow().downcast_ref::<Rc<AudioBuffer<u16>>>().unwrap().clone();
+        let audio_buffer = vec[0].downcast_ref::<Rc<AudioBuffer<u16>>>().unwrap().clone();
         r(Rc::new(audio_renders::audio_buffer::AudioBufferRender {
             audio_buffer: audio_buffer,
             interpolation: interpolation::NearestNeighbor
         }) as Rc<dyn AudioRender>)
     }) as MyFn));
     rt.insert("audio_clip", r(Box::new(|vec: Vec<Val>| {
-        let audio_render = vec[0].borrow().downcast_ref::<Rc<dyn AudioRender>>().unwrap().clone();
+        let audio_render = vec[0].downcast_ref::<Rc<dyn AudioRender>>().unwrap().clone();
         r(Rc::new(audio_renders::audio_clip::AudioClip {
             audio_render: audio_render,
-            gain: *vec[1].borrow().downcast_ref::<f64>().unwrap(),
-            pan: *vec[2].borrow().downcast_ref::<f64>().unwrap(),
-            start: *vec[3].borrow().downcast_ref::<f64>().unwrap(),
-            duration: *vec[4].borrow().downcast_ref::<f64>().unwrap(),
-            pitch: *vec[5].borrow().downcast_ref::<f64>().unwrap(),
-            fadein: *vec[6].borrow().downcast_ref::<f64>().unwrap(),
-            fadeout: *vec[7].borrow().downcast_ref::<f64>().unwrap()
+            gain: *vec[1].downcast_ref::<f64>().unwrap(),
+            pan: *vec[2].downcast_ref::<f64>().unwrap(),
+            start: *vec[3].downcast_ref::<f64>().unwrap(),
+            duration: *vec[4].downcast_ref::<f64>().unwrap(),
+            pitch: *vec[5].downcast_ref::<f64>().unwrap(),
+            fadein: *vec[6].downcast_ref::<f64>().unwrap(),
+            fadeout: *vec[7].downcast_ref::<f64>().unwrap()
         }) as Rc<dyn AudioRender>)
     }) as MyFn));
     rt.insert("audio_sequencer", r(Box::new(|vec: Vec<Val>| {
         let renders = vec.into_iter().map(|p| {
-            let p = p.borrow().downcast_ref::<Vec<Val>>().unwrap().clone();
-            let time = p[0].borrow_mut().downcast_mut::<f64>().unwrap().clone();
-            let render = p[1].borrow().downcast_ref::<Rc<dyn AudioRender>>().unwrap().clone();
+            let p = p.downcast_ref::<Vec<Val>>().unwrap().clone();
+            let time = p[0].downcast_ref::<f64>().unwrap().clone();
+            let render = p[1].downcast_ref::<Rc<dyn AudioRender>>().unwrap().clone();
             (time, render)
         }).collect();
         r(Rc::new(audio_renders::sequencer::Sequencer {renders}) as Rc<dyn AudioRender>)
@@ -509,36 +508,34 @@ fn init_runtime(rt: &mut Runtime) {
     }) as MyFn));
     rt.insert("path_to_image", r(Box::new(|vec: Vec<Val>| {
         use crate::path_to_image::{closed_path_rect, closed_path_to_image, expand_rect};
-        let path = vec[0].borrow().downcast_ref::<Rc<Path<Vec2<f64>>>>().unwrap().clone();
+        let path = vec[0].downcast_ref::<Rc<Path<Vec2<f64>>>>().unwrap().clone();
         let line_width = 3.0f64;
         let rect = expand_rect(closed_path_rect(&path), line_width.ceil() as i32);
         r(Rc::new(closed_path_to_image(rect, Rgba(1.0, 0.0, 0.0, 1.0), Rgba(1.0, 1.0, 1.0, 1.0), line_width, &path)))
     }) as MyFn));
     rt.insert("import_image", r(Box::new(|vec: Vec<Val>| {
-        let filepath = vec[0].borrow().downcast_ref::<String>().unwrap().clone();
+        let filepath = vec[0].downcast_ref::<String>().unwrap().clone();
         r(Rc::new(crate::image_import::load_image(&filepath)))
     }) as MyFn));
     #[cfg(feature = "ffmpeg")]
     rt.insert("import_audio", r(Box::new(|vec: Vec<Val>| {
-        let filepath = vec[0].borrow().downcast_ref::<String>().unwrap().clone();
+        let filepath = vec[0].downcast_ref::<String>().unwrap().clone();
         r(Rc::new(crate::ffmpeg::import_audio(&filepath)))
     }) as MyFn));
     rt.insert("import_ttf", r(Box::new(|vec: Vec<Val>| {
-        let filepath = vec[0].borrow().downcast_ref::<String>().unwrap().clone();
+        let filepath = vec[0].downcast_ref::<String>().unwrap().clone();
         let bytes = std::fs::read(filepath).unwrap();
         let font = crate::text::Font::from_bytes(bytes).unwrap();
         r(Rc::new(font))
     }) as MyFn));
     rt.insert("hash_map_get", r(Box::new(|vec: Vec<Val>| {
-        let hash_map = vec[0].borrow();
-        let hash_map = hash_map.downcast_ref::<std::collections::HashMap<String, Val>>().unwrap();
-        let key = vec[1].borrow().downcast_ref::<String>().unwrap().clone();
+        let hash_map = vec[0].downcast_ref::<RefCell<std::collections::HashMap<String, Val>>>().unwrap().borrow_mut();
+        let key = vec[1].downcast_ref::<String>().unwrap().clone();
         hash_map.get(&key).map(|x| x.clone()).unwrap_or_else(|| r(false))
     }) as MyFn));
     rt.insert("hash_map_set", r(Box::new(|vec: Vec<Val>| {
-        let mut hash_map = vec[0].borrow_mut();
-        let hash_map = hash_map.downcast_mut::<std::collections::HashMap<String, Val>>().unwrap();
-        let key = vec[1].borrow().downcast_ref::<String>().unwrap().clone();
+        let mut hash_map = vec[0].downcast_ref::<RefCell<std::collections::HashMap<String, Val>>>().unwrap().borrow_mut();
+        let key = vec[1].downcast_ref::<String>().unwrap().clone();
         let val = vec[2].clone();
         hash_map.insert(key, val.clone());
         val
@@ -576,9 +573,9 @@ fn init_runtime(rt: &mut Runtime) {
 }
 
 fn clone_timed<T: 'static + Lerp>(val: &Val) -> Option<Rc<dyn Timed<T>>> {
-    val.borrow().downcast_ref::<Rc<dyn Timed<T>>>().cloned()
-        .or_else(|| val.borrow().downcast_ref::<Rc<Path<T>>>().map(|x| x.clone() as Rc<dyn Timed<T>>))
-        .or_else(|| val.borrow().downcast_ref::<T>().map(|x| Rc::new(*x) as Rc<dyn Timed<T>>))
+    val.downcast_ref::<Rc<dyn Timed<T>>>().cloned()
+        .or_else(|| val.downcast_ref::<Rc<Path<T>>>().map(|x| x.clone() as Rc<dyn Timed<T>>))
+        .or_else(|| val.downcast_ref::<T>().map(|x| Rc::new(*x) as Rc<dyn Timed<T>>))
 }
 
 trait FnArgs {

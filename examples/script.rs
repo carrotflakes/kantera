@@ -14,7 +14,7 @@ fn main() {
             (vec 2.0 true (plain (rgba 0.0 0.0 1.0 1.0)))
         )"
     ).unwrap();
-    let render = res.borrow().downcast_ref::<Rc<dyn Render<Rgba>>>().unwrap().clone();
+    let render = res.downcast_ref::<Rc<dyn Render<Rgba>>>().unwrap().clone();
     render_to_mp4(
         5.0, 320, 240, 30, 1,
         "script.mp4",

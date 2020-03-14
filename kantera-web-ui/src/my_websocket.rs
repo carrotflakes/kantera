@@ -12,6 +12,7 @@ use kantera::{
     script::{Runtime, r, Val}
 };
 use std::rc::Rc;
+use std::cell::RefCell;
 use std::collections::HashMap;
 
 
@@ -124,7 +125,7 @@ impl MyWebSocket {
             loop_: false,
             size: (600, 400),
             render_at: Instant::now(),
-            rt_cache: r(HashMap::<String, Val>::new())
+            rt_cache: r(RefCell::new(HashMap::<String, Val>::new()))
         }
     }
 
@@ -217,26 +218,26 @@ impl MyWebSocket {
         rt.insert("__rt_cache", self.rt_cache.clone());
         match rt.re(&src) {
             Ok(_) => {
-                self.render = rt.get("video").and_then(|val| val.borrow().downcast_ref::<Rc<dyn Render<Rgba>>>().cloned());
-                self.audio_render = rt.get("audio").and_then(|val| val.borrow().downcast_ref::<Rc<dyn AudioRender>>().cloned());
+                self.render = rt.get("video").and_then(|val| val.downcast_ref::<Rc<dyn Render<Rgba>>>().cloned());
+                self.audio_render = rt.get("audio").and_then(|val| val.downcast_ref::<Rc<dyn AudioRender>>().cloned());
                 if let Some(val) = rt.get("framerate") {
-                    let framerate = *val.borrow().downcast_ref::<i32>().unwrap();
+                    let framerate = *val.downcast_ref::<i32>().unwrap();
                     self.framerate = framerate.min(120).max(1) as usize;
                 }
                 if let Some(val) = rt.get("samplerate") {
-                    let samplerate = *val.borrow().downcast_ref::<i32>().unwrap();
+                    let samplerate = *val.downcast_ref::<i32>().unwrap();
                     self.samplerate = samplerate.min(48000).max(4000) as usize;
                 }
                 if let Some(val) = rt.get("frame_size") {
-                    let val = val.borrow();
+                    let val = val;
                     let vec = val.downcast_ref::<Vec<Val>>().unwrap();
-                    let width = *vec[0].borrow().downcast_ref::<i32>().unwrap();
-                    let height = *vec[1].borrow().downcast_ref::<i32>().unwrap();
+                    let width = *vec[0].downcast_ref::<i32>().unwrap();
+                    let height = *vec[1].downcast_ref::<i32>().unwrap();
                     self.size = (width.max(0) as usize, height.max(0) as usize);
                 }
-                self.start_frame = rt.get("start_frame").and_then(|val| val.borrow().downcast_ref::<i32>().copied()).unwrap_or(0);
-                self.end_frame = rt.get("end_frame").and_then(|val| val.borrow().downcast_ref::<i32>().copied()).map(|val| val.max(1));
-                self.loop_ = rt.get("loop").and_then(|val| val.borrow().downcast_ref::<bool>().copied()).unwrap_or(false);
+                self.start_frame = rt.get("start_frame").and_then(|val| val.downcast_ref::<i32>().copied()).unwrap_or(0);
+                self.end_frame = rt.get("end_frame").and_then(|val| val.downcast_ref::<i32>().copied()).map(|val| val.max(1));
+                self.loop_ = rt.get("loop").and_then(|val| val.downcast_ref::<bool>().copied()).unwrap_or(false);
                 self.current_frame = Some(self.start_frame);
                 let channel_num = self.audio_render.as_ref().map(|r| r.channel_num()).unwrap_or(0);
                 ctx.text(format!(r#"{{"type":"streamInfo","framerate":{:?},"samplerate":{:?},"channelNum":{:?}}}"#, self.framerate, self.samplerate, channel_num));
