@@ -25,9 +25,6 @@ TODO:
 - [ ] Realtime hosting via WebRTC
 - [ ] Documentation...
 
-## Concepts
-- Orthogonal APIs
-
 ## Requirement
 
 You need install them:
@@ -61,6 +58,9 @@ e.g. https://twitter.com/carrotflakes/status/1213135191125872642
 ### Web UI (heroku)
 
 [![Deploy](https://www.herokucdn.com/deploy/button.png)](https://heroku.com/deploy)
+
+## Docker hub
+Docker images for Web UI are available [here](https://hub.docker.com/repository/docker/carrotflakes/kantera) (now latest only).
 
 ## Author
 
