@@ -7,12 +7,14 @@ import config from 'src/config';
 type Props = {
   value: string,
   onChange: (code: string) => void,
-  apply: (code: string) => void
+  apply: (code: string) => void,
+  mount: (code: string, position: number) => void
 };
 export default ({
   value,
   onChange,
-  apply
+  apply,
+  mount
 }: Props) => {
   const [onResize, setOnResize] = React.useState<(() => void) | null>(null);
   const editorDidMount = (editor: monacoEditor.editor.IStandaloneCodeEditor, monaco: typeof monacoEditor) => {
@@ -31,6 +33,27 @@ export default ({
       contextMenuOrder: 2.0,
       run(editor: monacoEditor.editor.IStandaloneCodeEditor) {
         apply(editor.getValue());
+      }
+    });
+    editor.addAction({
+      id: 'mount',
+      label: 'Mount',
+      keybindings: [
+        monaco.KeyMod.CtrlCmd | monaco.KeyCode.KEY_M
+      ],
+      precondition: undefined,
+      keybindingContext: undefined,
+      contextMenuGroupId: 'development', // ?
+      contextMenuOrder: 2.0,
+      run(editor: monacoEditor.editor.IStandaloneCodeEditor) {
+        const position = editor.getPosition();
+        const model = editor.getModel();
+        if (!position || !model) {
+          window.alert('cursor not exists');
+          return;
+        }
+        const offset = model.getOffsetAt(position);
+        mount(editor.getValue(), offset);
       }
     });
     const resized = () => editor.layout();

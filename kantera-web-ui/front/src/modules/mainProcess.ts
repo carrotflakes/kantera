@@ -8,13 +8,15 @@ export interface State {
   imgEl: HTMLElement | null,
   audioManager: AudioManager | null,
   logs: string[],
+  mounted: any, // TODO: remove any
 }
 
 const initialState: State = {
   ws: null,
   imgEl: null,
   audioManager: null,
-  logs: []
+  logs: [],
+  mounted: null,
 };
 
 
@@ -23,7 +25,8 @@ type Action
   | ReturnType<typeof disconnected>
   | ReturnType<typeof send>
   | ReturnType<typeof init>
-  | ReturnType<typeof setAudioManager>;
+  | ReturnType<typeof setAudioManager>
+  | ReturnType<typeof mounted>;
 
 const reducers: { [key: string]: (state: State, action: any) => State } = {};
 
@@ -118,6 +121,20 @@ reducers[PUSH_LOG] = (state: State, action: ReturnType<typeof pushLog>): State =
   };
 };
 
+export const MOUNTED = 'MAIN_PROCESS/MOUNTED' as const;
+export const mounted = (mounted: any) => {
+  return {
+    type: MOUNTED,
+    mounted
+  };
+}
+reducers[MOUNTED] = (state: State, action: ReturnType<typeof mounted>): State => {
+  return {
+    ...state,
+    mounted: action.mounted
+  };
+};
+
 export const requestRender = (fileName: string) => {
   return send(`render: ${fileName}`);
 };
@@ -201,6 +218,8 @@ function* handleConnect(action: ReturnType<typeof connect>) {
           yield put(pushLog(`render succeeded: ${path}`));
         } else if (data.type === 'renderFailed') {
           yield put(pushLog(`render failed: ${data.error}`));
+        } else if (data.type === 'mountSucceeded') {
+          yield put(mounted(data.sequencer));
         } else {
           console.warn('unhandled message from ws', data);
         }

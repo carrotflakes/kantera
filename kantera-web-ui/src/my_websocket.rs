@@ -3,13 +3,14 @@ use std::time::{Duration, Instant};
 use actix::prelude::*;
 use actix_web_actors::ws;
 
+use serde::Deserialize;
 use kantera::{
     pixel::Rgba,
     buffer::Buffer,
     render::{Render, RenderOpt},
     audio_render::AudioRender,
     export::render_to_buffer_parallel,
-    script::{Runtime, r, Val}
+    script::{Runtime, r, Val, ValInterface}
 };
 use std::rc::Rc;
 use std::cell::RefCell;
@@ -65,6 +66,24 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWebSocket {
                 if text.starts_with("script: ") {
                     let src = &text["script: ".len()..];
                     self.run_script(src, ctx);
+                }
+                if text.starts_with("mount: ") {
+                    #[derive(Deserialize)]
+                    struct MountReq {
+                        position: i32,
+                        src: String
+                    }
+                    let json = &text["mount: ".len()..];
+                    if let Ok(req) = serde_json::from_str::<MountReq>(json) {
+                        if let Some(sequencer) = crate::mount::mount(&req.src, req.position, self.make_runtime()) {
+                            let st = serde_json::to_string(&sequencer).unwrap();
+                            ctx.text(format!(r#"{{"type":"mountSucceeded","sequencer":{}}}"#, st));
+                        } else {
+                            ctx.text(format!(r#"{{"type":"error","error":"mount failed"}}"#));
+                        }
+                    } else {
+                        ctx.text(format!(r#"{{"type":"error","error":"parse failed"}}"#));
+                    }
                 }
                 if text.starts_with("render: ") {
                     let file_name = &text["script: ".len()..];
@@ -206,7 +225,7 @@ impl MyWebSocket {
         ctx.run_later(duration, Self::render_loop);
     }
 
-    fn run_script(&mut self, src: &str, ctx: &mut <Self as Actor>::Context) {
+    fn make_runtime(&mut self) -> Runtime {
         let mut rt = Runtime::new();
         rt.insert("framerate", r(FRAMERATE_DEFAULT as i32));
         rt.insert("samplerate", r(SAMPLERATE_DEFAULT as i32));
@@ -216,28 +235,33 @@ impl MyWebSocket {
         rt.insert("loop", r(false));
         rt.insert("frame_height", r(400 as i32));
         rt.insert("__rt_cache", self.rt_cache.clone());
+        rt
+    }
+
+    fn run_script(&mut self, src: &str, ctx: &mut <Self as Actor>::Context) {
+        let mut rt = self.make_runtime();
         match rt.re(&src) {
             Ok(_) => {
-                self.render = rt.get("video").and_then(|val| val.downcast_ref::<Rc<dyn Render<Rgba>>>().cloned());
-                self.audio_render = rt.get("audio").and_then(|val| val.downcast_ref::<Rc<dyn AudioRender>>().cloned());
+                self.render = rt.get("video").and_then(|val| val.ref_as::<Rc<dyn Render<Rgba>>>().cloned());
+                self.audio_render = rt.get("audio").and_then(|val| val.ref_as::<Rc<dyn AudioRender>>().cloned());
                 if let Some(val) = rt.get("framerate") {
-                    let framerate = *val.downcast_ref::<i32>().unwrap();
+                    let framerate = *val.ref_as::<i32>().unwrap();
                     self.framerate = framerate.min(120).max(1) as usize;
                 }
                 if let Some(val) = rt.get("samplerate") {
-                    let samplerate = *val.downcast_ref::<i32>().unwrap();
+                    let samplerate = *val.ref_as::<i32>().unwrap();
                     self.samplerate = samplerate.min(48000).max(4000) as usize;
                 }
                 if let Some(val) = rt.get("frame_size") {
                     let val = val;
-                    let vec = val.downcast_ref::<Vec<Val>>().unwrap();
-                    let width = *vec[0].downcast_ref::<i32>().unwrap();
-                    let height = *vec[1].downcast_ref::<i32>().unwrap();
+                    let vec = val.ref_as::<Vec<Val>>().unwrap();
+                    let width = *vec[0].ref_as::<i32>().unwrap();
+                    let height = *vec[1].ref_as::<i32>().unwrap();
                     self.size = (width.max(0) as usize, height.max(0) as usize);
                 }
-                self.start_frame = rt.get("start_frame").and_then(|val| val.downcast_ref::<i32>().copied()).unwrap_or(0);
-                self.end_frame = rt.get("end_frame").and_then(|val| val.downcast_ref::<i32>().copied()).map(|val| val.max(1));
-                self.loop_ = rt.get("loop").and_then(|val| val.downcast_ref::<bool>().copied()).unwrap_or(false);
+                self.start_frame = rt.get("start_frame").and_then(|val| val.ref_as::<i32>().copied()).unwrap_or(0);
+                self.end_frame = rt.get("end_frame").and_then(|val| val.ref_as::<i32>().copied()).map(|val| val.max(1));
+                self.loop_ = rt.get("loop").and_then(|val| val.ref_as::<bool>().copied()).unwrap_or(false);
                 self.current_frame = Some(self.start_frame);
                 let channel_num = self.audio_render.as_ref().map(|r| r.channel_num()).unwrap_or(0);
                 ctx.text(format!(r#"{{"type":"streamInfo","framerate":{:?},"samplerate":{:?},"channelNum":{:?}}}"#, self.framerate, self.samplerate, channel_num));

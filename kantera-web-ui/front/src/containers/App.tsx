@@ -8,7 +8,8 @@ type ReduxState = {
 
 export default connect(
   (state: ReduxState) => ({
-    ready: !!state.mainProcess.ws
+    ready: !!state.mainProcess.ws,
+    mounted: state.mainProcess.mounted
   }), {
     connect: mainProcess.connect,
     disconnect: mainProcess.disconnect,

@@ -30,6 +30,9 @@ const GlobalStyle = createGlobalStyle`
 html {
   background: #222;
 }
+html, body, #app {
+  height: 100%;
+}
 `;
 
 ReactDOM.render(

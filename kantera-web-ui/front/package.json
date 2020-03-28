@@ -31,9 +31,11 @@
   },
   "dependencies": {
     "axios": "^0.19.2",
+    "konva": "^4.1.6",
     "monaco-editor": "^0.20.0",
     "react": "^16.12.0",
     "react-dom": "^16.12.0",
+    "react-konva": "^16.12.0-0",
     "react-monaco-editor": "^0.34.0",
     "react-redux": "^7.2.0",
     "redux": "^4.0.5",
