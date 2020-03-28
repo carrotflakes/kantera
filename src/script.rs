@@ -2,17 +2,17 @@ use std::rc::Rc;
 use std::cell::RefCell;
 use std::fmt::Write;
 use std::iter::Peekable;
-use std::str::Chars;
+use std::str::CharIndices;
 use gluten::{
     reader::{Reader, default_atom_reader},
     env::Env,
     macros::defmacro,
-    StringPool,
-    val_helper::Get
+    Package
 };
 pub use gluten::{
     data::*,
-    error::GlutenError
+    error::GlutenError,
+    syntax_tree::{make_syntax_tree_reader, SRange}
 };
 use crate::{
     image::Image,
@@ -32,23 +32,7 @@ pub struct Runtime(Env);
 
 impl Runtime {
     pub fn new() -> Runtime {
-        let mut reader = Reader::new(Box::new(atom_reader));
-        {
-            let mut read_table: gluten::reader::ReadTable = std::collections::HashMap::new();
-            read_table.insert('#', Rc::new(read_raw_string));
-            let r = move |reader: &mut Reader, cs: &mut Peekable<Chars>| {
-                if let Some(c) = cs.next() {
-                   if let Some(f) = read_table.get(&c).cloned() {
-                        f(reader, cs)
-                    } else {
-                        Err(GlutenError::ReadFailed(format!("Expect a read_table charactor")))
-                    }
-                } else {
-                    Err(GlutenError::ReadFailed(format!("Expect a read_table charactor, but found EOS")))
-                }
-            };
-            reader.read_table.insert('#', Rc::new(r));
-        }
+        let reader = make_syntax_tree_reader(make_reader());
         let mut env = Env::new(Rc::new(RefCell::new(reader)));
         gluten::special_operators::insert_all(&mut env);
         let mut rt = Runtime(env);
@@ -57,13 +41,17 @@ impl Runtime {
     }
 
     pub fn insert(&mut self, str: &str, val: Val) {
-        let sym = self.0.reader().borrow_mut().intern(str);
+        let sym = self.0.reader().borrow_mut().package.intern(&str.to_string());
         self.0.insert(sym, val);
     }
 
     pub fn get(&self, str: &str) -> Option<Val> {
-        let sym = self.0.reader().borrow().try_intern(str)?;
+        let sym = self.0.reader().borrow().package.try_intern(&str.to_string())?;
         self.0.get(&sym)
+    }
+
+    pub fn r(&mut self, str: &str) -> Result<Vec<Val>, GlutenError> {
+        self.0.reader().borrow_mut().parse_top_level(str)
     }
 
     pub fn re(&mut self, str: &str) -> Result<Val, GlutenError>{
@@ -75,9 +63,44 @@ impl Runtime {
         }
         last_val.ok_or(GlutenError::Str("no form".to_string()))
     }
+
+    pub fn e(&mut self, forms: Vec<Val>) -> Result<Val, GlutenError>{
+        let mut last_val = None;
+        for form in forms {
+            self.print(&form);
+            let form = self.0.macro_expand(form)?;
+            last_val = Some(self.0.eval(form)?);
+        }
+        last_val.ok_or(GlutenError::Str("no form".to_string()))
+    }
+
+    pub fn print(&mut self, val: &Val) {
+        let mut str = String::new();
+        write_val(&mut str, val);
+        println!("{}", str);
+    }
 }
 
-fn atom_reader(sp: &mut StringPool, s: &str) -> Result<Val, GlutenError> {
+pub fn make_reader() -> Reader {
+    let mut reader = Reader::new(Box::new(atom_reader), Package::new());
+    let mut read_table: gluten::reader::ReadTable = std::collections::HashMap::new();
+    read_table.insert('#', Rc::new(read_raw_string));
+    let r = move |reader: &mut Reader, cs: &mut Peekable<CharIndices>| {
+        if let Some((_, c)) = cs.next() {
+            if let Some(f) = read_table.get(&c).cloned() {
+                f(reader, cs)
+            } else {
+                Err(GlutenError::ReadFailed(format!("Expect a read_table charactor")))
+            }
+        } else {
+            Err(GlutenError::ReadFailed(format!("Expect a read_table charactor, but found EOS")))
+        }
+    };
+    reader.read_table.insert('#', Rc::new(r));
+    reader
+}
+
+fn atom_reader(sp: &mut Package, s: &String) -> Result<Val, GlutenError> {
     if let Ok(v) = s.parse::<i32>() {
         return Ok(r(v));
     }
@@ -88,15 +111,15 @@ fn atom_reader(sp: &mut StringPool, s: &str) -> Result<Val, GlutenError> {
 }
 
 fn write_val<T: Write>(write: &mut T, val: &Val) {
-    if let Some(s) = val.downcast_ref::<Symbol>() {
-        write!(write, "{}", s.0.as_ref()).unwrap();
-    } else if let Some(s) = val.downcast_ref::<String>() {
+    if let Some(s) = val.ref_as::<Symbol>() {
+        write!(write, "{}", s.0.as_str()).unwrap();
+    } else if let Some(s) = val.ref_as::<String>() {
         write!(write, "{:?}", s).unwrap();
-    } else if let Some(s) = val.downcast_ref::<i32>() {
+    } else if let Some(s) = val.ref_as::<i32>() {
         write!(write, "{:?}", s).unwrap();
-    } else if let Some(s) = val.downcast_ref::<f64>() {
+    } else if let Some(s) = val.ref_as::<f64>() {
         write!(write, "{:?}", s).unwrap();
-    } else if let Some(vec) = val.downcast_ref::<Vec<Val>>() {
+    } else if let Some(vec) = val.ref_as::<Vec<Val>>() {
         write!(write, "(").unwrap();
         let mut first = true;
         for val in vec {
@@ -115,7 +138,7 @@ fn write_val<T: Write>(write: &mut T, val: &Val) {
 
 fn init_runtime(rt: &mut Runtime) {
     rt.insert("read_and_eval", r(Box::new(|vec: Vec<Val>| {
-        let src = vec[0].downcast_ref::<String>().ok_or_else(|| GlutenError::Str("arguments mismatch".to_owned()))?;
+        let src = vec[0].ref_as::<String>().ok_or_else(|| GlutenError::Str("arguments mismatch".to_owned()))?;
         let mut rt = Runtime::new(); // TODO: ?
         rt.re(src)
     }) as NativeFn));
@@ -131,7 +154,7 @@ fn init_runtime(rt: &mut Runtime) {
         fn f<T: num_traits::Num + Copy + 'static>(vec: &Vec<Val>) -> Option<Val> {
             let mut acc = T::zero();
             for rv in vec.iter() {
-                acc = acc + *rv.downcast_ref::<T>()?;
+                acc = acc + *rv.ref_as::<T>()?;
             }
             Some(r(acc))
         }
@@ -139,9 +162,9 @@ fn init_runtime(rt: &mut Runtime) {
     }) as NativeFn));
     rt.insert("-", r(Box::new(|vec: Vec<Val>| {
         fn f<T: num_traits::Num + Copy + 'static>(vec: &Vec<Val>) -> Option<Val> {
-            let mut acc = *vec.get(0)?.downcast_ref::<T>()?;
+            let mut acc = *vec.get(0)?.ref_as::<T>()?;
             for rv in vec.iter().skip(1) {
-                acc = acc - *rv.downcast_ref::<T>()?;
+                acc = acc - *rv.ref_as::<T>()?;
             }
             Some(r(acc))
         }
@@ -151,7 +174,7 @@ fn init_runtime(rt: &mut Runtime) {
         fn f<T: num_traits::Num + Copy + 'static>(vec: &Vec<Val>) -> Option<Val> {
             let mut acc = T::one();
             for rv in vec.iter() {
-                acc = acc * *rv.downcast_ref::<T>()?;
+                acc = acc * *rv.ref_as::<T>()?;
             }
             Some(r(acc))
         }
@@ -159,9 +182,9 @@ fn init_runtime(rt: &mut Runtime) {
     }) as NativeFn));
     rt.insert("/", r(Box::new(|vec: Vec<Val>| {
         fn f<T: num_traits::Num + Copy + 'static>(vec: &Vec<Val>) -> Option<Val> {
-            let mut acc = *vec.get(0)?.downcast_ref::<T>()?;
+            let mut acc = *vec.get(0)?.ref_as::<T>()?;
             for rv in vec.iter().skip(1) {
-                acc = acc / *rv.downcast_ref::<T>()?;
+                acc = acc / *rv.ref_as::<T>()?;
             }
             Some(r(acc))
         }
@@ -169,16 +192,16 @@ fn init_runtime(rt: &mut Runtime) {
     }) as NativeFn));
     rt.insert("PI", r(std::f64::consts::PI));
     rt.insert("sin", r(Box::new(|vec: Vec<Val>| {
-        let v = vec.get_(0)?.copy_as::<f64>().ok_or_else(|| GlutenError::Str("arguments mismatch".to_owned()))?;
+        let v = vec.get_(0)?.ref_as::<f64>().copied().ok_or_else(|| GlutenError::Str("arguments mismatch".to_owned()))?;
         Ok(r(v.sin()))
     }) as NativeFn));
     rt.insert("cos", r(Box::new(|vec: Vec<Val>| {
-        let v = vec.get_(0)?.copy_as::<f64>().ok_or_else(|| GlutenError::Str("arguments mismatch".to_owned()))?;
+        let v = vec.get_(0)?.ref_as::<f64>().copied().ok_or_else(|| GlutenError::Str("arguments mismatch".to_owned()))?;
         Ok(r(v.cos()))
     }) as NativeFn));
     rt.insert("stringify", r(Box::new(|vec: Vec<Val>| {
         fn f<T: std::fmt::Debug + 'static>(vec: &Vec<Val>) -> Option<Val> {
-            Some(r(format!("{:?}", vec.get(0)?.downcast_ref::<T>()?)))
+            Some(r(format!("{:?}", vec.get(0)?.ref_as::<T>()?)))
         }
         f::<String>(&vec).or_else(|| f::<Symbol>(&vec))
         .or_else(|| f::<f64>(&vec)).or_else(|| f::<i32>(&vec)).or_else(|| f::<Vec2<f64>>(&vec)).or_else(|| f::<Vec3<f64>>(&vec))
@@ -187,7 +210,7 @@ fn init_runtime(rt: &mut Runtime) {
     }) as NativeFn));
     rt.insert("rgb", r(Box::new(|vec: Vec<Val>| {
         use regex::Regex;
-        if let Some(string) = vec[0].downcast_ref::<String>() {
+        if let Some(string) = vec[0].ref_as::<String>() {
             let re = Regex::new(r"#([\da-fA-F]{2})([\da-fA-F]{2})([\da-fA-F]{2})").unwrap();
             if let Some(cap) = re.captures(string) {
                 fn f(s: &str) -> f64 {
@@ -205,16 +228,16 @@ fn init_runtime(rt: &mut Runtime) {
             }
         } else {
             r(Rgba(
-                *vec[0].downcast_ref::<f64>().unwrap(),
-                *vec[1].downcast_ref::<f64>().unwrap(),
-                *vec[2].downcast_ref::<f64>().unwrap(),
+                *vec[0].ref_as::<f64>().unwrap(),
+                *vec[1].ref_as::<f64>().unwrap(),
+                *vec[2].ref_as::<f64>().unwrap(),
                 1.0
             ))
         }
     }) as MyFn));
     rt.insert("rgba", r(Box::new(|vec: Vec<Val>| {
         use regex::Regex;
-        if let Some(string) = vec[0].downcast_ref::<String>() {
+        if let Some(string) = vec[0].ref_as::<String>() {
             let re = Regex::new(r"#([\da-fA-F]{2})([\da-fA-F]{2})([\da-fA-F]{2})([\da-fA-F]{2})").unwrap();
             if let Some(cap) = re.captures(string) {
                 fn f(s: &str) -> f64 {
@@ -232,16 +255,16 @@ fn init_runtime(rt: &mut Runtime) {
             }
         } else {
             r(Rgba(
-                *vec[0].downcast_ref::<f64>().unwrap(),
-                *vec[1].downcast_ref::<f64>().unwrap(),
-                *vec[2].downcast_ref::<f64>().unwrap(),
-                *vec[3].downcast_ref::<f64>().unwrap()
+                *vec[0].ref_as::<f64>().unwrap(),
+                *vec[1].ref_as::<f64>().unwrap(),
+                *vec[2].ref_as::<f64>().unwrap(),
+                *vec[3].ref_as::<f64>().unwrap()
             ))
         }
     }) as MyFn));
     rt.insert("plain", r(Box::new(|vec: Vec<Val>| {
         let first = vec.get_(0)?;
-        if let Some(p) = first.copy_as::<Rgba>() {
+        if let Some(p) = first.ref_as::<Rgba>().copied() {
             Ok(r(Rc::new(crate::renders::plain::Plain::new(p)) as Rc<dyn Render<Rgba>>))
         } else if let Some(p) = clone_timed(first) {
             Ok(r(Rc::new(crate::renders::plain::Plain::new(p.clone())) as Rc<dyn Render<Rgba>>))
@@ -250,16 +273,16 @@ fn init_runtime(rt: &mut Runtime) {
         }
     }) as NativeFn));
     rt.insert("clip", r(Box::new(|vec: Vec<Val>| {
-        let render = vec.get_(0)?.clone_as::<Rc<dyn Render<Rgba>>>().ok_or_else(|| GlutenError::Str("type mismatch".to_owned()))?;
-        let start = vec.get_(1)?.copy_as::<f64>().ok_or_else(|| GlutenError::Str("arguments mismatch".to_owned()))?;
-        let end = vec.get_(2)?.copy_as::<f64>().ok_or_else(|| GlutenError::Str("arguments mismatch".to_owned()))?;
+        let render = vec.get_(0)?.ref_as::<Rc<dyn Render<Rgba>>>().cloned().ok_or_else(|| GlutenError::Str("type mismatch".to_owned()))?;
+        let start = vec.get_(1)?.ref_as::<f64>().copied().ok_or_else(|| GlutenError::Str("arguments mismatch".to_owned()))?;
+        let end = vec.get_(2)?.ref_as::<f64>().copied().ok_or_else(|| GlutenError::Str("arguments mismatch".to_owned()))?;
         Ok(r(Rc::new(crate::renders::clip::Clip::new(render, start, end)) as Rc<dyn Render<Rgba>>))
     }) as NativeFn));
     rt.insert("frame", r(Box::new(|vec: Vec<Val>| {
         use crate::renders::frame::{Frame, FrameType};
-        let render = vec.get_(0)?.clone_as::<Rc<dyn Render<Rgba>>>().ok_or_else(|| GlutenError::Str("type mismatch".to_owned()))?;
-        let frame_type = match vec.get_(1)?.downcast_ref::<Symbol>().unwrap().0.as_str() {
-            "constant" => FrameType::Constant(vec.get_(2)?.copy_as::<Rgba>().ok_or_else(|| GlutenError::Str("type mismatch".to_owned()))?),
+        let render = vec.get_(0)?.ref_as::<Rc<dyn Render<Rgba>>>().cloned().ok_or_else(|| GlutenError::Str("type mismatch".to_owned()))?;
+        let frame_type = match vec.get_(1)?.ref_as::<Symbol>().unwrap().0.as_str() {
+            "constant" => FrameType::Constant(vec.get_(2)?.ref_as::<Rgba>().copied().ok_or_else(|| GlutenError::Str("type mismatch".to_owned()))?),
             "extend" => FrameType::Extend,
             "repeat" => FrameType::Repeat,
             "reflect" => FrameType::Reflect,
@@ -270,28 +293,28 @@ fn init_runtime(rt: &mut Runtime) {
     rt.insert("sequence", r(Box::new(|vec: Vec<Val>| {
         let mut sequence = crate::renders::sequence::Sequence::new();
         for p in vec.into_iter() {
-            let p = p.downcast_ref::<Vec<Val>>().unwrap().clone();
-            let time = *p[0].downcast_ref::<f64>().unwrap();
-            let restart = *p[1].downcast_ref::<bool>().unwrap();
-            let render = p[2].downcast_ref::<Rc<dyn Render<Rgba>>>().unwrap().clone();
+            let p = p.ref_as::<Vec<Val>>().unwrap().clone();
+            let time = *p[0].ref_as::<f64>().unwrap();
+            let restart = *p[1].ref_as::<bool>().unwrap();
+            let render = p[2].ref_as::<Rc<dyn Render<Rgba>>>().unwrap().clone();
             sequence = sequence.append(time, restart, render);
         }
         r(Rc::new(sequence) as Rc<dyn Render<Rgba>>)
     }) as MyFn));
     rt.insert("sequencer", r(Box::new(|vec: Vec<Val>| {
         let mut sequencer = crate::renders::sequencer::Sequencer::new(Rgba(0.0, 0.0, 0.0, 0.0)); // TODO
-        for p in vec.get_(0)?.clone_as::<Vec<Val>>().ok_or_else(|| GlutenError::Str("type mismatch".to_owned()))? {
-            let p = p.clone_as::<Vec<Val>>().ok_or_else(|| GlutenError::Str("type mismatch".to_owned()))?;
-            let time = p.get_(0)?.copy_as::<f64>().ok_or_else(|| GlutenError::Str("type mismatch".to_owned()))?;
-            let z = p.get_(1)?.copy_as::<i32>().ok_or_else(|| GlutenError::Str("type mismatch".to_owned()))?;
-            let render = p.get_(2)?.clone_as::<Rc<dyn Render<Rgba>>>().ok_or_else(|| GlutenError::Str("type mismatch".to_owned()))?;
+        for p in vec.get_(0)?.ref_as::<Vec<Val>>().cloned().ok_or_else(|| GlutenError::Str("type mismatch".to_owned()))? {
+            let p = p.ref_as::<Vec<Val>>().cloned().ok_or_else(|| GlutenError::Str("type mismatch".to_owned()))?;
+            let time = p.get_(0)?.ref_as::<f64>().copied().ok_or_else(|| GlutenError::Str("type mismatch".to_owned()))?;
+            let z = p.get_(1)?.ref_as::<i32>().copied().ok_or_else(|| GlutenError::Str("type mismatch".to_owned()))?;
+            let render = p.get_(2)?.ref_as::<Rc<dyn Render<Rgba>>>().cloned().ok_or_else(|| GlutenError::Str("type mismatch".to_owned()))?;
             sequencer = sequencer.append(time, z as usize, render);
         }
         Ok(r(Rc::new(sequencer) as Rc<dyn Render<Rgba>>))
     }) as NativeFn));
     rt.insert("image_render", r(Box::new(|vec: Vec<Val>| {
-        let image = vec[0].downcast_ref::<Rc<Image<Rgba>>>().unwrap().clone();
-        let default = *vec[1].downcast_ref::<Rgba>().unwrap();
+        let image = vec[0].ref_as::<Rc<Image<Rgba>>>().unwrap().clone();
+        let default = *vec[1].ref_as::<Rgba>().unwrap();
         r(Rc::new(crate::renders::image_render::ImageRender {
             image: image,
             sizing: crate::renders::image_render::Sizing::Contain,
@@ -300,9 +323,9 @@ fn init_runtime(rt: &mut Runtime) {
         }) as Rc<dyn Render<Rgba>>)
     }) as MyFn));
     rt.insert("text_to_image", r(Box::new(|vec: Vec<Val>| {
-        let string = vec[0].downcast_ref::<String>().unwrap().clone();
-        let scale = *vec[1].downcast_ref::<f64>().unwrap();
-        let font = vec.get(2).and_then(|v| v.downcast_ref::<Rc<crate::text::Font>>().cloned()).unwrap_or_else(|| {
+        let string = vec[0].ref_as::<String>().unwrap().clone();
+        let scale = *vec[1].ref_as::<f64>().unwrap();
+        let font = vec.get(2).and_then(|v| v.ref_as::<Rc<crate::text::Font>>().cloned()).unwrap_or_else(|| {
             let font_path = "./tmp/IPAexfont00401/ipaexg.ttf";
             let bytes = std::fs::read(font_path).unwrap();
             Rc::new(crate::text::Font::from_bytes(bytes).unwrap())
@@ -312,9 +335,9 @@ fn init_runtime(rt: &mut Runtime) {
     rt.insert("composite", r(Box::new(|vec: Vec<Val>| {
         use crate::renders::composite::{Composite, CompositeMode};
         let layers = vec.into_iter().map(|p| {
-            let p = p.downcast_ref::<Vec<Val>>().unwrap().clone();
-            let render = p[0].downcast_ref::<Rc<dyn Render<Rgba>>>().unwrap().clone();
-            let mode = p[1].downcast_ref::<Symbol>().unwrap().0.to_owned();
+            let p = p.ref_as::<Vec<Val>>().unwrap().clone();
+            let render = p[0].ref_as::<Rc<dyn Render<Rgba>>>().unwrap().clone();
+            let mode = p[1].ref_as::<Symbol>().unwrap().0.to_owned();
             let mode = match mode.as_str() {
                 "none" => CompositeMode::None,
                 "normal" => CompositeMode::Normal(
@@ -330,17 +353,17 @@ fn init_runtime(rt: &mut Runtime) {
     }) as MyFn));
     fn vec_to_vec2<T: 'static + num_traits::Num + Lerp>(val: &Val) -> Vec2<T> {
         let val = val;
-        let vec = val.downcast_ref::<Vec<Val>>().unwrap();
-        let a = *vec[0].downcast_ref::<T>().unwrap();
-        let b = *vec[1].downcast_ref::<T>().unwrap();
+        let vec = val.ref_as::<Vec<Val>>().unwrap();
+        let a = *vec[0].ref_as::<T>().unwrap();
+        let b = *vec[1].ref_as::<T>().unwrap();
         Vec2(a, b)
     }
     fn vec_to_vec3<T: 'static + num_traits::Num + Lerp>(val: &Val) -> Vec3<T> {
         let val = val;
-        let vec = val.downcast_ref::<Vec<Val>>().unwrap();
-        let a = *vec[0].downcast_ref::<T>().unwrap();
-        let b = *vec[1].downcast_ref::<T>().unwrap();
-        let c = *vec[2].downcast_ref::<T>().unwrap();
+        let vec = val.ref_as::<Vec<Val>>().unwrap();
+        let a = *vec[0].ref_as::<T>().unwrap();
+        let b = *vec[1].ref_as::<T>().unwrap();
+        let c = *vec[2].ref_as::<T>().unwrap();
         Vec3(a, b, c)
     }
     rt.insert("path", r(Box::new(|vec: Vec<Val>| {
@@ -349,10 +372,10 @@ fn init_runtime(rt: &mut Runtime) {
             let mut path = Path::new(first_value);
             for rp in it {
                 let rp = rp;
-                let p = rp.downcast_ref::<Vec<Val>>().unwrap();
-                let d_time = *p[0].downcast_ref::<f64>().unwrap();
+                let p = rp.ref_as::<Vec<Val>>().unwrap();
+                let d_time = *p[0].ref_as::<f64>().unwrap();
                 let vec = vectorize(&p[1]);
-                let point = match p[2].downcast_ref::<Symbol>().unwrap().0.as_str() {
+                let point = match p[2].ref_as::<Symbol>().unwrap().0.as_str() {
                     "constant" => Point::Constant,
                     "linear" => Point::Linear,
                     "bezier2" => Point::Bezier2(vectorize(&p[3])),
@@ -364,11 +387,11 @@ fn init_runtime(rt: &mut Runtime) {
             r(Rc::new(path))
         }
         if let Some(v) = it.next() {
-            if let Some(v) = v.downcast_ref::<f64>() {
-                return build_path(*v, it, &|val| *val.downcast_ref::<f64>().unwrap());
-            } else if let Some(v) = v.downcast_ref::<Rgba>() {
-                return build_path(*v, it, &|val| *val.downcast_ref::<Rgba>().unwrap());
-            } else if let Some(vec) = v.downcast_ref::<Vec<Val>>() {
+            if let Some(v) = v.ref_as::<f64>() {
+                return build_path(*v, it, &|val| *val.ref_as::<f64>().unwrap());
+            } else if let Some(v) = v.ref_as::<Rgba>() {
+                return build_path(*v, it, &|val| *val.ref_as::<Rgba>().unwrap());
+            } else if let Some(vec) = v.ref_as::<Vec<Val>>() {
                 match vec.len() {
                     2 => {
                         return build_path(vec_to_vec2::<f64>(&v), it, &vec_to_vec2);
@@ -388,7 +411,7 @@ fn init_runtime(rt: &mut Runtime) {
         use crate::timed::Cycle;
         fn f<T: 'static + Lerp>(vec: &Vec<Val>) -> Option<Val> {
             let timed = clone_timed(&vec[0])?;
-            let duration = *vec[1].downcast_ref::<f64>().unwrap();
+            let duration = *vec[1].ref_as::<f64>().unwrap();
             Some(r(Rc::new(Cycle::new(timed, duration)) as Rc<dyn Timed<T>>))
         }
         f::<f64>(&vec).or_else(|| f::<Vec2<f64>>(&vec)).or_else(|| f::<Vec3<f64>>(&vec)).or_else(|| f::<Rgba>(&vec)).unwrap()
@@ -396,9 +419,9 @@ fn init_runtime(rt: &mut Runtime) {
     rt.insert("timed/sin", r(Box::new(|vec: Vec<Val>| {
         use crate::timed::Sine;
         fn f<T: 'static + Clone + Timed<f64>>(vec: &Vec<Val>) -> Option<Val> {
-            let initial_phase = *vec[0].downcast_ref::<f64>().unwrap();
-            let frequency = vec[1].downcast_ref::<f64>().unwrap().clone();
-            let amplitude = vec[2].downcast_ref::<T>().unwrap().clone();
+            let initial_phase = *vec[0].ref_as::<f64>().unwrap();
+            let frequency = vec[1].ref_as::<f64>().unwrap().clone();
+            let amplitude = vec[2].ref_as::<T>().unwrap().clone();
             Some(r(Rc::new(Sine::new(initial_phase, frequency, amplitude)) as Rc<dyn Timed<f64>>))
         }
         f::<f64>(&vec).or_else(|| f::<Rc<dyn Timed<f64>>>(&vec)).unwrap()
@@ -422,7 +445,7 @@ fn init_runtime(rt: &mut Runtime) {
     rt.insert("timed/map_sin", r(Box::new(|vec: Vec<Val>| {
         use crate::timed::Map;
         fn f<T: 'static + Clone + Timed<f64>>(vec: &Vec<Val>) -> Option<Val> {
-            let timed = vec[0].downcast_ref::<T>()?.clone();
+            let timed = vec[0].ref_as::<T>()?.clone();
             Some(r(Rc::new(Map::new(timed, |x| x.sin())) as Rc<dyn Timed<f64>>))
         }
         f::<f64>(&vec).or_else(|| f::<Rc<dyn Timed<f64>>>(&vec)).or_else(
@@ -431,15 +454,15 @@ fn init_runtime(rt: &mut Runtime) {
     }) as MyFn));
     rt.insert("transform", r(Box::new(|vec: Vec<Val>| {
         use crate::{renders::transform::{Transform, timed_to_transformer}};
-        let render = vec[0].downcast_ref::<Rc<dyn Render<Rgba>>>().unwrap().clone();
+        let render = vec[0].ref_as::<Rc<dyn Render<Rgba>>>().unwrap().clone();
         fn get_timed_vec2(val: &Val) -> Rc<dyn Timed<Vec2<f64>>> {
             if let Some(timed) = clone_timed::<Vec2<f64>>(val) {
                 timed
             } else {
                 let val = val;
-                let v = val.downcast_ref::<Vec<Val>>().unwrap();
-                let a = *v[0].downcast_ref::<f64>().unwrap();
-                let b = *v[1].downcast_ref::<f64>().unwrap();
+                let v = val.ref_as::<Vec<Val>>().unwrap();
+                let a = *v[0].ref_as::<f64>().unwrap();
+                let b = *v[1].ref_as::<f64>().unwrap();
                 Rc::new(Vec2(a, b))
             }
         }
@@ -447,7 +470,7 @@ fn init_runtime(rt: &mut Runtime) {
             if let Some(timed) = clone_timed::<f64>(val) {
                 timed
             } else {
-                Rc::new(val.downcast_ref::<f64>().unwrap().clone())
+                Rc::new(val.ref_as::<f64>().unwrap().clone())
             }
         }
         let translation_timed = get_timed_vec2(&vec[1]);
@@ -459,36 +482,36 @@ fn init_runtime(rt: &mut Runtime) {
         )) as Rc<dyn Render<Rgba>>)
     }) as MyFn));
     rt.insert("audio_buffer_render", r(Box::new(|vec: Vec<Val>| {
-        let audio_buffer = vec[0].downcast_ref::<Rc<AudioBuffer<u16>>>().unwrap().clone();
+        let audio_buffer = vec[0].ref_as::<Rc<AudioBuffer<u16>>>().unwrap().clone();
         r(Rc::new(audio_renders::audio_buffer::AudioBufferRender {
             audio_buffer: audio_buffer,
             interpolation: interpolation::NearestNeighbor
         }) as Rc<dyn AudioRender>)
     }) as MyFn));
     rt.insert("audio_clip", r(Box::new(|vec: Vec<Val>| {
-        let audio_render = vec[0].downcast_ref::<Rc<dyn AudioRender>>().unwrap().clone();
+        let audio_render = vec[0].ref_as::<Rc<dyn AudioRender>>().unwrap().clone();
         r(Rc::new(audio_renders::audio_clip::AudioClip {
             audio_render: audio_render,
-            gain: *vec[1].downcast_ref::<f64>().unwrap(),
-            pan: *vec[2].downcast_ref::<f64>().unwrap(),
-            start: *vec[3].downcast_ref::<f64>().unwrap(),
-            duration: *vec[4].downcast_ref::<f64>().unwrap(),
-            pitch: *vec[5].downcast_ref::<f64>().unwrap(),
-            fadein: *vec[6].downcast_ref::<f64>().unwrap(),
-            fadeout: *vec[7].downcast_ref::<f64>().unwrap()
+            gain: *vec[1].ref_as::<f64>().unwrap(),
+            pan: *vec[2].ref_as::<f64>().unwrap(),
+            start: *vec[3].ref_as::<f64>().unwrap(),
+            duration: *vec[4].ref_as::<f64>().unwrap(),
+            pitch: *vec[5].ref_as::<f64>().unwrap(),
+            fadein: *vec[6].ref_as::<f64>().unwrap(),
+            fadeout: *vec[7].ref_as::<f64>().unwrap()
         }) as Rc<dyn AudioRender>)
     }) as MyFn));
     rt.insert("audio_sequencer", r(Box::new(|vec: Vec<Val>| {
         let renders = vec.into_iter().map(|p| {
-            let p = p.downcast_ref::<Vec<Val>>().unwrap().clone();
-            let time = p[0].downcast_ref::<f64>().unwrap().clone();
-            let render = p[1].downcast_ref::<Rc<dyn AudioRender>>().unwrap().clone();
+            let p = p.ref_as::<Vec<Val>>().unwrap().clone();
+            let time = p[0].ref_as::<f64>().unwrap().clone();
+            let render = p[1].ref_as::<Rc<dyn AudioRender>>().unwrap().clone();
             (time, render)
         }).collect();
         r(Rc::new(audio_renders::sequencer::Sequencer {renders}) as Rc<dyn AudioRender>)
     }) as MyFn));
     rt.insert("audio/timed", r(Box::new(|vec: Vec<Val>| {
-        let timed = vec.get_(0)?.clone_as::<Rc<dyn Timed<f64>>>().ok_or_else(|| GlutenError::Str("arguments mismatch".to_owned()))?;
+        let timed = vec.get_(0)?.ref_as::<Rc<dyn Timed<f64>>>().cloned().ok_or_else(|| GlutenError::Str("arguments mismatch".to_owned()))?;
         Ok(r(Rc::new(timed) as Rc<dyn AudioRender>))
     }) as NativeFn));
     rt.insert("test_audio", r(Box::new(|_vec: Vec<Val>| {
@@ -532,46 +555,46 @@ fn init_runtime(rt: &mut Runtime) {
     }) as MyFn));
     rt.insert("path_to_image", r(Box::new(|vec: Vec<Val>| {
         use crate::path_to_image::{closed_path_rect, closed_path_to_image, expand_rect};
-        let path = vec[0].downcast_ref::<Rc<Path<Vec2<f64>>>>().unwrap().clone();
+        let path = vec[0].ref_as::<Rc<Path<Vec2<f64>>>>().unwrap().clone();
         let line_width = 3.0f64;
         let rect = expand_rect(closed_path_rect(&path), line_width.ceil() as i32);
         r(Rc::new(closed_path_to_image(rect, Rgba(1.0, 0.0, 0.0, 1.0), Rgba(1.0, 1.0, 1.0, 1.0), line_width, &path)))
     }) as MyFn));
     rt.insert("import_image", r(Box::new(|vec: Vec<Val>| {
-        let filepath = vec[0].downcast_ref::<String>().unwrap().clone();
+        let filepath = vec[0].ref_as::<String>().unwrap().clone();
         r(Rc::new(crate::image_import::load_image(&filepath)))
     }) as MyFn));
     #[cfg(feature = "ffmpeg")]
     rt.insert("import_audio", r(Box::new(|vec: Vec<Val>| {
-        let filepath = vec[0].downcast_ref::<String>().unwrap().clone();
+        let filepath = vec[0].ref_as::<String>().unwrap().clone();
         r(Rc::new(crate::ffmpeg::import_audio(&filepath)))
     }) as MyFn));
     rt.insert("import_ttf", r(Box::new(|vec: Vec<Val>| {
-        let filepath = vec[0].downcast_ref::<String>().unwrap().clone();
+        let filepath = vec[0].ref_as::<String>().unwrap().clone();
         let bytes = std::fs::read(filepath).unwrap();
         let font = crate::text::Font::from_bytes(bytes).unwrap();
         r(Rc::new(font))
     }) as MyFn));
     rt.insert("hash_map_get", r(Box::new(|vec: Vec<Val>| {
-        let hash_map = vec[0].downcast_ref::<RefCell<std::collections::HashMap<String, Val>>>().unwrap().borrow_mut();
-        let key = vec[1].downcast_ref::<String>().unwrap().clone();
+        let hash_map = vec[0].ref_as::<RefCell<std::collections::HashMap<String, Val>>>().unwrap().borrow_mut();
+        let key = vec[1].ref_as::<String>().unwrap().clone();
         hash_map.get(&key).map(|x| x.clone()).unwrap_or_else(|| r(false))
     }) as MyFn));
     rt.insert("hash_map_set", r(Box::new(|vec: Vec<Val>| {
-        let mut hash_map = vec[0].downcast_ref::<RefCell<std::collections::HashMap<String, Val>>>().unwrap().borrow_mut();
-        let key = vec[1].downcast_ref::<String>().unwrap().clone();
+        let mut hash_map = vec[0].ref_as::<RefCell<std::collections::HashMap<String, Val>>>().unwrap().borrow_mut();
+        let key = vec[1].ref_as::<String>().unwrap().clone();
         let val = vec[2].clone();
         hash_map.insert(key, val.clone());
         val
     }) as MyFn));
     rt.insert("or", r(Macro(Box::new(|env: &mut Env, vec: Vec<Val>| {
-        let let_sym = r(env.reader().borrow_mut().intern("let"));
-        let if_sym = r(env.reader().borrow_mut().intern("if"));
+        let let_sym = env.reader().borrow_mut().package.intern(&"let".to_string());
+        let if_sym = env.reader().borrow_mut().package.intern(&"if".to_string());
         let mut ret = vec.last().unwrap().clone();
         let mut i = 0;
         for val in vec.iter().rev().skip(1) {
             i += 1;
-            let sym = r(env.reader().borrow_mut().intern(&format!("#gensym{}#", i)));
+            let sym = env.reader().borrow_mut().package.intern(&format!("#gensym{}#", i));
             ret = r(vec![
                 let_sym.clone(),
                 r(vec![r(vec![sym.clone(), val.clone()])]),
@@ -585,13 +608,13 @@ fn init_runtime(rt: &mut Runtime) {
     rt.insert("with_cache", r(Macro(Box::new(|env: &mut Env, vec: Vec<Val>| {
         let reader = env.reader();
         let mut reader = reader.borrow_mut();
-        let rt_cache = env.get(&reader.intern("__rt_cache")).unwrap().clone();
+        let rt_cache = env.get(&reader.package.intern(&"__rt_cache".to_string())).unwrap().clone();
         let mut key = String::new();
         write_val(&mut key, &vec[0]);
         Ok(r(vec![
-            r(reader.intern("or")),
-            r(vec![r(reader.intern("hash_map_get")), rt_cache.clone(), r(key.clone())]),
-            r(vec![r(reader.intern("hash_map_set")), rt_cache, r(key), vec[0].clone()])
+            reader.package.intern(&"or".to_string()),
+            r(vec![reader.package.intern(&"hash_map_get".to_string()), rt_cache.clone(), r(key.clone())]),
+            r(vec![reader.package.intern(&"hash_map_set".to_string()), rt_cache, r(key), vec[0].clone()])
         ]))
     }))));
 
@@ -602,9 +625,9 @@ fn init_runtime(rt: &mut Runtime) {
 }
 
 fn clone_timed<T: 'static + Lerp>(val: &Val) -> Option<Rc<dyn Timed<T>>> {
-    val.downcast_ref::<Rc<dyn Timed<T>>>().cloned()
-        .or_else(|| val.downcast_ref::<Rc<Path<T>>>().map(|x| x.clone() as Rc<dyn Timed<T>>))
-        .or_else(|| val.downcast_ref::<T>().map(|x| Rc::new(*x) as Rc<dyn Timed<T>>))
+    val.ref_as::<Rc<dyn Timed<T>>>().cloned()
+        .or_else(|| val.ref_as::<Rc<Path<T>>>().map(|x| x.clone() as Rc<dyn Timed<T>>))
+        .or_else(|| val.ref_as::<T>().map(|x| Rc::new(*x) as Rc<dyn Timed<T>>))
 }
 
 trait FnArgs {
@@ -616,16 +639,16 @@ impl FnArgs for Vec<Val> {
     }
 }
 
-fn read_raw_string(_reader: &mut Reader, cs: &mut Peekable<Chars>) -> Result<Val, GlutenError> {
+fn read_raw_string(_reader: &mut Reader, cs: &mut Peekable<CharIndices>) -> Result<Val, GlutenError> {
     let mut numbers = 2;
-    while let Some('#') = cs.peek() {
+    while let Some((_, '#')) = cs.peek() {
         cs.next();
         numbers += 1;
     }
     match cs.next() {
-        Some('"') => {
+        Some((_, '"')) => {
         }
-        Some(c) =>{
+        Some((_, c)) =>{
             return Err(GlutenError::ReadFailed(format!("Expects '\"', but found {:?}", c)));
         }
         None => {
@@ -636,7 +659,7 @@ fn read_raw_string(_reader: &mut Reader, cs: &mut Peekable<Chars>) -> Result<Val
     let mut continual_numbers = 0;
     loop {
         match cs.next() {
-            Some(c) if c == '#' => {
+            Some((_, c)) if c == '#' => {
                 vec.push(c);
                 continual_numbers += 1;
                 if continual_numbers == numbers {
@@ -646,7 +669,7 @@ fn read_raw_string(_reader: &mut Reader, cs: &mut Peekable<Chars>) -> Result<Val
                     }
                 }
             }
-            Some(c) => {
+            Some((_, c)) => {
                 vec.push(c);
                 continual_numbers = 0;
             }
