@@ -290,6 +290,18 @@ fn init_runtime(rt: &mut Runtime) {
         };
         Ok(r(Rc::new(Frame {render, frame_type}) as Rc<dyn Render<Rgba>>))
     }) as NativeFn));
+    rt.insert("color_sample", r(Box::new(|vec: Vec<Val>| {
+        use crate::renders::color_sampling::{ColorSampling, ColorSamplingType};
+        let render = vec.get_(0)?.ref_as::<Rc<dyn Render<Rgba>>>().cloned().ok_or_else(|| GlutenError::Str("type mismatch".to_owned()))?;
+        let r#type = match vec.get_(1)?.ref_as::<Symbol>().unwrap().0.as_str() {
+            "t444" => ColorSamplingType::T444,
+            "t422" => ColorSamplingType::T422,
+            "t420" => ColorSamplingType::T420,
+            "t411" => ColorSamplingType::T411,
+            _ => { return Err(GlutenError::Str(format!("invalid frame_type"))) }
+        };
+        Ok(r(Rc::new(ColorSampling {render, r#type}) as Rc<dyn Render<Rgba>>))
+    }) as NativeFn));
     rt.insert("sequence", r(Box::new(|vec: Vec<Val>| {
         let mut sequence = crate::renders::sequence::Sequence::new();
         for p in vec.into_iter() {
