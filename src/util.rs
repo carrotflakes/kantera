@@ -13,6 +13,28 @@ pub fn hsl_to_rgb(h: f64, s: f64, l: f64) -> (f64, f64, f64) {
     }
 }
 
+pub fn rgb_to_hsl(r: f64, g: f64, b: f64) -> (f64, f64, f64) {
+    let c_max = r.max(g).max(b);
+    let c_min = r.min(g).min(b);
+    let delta = c_max - c_min;
+    let h = if delta == 0.0 {
+        0.0
+    } else if c_max == r {
+        ((g - b) / delta % 6.0) / 6.0
+    } else if c_max == g {
+        ((b - r) / delta + 2.0) / 6.0
+    } else {
+        ((r - g) / delta + 4.0) / 6.0
+    };
+    let l = (c_max + c_min) / 2.0;
+    let s = if delta == 0.0 {
+        0.0
+    } else {
+        delta / (1.0 - (2.0 * l - 1.0).abs())
+    };
+    (h, s, l)
+}
+
 pub fn u32_noise(x: u32, y: u32, z: u32) -> u32 {
     // This is experimental implement.
     let w = x * 2777 + y * 2999 + z * 3252 + 0xa241ee91;
