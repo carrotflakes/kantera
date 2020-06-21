@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>kantera</title>
+    <style>
+    </style>
+  </head>
+  <body>
+    <button id="connectButton" onClick="connect()">connect</button>
+    <div id="parseError" style="color: red"></div>
+    <div id="status"></div>
+    <img id="img"/>
+    <div id="log"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.19.0/axios.js" integrity="sha256-XmdRbTre/3RulhYk/cOBUMpYlaAp2Rpo/s556u0OIKk=" crossorigin="anonymous"></script>
+    <script>
+      const statusEl = document.getElementById('status');
+      const imgEl = document.getElementById('img');
+      const logEl = document.getElementById('log');
+      let ws = null;
+      let syncObj = {frame: 0};
+      let binaryType = null;
+      const buffers = [];
+      let bufferI = 0;
+      let streamInfo = null;
+
+      function connect() {
+        if (ws) {
+          ws.close();
+          buffers.length = 0;
+          bufferI = 0;
+          return;
+        }
+        ws = new WebSocket(location.protocol.replace('http', 'ws') + '//' + location.host + '/ws/');
+        const history = [Date.now()];
+        ws.onopen = () => {
+          console.log('connected');
+          document.getElementById('connectButton').textContent = 'disconnect';
+        };
+        ws.onmessage = e => {
+          if (e.data instanceof Blob) {
+            if (binaryType === 'frame') {
+              imgEl.src = (window.URL || window.webkitURL).createObjectURL(e.data);
+              history.push(Date.now());
+              if (history.length > 30) history.shift();
+            } else if (binaryType === 'audio') {
+              const fileReader = new FileReader();
+              fileReader.onloadend = () => {
+                const array = new Uint16Array(fileReader.result);
+                buffers.push(array);
+                while (buffers.length > 4)
+                  buffers.shift();
+              };
+              fileReader.readAsArrayBuffer(e.data);
+            }
+            binaryType = null;
+          } else if (typeof e.data === 'string') {
+            const data = eval('(' + e.data + ')'); // for parse "\'"
+            if (data.type === 'sync') {
+              syncObj = {...syncObj, ...data, type: undefined};
+            } else if (data.type === 'parseFailed') {
+              document.getElementById('parseError').textContent = data.error;
+            } else if (data.type === 'frame') {
+              binaryType = 'frame';
+            } else if (data.type === 'audio') {
+              binaryType = 'audio';
+            } else if (data.type === 'streamInfo') {
+              streamInfo = data;
+            } else if (data.type === 'log') {
+              logEl.innerHTML += (data.log + '\n').replace(/\n/, '</br>');
+            }
+          } else {
+            console.log(e.data);
+          }
+          statusEl.textContent = (history.length / Math.max(1, history[history.length - 1] - history[0]) * 1000 + '').substr(0, 5) + ' fps, ' + syncObj.frame + ' frame';
+        };
+        ws.onclose = () => {
+          ws = null;
+          console.log('closed');
+          document.getElementById('connectButton').textContent = 'connect';
+        };
+
+        if (startAudio) {
+          startAudio();
+          startAudio = null;
+        }
+      }
+
+      function startAudio() {
+        const ctx = new AudioContext();
+        console.log('sampleRate: ' + ctx.sampleRate);
+        let p = 0;
+        const bufferSize = 4096;
+        const scriptNode = ctx.createScriptProcessor(bufferSize, 1, 2);
+        scriptNode.onaudioprocess = e => {
+          const buffer = e.outputBuffer;
+          const array0 = buffer.getChannelData(0);
+          const array1 = buffer.getChannelData(1);
+          const sampleRate = ctx.sampleRate;
+          const remoteSampleRate = streamInfo && streamInfo.samplerate || 4000;
+
+          for (let i = 0; i < bufferSize; ++i) {
+            if (buffers.length) {
+              const bufLen = buffers[0].length / 2;
+              let j = bufferI++ * remoteSampleRate / sampleRate | 0;
+              array0[i] = buffers[0][j] / 2**15 - 1.0;
+              array1[i] = buffers[0][bufLen + j] / 2**15 - 1.0;
+              if (bufLen <= (bufferI * remoteSampleRate / sampleRate | 0)) {
+                buffers.shift();
+                bufferI = 0;
+              }
+            } else {
+              array1[i] = array0[i] = 0;
+            }
+          }
+        };
+        scriptNode.connect(ctx.destination);
+      }
+
+      window.onload = connect;
+
+    </script>
+  </body>
+</html>

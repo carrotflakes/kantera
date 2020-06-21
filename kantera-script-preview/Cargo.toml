@@ -1,0 +1,25 @@
+[package]
+name = "kantera-script-preview"
+version = "0.1.0"
+authors = ["carrotflakes <carrotflakes@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+
+kantera = { git = "https://github.com/carrotflakes/kantera.git" }
+futures = "0.3.1"
+actix = "0.9"
+actix-codec = "0.2"
+actix-web = "2.0"
+actix-web-actors = "2.0.0"
+actix-files = "0.2.0"
+actix-multipart = "0.2.0"
+actix-rt = "1.0"
+actix-cors = "0.2"
+serde = "1.0"
+serde_json = "1.0"
+env_logger = "0.6"
+image = "0.22"
+notify = "4.0"
