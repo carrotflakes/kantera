@@ -63,6 +63,7 @@
               binaryType = 'frame';
             } else if (data.type === 'audio') {
               binaryType = 'audio';
+              streamInfo = {samplerate: data.samplerate};
             } else if (data.type === 'streamInfo') {
               streamInfo = data;
             } else if (data.type === 'log') {
@@ -86,6 +87,8 @@
       }
 
       function startAudio() {
+        if (buffers.length > 1)
+          buffers = [buffers.pop()]
         const ctx = new AudioContext();
         console.log('sampleRate: ' + ctx.sampleRate);
         let p = 0;
@@ -115,9 +118,6 @@
         };
         scriptNode.connect(ctx.destination);
       }
-
-      window.onload = connect;
-
     </script>
   </body>
 </html>

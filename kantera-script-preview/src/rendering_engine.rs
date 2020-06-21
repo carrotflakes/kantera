@@ -64,6 +64,10 @@ impl RenderingEngine {
         }
     }
 
+    pub fn get_samplerate(&self) -> usize {
+        self.samplerate
+    }
+
     pub fn get_current_frame(&self) -> i32 {
         self.current_frame.unwrap_or_default()
     }
