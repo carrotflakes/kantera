@@ -74,7 +74,7 @@ impl MyWebSocket {
                 ctx.binary(data);
             }
             if let Some(data) = re.get_audio_frame_bin().cloned() {
-                ctx.text(r#"{"type":"audio"}"#);
+                ctx.text(format!(r#"{{"type":"audio","samplerate":{}}}"#, re.get_samplerate()));
                 ctx.binary(data);
             }
 
