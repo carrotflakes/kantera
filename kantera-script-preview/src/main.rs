@@ -43,7 +43,12 @@ async fn main() -> std::io::Result<()> {
         "\x1b[31mThis is built without optimization! Kantera recommends release build.\x1b[0m"
     );
 
-    let directory_path = PathBuf::from("./workspace");
+    let directory_path = PathBuf::from(
+        std::env::args()
+            .collect::<Vec<String>>()
+            .get(1)
+            .unwrap_or(&"".to_string()),
+    );
     let rendering_engine = RenderingEngine::new(directory_path).start();
 
     std::env::set_var("RUST_LOG", "actix_web=info");
