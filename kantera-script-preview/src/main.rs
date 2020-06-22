@@ -1,3 +1,6 @@
+#[macro_use]
+extern crate actix_web;
+
 mod my_websocket;
 mod rendering_engine;
 
@@ -5,19 +8,26 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
 use actix_cors::Cors;
-use actix_files as fs;
-use actix_web::{middleware, web, App, Error, HttpRequest, HttpResponse, HttpServer};
+use actix_web::{middleware, web, App, Error, HttpRequest, HttpResponse, HttpServer, http::StatusCode};
 use actix_web_actors::ws;
 
 use my_websocket::MyWebSocket;
 use rendering_engine::{RRenderingEngine, RenderingEngine};
 
+#[get("/ws")]
 async fn ws_index(status: web::Data<RRenderingEngine>, r: HttpRequest, stream: web::Payload) -> Result<HttpResponse, Error> {
     let re = status.as_ref().clone();
     println!("{:?}", r);
     let res = ws::start(MyWebSocket::new(re), &r, stream);
     println!("{:?}", res);
     res
+}
+
+#[get("/")]
+async fn index() -> actix_web::Result<HttpResponse> {
+    Ok(HttpResponse::build(StatusCode::OK)
+        .content_type("text/html; charset=utf-8")
+        .body(include_str!("../static/index.html")))
 }
 
 #[actix_rt::main]
@@ -51,8 +61,9 @@ async fn main() -> std::io::Result<()> {
                     .finish(),
             )
             .wrap(middleware::Logger::default())
-            .service(web::resource("/ws/").route(web::get().to(ws_index)))
-            .service(fs::Files::new("/", "static/").index_file("index.html"))
+            .service(ws_index)
+            .service(index)
+            //.service(fs::Files::new("/", "static/").index_file("index.html"))
     })
     .bind(addr)?
     .run()
