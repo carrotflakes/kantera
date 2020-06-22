@@ -3,16 +3,14 @@ use std::time::{Duration, Instant};
 use actix::prelude::*;
 use actix_web_actors::ws;
 
-use crate::rendering_engine::RRenderingEngine;
+use crate::rendering_engine::{Frame, RenderingEngine, Subscribe};
 
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
 const CLIENT_TIMEOUT: Duration = Duration::from_secs(10);
 
 pub struct MyWebSocket {
     hb: Instant,
-    framerate: usize,
-    render_at: Instant,
-    re: RRenderingEngine
+    re: Addr<RenderingEngine>,
 }
 
 impl Actor for MyWebSocket {
@@ -20,7 +18,8 @@ impl Actor for MyWebSocket {
 
     fn started(&mut self, ctx: &mut Self::Context) {
         self.haertbeat(ctx);
-        self.cast(ctx);
+        self.re
+            .do_send(Subscribe::new(ctx.address().recipient::<Frame>()));
         ctx.text(r#"{"type":"log","log":"ready."}"#);
     }
 }
@@ -38,7 +37,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWebSocket {
             Ok(ws::Message::Text(text)) => {
                 println!("{:?}", text);
             }
-            Ok(ws::Message::Binary(_)) => {},
+            Ok(ws::Message::Binary(_)) => {}
             Ok(ws::Message::Close(_)) => ctx.stop(),
             _ => ctx.stop(),
         }
@@ -46,12 +45,10 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWebSocket {
 }
 
 impl MyWebSocket {
-    pub fn new(re: RRenderingEngine) -> Self {
+    pub fn new(re: Addr<RenderingEngine>) -> Self {
         Self {
             hb: Instant::now(),
-            framerate: 30,
-            render_at: Instant::now(),
-            re
+            re,
         }
     }
 
@@ -65,29 +62,27 @@ impl MyWebSocket {
             ctx.ping(b"");
         });
     }
+}
 
-    fn cast(&mut self, ctx: &mut <Self as Actor>::Context) {
-        {
-            let re = self.re.lock().unwrap();
-            if let Some(data) = re.get_frame_bin().cloned() {
-                ctx.text(r#"{"type":"frame"}"#);
-                ctx.binary(data);
-            }
-            if let Some(data) = re.get_audio_frame_bin().cloned() {
-                ctx.text(format!(r#"{{"type":"audio","samplerate":{}}}"#, re.get_samplerate()));
-                ctx.binary(data);
-            }
+impl Handler<Frame> for MyWebSocket {
+    type Result = ();
 
-            ctx.text(format!(r#"{{"type":"sync","frame":{}}}"#, re.get_current_frame()));
+    fn handle(&mut self, msg: Frame, ctx: &mut Self::Context) -> Self::Result {
+        if let Some(data) = msg.video {
+            ctx.text(r#"{"type":"frame"}"#);
+            ctx.binary(data);
+        }
+        if let Some(data) = msg.audio {
+            ctx.text(format!(
+                r#"{{"type":"audio","samplerate":{}}}"#,
+                msg.samplerate
+            ));
+            ctx.binary(data);
         }
 
-        // Schedule next render
-        let desire_duration = Duration::from_millis(1000 / self.framerate as u64);
-        self.render_at = (self.render_at + desire_duration).max(Instant::now() - desire_duration);
-        let duration = self
-            .render_at
-            .checked_duration_since(Instant::now())
-            .unwrap_or(Duration::from_millis(1));
-        ctx.run_later(duration, Self::cast);
+        ctx.text(format!(
+            r#"{{"type":"sync","frame":{}}}"#,
+            msg.current_frame
+        ));
     }
 }

@@ -1,3 +1,4 @@
+use actix::prelude::*;
 use kantera::{
     audio_render::AudioRender,
     buffer::Buffer,
@@ -14,14 +15,12 @@ use std::path::PathBuf;
 use std::rc::Rc;
 use std::sync::{mpsc::channel, Arc, Mutex};
 use std::thread;
-use std::time::Duration;
-
-pub type RRenderingEngine = Arc<Mutex<RenderingEngine>>;
+use std::time::{Duration, Instant};
 
 const FRAMERATE_DEFAULT: usize = 30;
 const SAMPLERATE_DEFAULT: usize = 16000;
 
-pub struct RenderingEngine {
+struct RenderingEngineInner {
     directory_path: PathBuf,
     main_path: PathBuf,
     current_frame: Option<i32>,
@@ -36,17 +35,37 @@ pub struct RenderingEngine {
     rt_cache: Val,
     frame_bin: Option<Vec<u8>>,
     audio_frame_bin: Option<Vec<u8>>,
+    render_at: Instant,
+    subscribers: Vec<Recipient<Frame>>,
 }
 
-impl RenderingEngine {
-    pub fn new(directory_path: PathBuf) -> RenderingEngine {
+#[derive(Clone)]
+pub struct RenderingEngine {
+    inner: Arc<Mutex<RenderingEngineInner>>,
+}
+
+#[derive(Message)]
+#[rtype(result = "()")]
+pub struct Subscribe(Recipient<Frame>);
+
+#[derive(Message)]
+#[rtype(result = "()")]
+pub struct Frame {
+    pub video: Option<Vec<u8>>,
+    pub audio: Option<Vec<u8>>,
+    pub samplerate: usize,
+    pub current_frame: i32,
+}
+
+impl RenderingEngineInner {
+    fn new(directory_path: PathBuf) -> RenderingEngineInner {
         let main_path = {
             let mut p = directory_path.clone();
             p.push("main.ks");
             p
         };
 
-        RenderingEngine {
+        RenderingEngineInner {
             directory_path,
             main_path,
             current_frame: Some(0),
@@ -61,55 +80,8 @@ impl RenderingEngine {
             rt_cache: r(RefCell::new(HashMap::<String, Val>::new())),
             frame_bin: None,
             audio_frame_bin: None,
-        }
-    }
-
-    pub fn get_samplerate(&self) -> usize {
-        self.samplerate
-    }
-
-    pub fn get_current_frame(&self) -> i32 {
-        self.current_frame.unwrap_or_default()
-    }
-
-    pub fn get_frame_bin<'a>(&'a self) -> Option<&'a Vec<u8>> {
-        self.frame_bin.as_ref()
-    }
-
-    pub fn get_audio_frame_bin<'a>(&'a self) -> Option<&'a Vec<u8>> {
-        self.audio_frame_bin.as_ref()
-    }
-
-    fn render_loop(re: Arc<Mutex<RenderingEngine>>) {
-        loop {
-            let framerate = {
-                let mut re = re.lock().unwrap();
-                re.render_frame();
-                re.framerate as u64
-            };
-            thread::sleep(Duration::from_millis(1000 / framerate));
-        }
-    }
-
-    fn watch(re: Arc<Mutex<RenderingEngine>>) {
-        let directory_path = re.lock().unwrap().directory_path.clone();
-
-        let (tx, rx) = channel();
-        let mut watcher = watcher(tx, Duration::from_secs(1)).unwrap();
-        watcher
-            .watch(directory_path, RecursiveMode::Recursive)
-            .unwrap();
-
-        loop {
-            match rx.recv() {
-                Ok(event) => {
-                    println!("{:?}", event);
-                    if let DebouncedEvent::Write(_path) = event {
-                        re.lock().unwrap().run();
-                    }
-                }
-                Err(e) => println!("watch error: {:?}", e),
-            }
+            render_at: Instant::now(),
+            subscribers: Vec::new(),
         }
     }
 
@@ -119,19 +91,6 @@ impl RenderingEngine {
                 self.run_script(&src);
             }
             Err(_) => {}
-        }
-    }
-
-    pub fn start(re: Arc<Mutex<RenderingEngine>>) {
-        re.lock().unwrap().run();
-
-        {
-            let re = re.clone();
-            thread::spawn(move || RenderingEngine::render_loop(re));
-        }
-        {
-            let re = re.clone();
-            thread::spawn(move || RenderingEngine::watch(re));
         }
     }
 
@@ -188,6 +147,20 @@ impl RenderingEngine {
                     bin.write(&v.to_le_bytes()).unwrap();
                 }
                 self.audio_frame_bin = Some(bin);
+            }
+
+            {
+                self.subscribers.retain(|s| s.connected());
+                for subscriber in self.subscribers.iter() {
+                    subscriber
+                        .do_send(Frame {
+                            video: self.frame_bin.clone(),
+                            audio: self.audio_frame_bin.clone(),
+                            samplerate: self.samplerate,
+                            current_frame: frame,
+                        })
+                        .unwrap();
+                }
             }
 
             //ctx.text(format!(r#"{{"type":"sync","frame":{}}}"#, frame));
@@ -266,6 +239,89 @@ impl RenderingEngine {
             }
             Err(mes) => println!("{}", mes),
         }
+    }
+}
+
+impl RenderingEngine {
+    pub fn new(directory_path: PathBuf) -> Self {
+        RenderingEngine {
+            inner: Arc::new(Mutex::new(RenderingEngineInner::new(directory_path))),
+        }
+    }
+
+    fn render_loop(&self) {
+        loop {
+            let sleep_dur = {
+                let mut rei = self.inner.lock().unwrap();
+                rei.render_frame();
+
+                let desire_duration = Duration::from_millis(1000 / rei.framerate as u64);
+                rei.render_at =
+                    (rei.render_at + desire_duration).max(Instant::now() - desire_duration);
+                rei.render_at
+                    .checked_duration_since(Instant::now())
+                    .unwrap_or(Duration::from_millis(1))
+            };
+
+            thread::sleep(sleep_dur);
+        }
+    }
+
+    fn watch(&self) {
+        let directory_path = self.inner.lock().unwrap().directory_path.clone();
+
+        let (tx, rx) = channel();
+        let mut watcher = watcher(tx, Duration::from_secs(1)).unwrap();
+        watcher
+            .watch(directory_path, RecursiveMode::Recursive)
+            .unwrap();
+
+        loop {
+            match rx.recv() {
+                Ok(event) => {
+                    println!("{:?}", event);
+                    if let DebouncedEvent::Write(_path) = event {
+                        self.inner.lock().unwrap().run();
+                    }
+                }
+                Err(e) => println!("watch error: {:?}", e),
+            }
+        }
+    }
+
+    fn start_thread(&self) {
+        self.inner.lock().unwrap().run();
+
+        {
+            let re = self.clone();
+            thread::spawn(move || re.render_loop());
+        }
+        {
+            let re = self.clone();
+            thread::spawn(move || re.watch());
+        }
+    }
+}
+
+impl Actor for RenderingEngine {
+    type Context = Context<Self>;
+
+    fn started(&mut self, _ctx: &mut Self::Context) {
+        self.start_thread();
+    }
+}
+
+impl Handler<Subscribe> for RenderingEngine {
+    type Result = ();
+
+    fn handle(&mut self, msg: Subscribe, _ctx: &mut Self::Context) -> Self::Result {
+        self.inner.lock().unwrap().subscribers.push(msg.0);
+    }
+}
+
+impl Subscribe {
+    pub fn new(subscriber: Recipient<Frame>) -> Self {
+        Subscribe(subscriber)
     }
 }
 

@@ -5,17 +5,23 @@ mod my_websocket;
 mod rendering_engine;
 
 use std::path::PathBuf;
-use std::sync::{Arc, Mutex};
 
+use actix::prelude::*;
 use actix_cors::Cors;
-use actix_web::{middleware, web, App, Error, HttpRequest, HttpResponse, HttpServer, http::StatusCode};
+use actix_web::{
+    http::StatusCode, middleware, web, App, Error, HttpRequest, HttpResponse, HttpServer,
+};
 use actix_web_actors::ws;
 
 use my_websocket::MyWebSocket;
-use rendering_engine::{RRenderingEngine, RenderingEngine};
+use rendering_engine::RenderingEngine;
 
 #[get("/ws")]
-async fn ws_index(status: web::Data<RRenderingEngine>, r: HttpRequest, stream: web::Payload) -> Result<HttpResponse, Error> {
+async fn ws_index(
+    status: web::Data<Addr<RenderingEngine>>,
+    r: HttpRequest,
+    stream: web::Payload,
+) -> Result<HttpResponse, Error> {
     let re = status.as_ref().clone();
     println!("{:?}", r);
     let res = ws::start(MyWebSocket::new(re), &r, stream);
@@ -38,8 +44,7 @@ async fn main() -> std::io::Result<()> {
     );
 
     let directory_path = PathBuf::from("./workspace");
-    let rendering_engine = Arc::new(Mutex::new(RenderingEngine::new(directory_path)));
-    RenderingEngine::start(rendering_engine.clone());
+    let rendering_engine = RenderingEngine::new(directory_path).start();
 
     std::env::set_var("RUST_LOG", "actix_web=info");
     env_logger::init();
@@ -63,7 +68,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(middleware::Logger::default())
             .service(ws_index)
             .service(index)
-            //.service(fs::Files::new("/", "static/").index_file("index.html"))
+        //.service(fs::Files::new("/", "static/").index_file("index.html"))
     })
     .bind(addr)?
     .run()
