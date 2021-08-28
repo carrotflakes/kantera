@@ -61,17 +61,17 @@ impl From<&mut ImageSurface> for Image<Rgba> {
 }
 
 pub struct WrapedContext<'a> {
-    pub context: Option<Context>,
-    pub surface: ImageSurface,
-    pub images: &'a mut Vec<Image<Rgba>>
+    context: Option<Context>,
+    surface: ImageSurface,
+    images: &'a mut Vec<Image<Rgba>>
 }
 
 impl<'a> WrapedContext<'a> {
     pub fn new(surface: ImageSurface, images: &'a mut Vec<Image<Rgba>>) -> Self {
         WrapedContext {
             context: Some(Context::new(&surface)),
-            surface: surface,
-            images: images
+            surface,
+            images
         }
     }
     pub fn push(&mut self) {
