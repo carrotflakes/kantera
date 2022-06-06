@@ -13,7 +13,8 @@ fn main() {
     let (width, height) = (320, 240);
 
     let img = Rc::new({
-        let buf = image::open("./out.jpg").unwrap().to_rgba();
+        let img = image::open("./out.jpg").unwrap();
+        let buf = img.as_rgba8().unwrap();
         Image {
             width: buf.width() as usize,
             height: buf.height() as usize,

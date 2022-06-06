@@ -4,7 +4,8 @@ use crate::pixel::Rgba;
 use crate::image::Image;
 
 pub fn load_image(filepath: &str) -> Image<Rgba> {
-    let buf = image::open(filepath).unwrap().to_rgba(); // TODO: remove unwrap
+    let img = image::open(filepath).unwrap();
+    let buf = img.as_rgba8().unwrap(); // TODO: remove unwrap
     Image {
         width: buf.width() as usize,
         height: buf.height() as usize,
