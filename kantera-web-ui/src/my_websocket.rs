@@ -182,7 +182,8 @@ impl MyWebSocket {
                     buf[i * 4 + 3] = (buffer.vec[i].3.min(1.0).max(0.0) * 255.99).floor() as u8;
                 }
                 let mut bin = Vec::new();
-                image::png::PNGEncoder::new(&mut bin).encode(&buf, width as u32, height as u32, image::RGBA(8)).unwrap();
+                use image::ImageEncoder;
+                image::codecs::png::PngEncoder::new(&mut bin).write_image(&buf, width as u32, height as u32, image::ColorType::Rgba8).unwrap();
                 ctx.text(r#"{"type":"frame"}"#);
                 ctx.binary(bin);
             }

@@ -3,7 +3,7 @@ name = "kantera"
 description = "Video composition and rendering kit"
 version = "0.0.1"
 authors = ["carrotflakes <carrotflakes@gmail.com>"]
-edition = "2018"
+edition = "2021"
 repository = "https://github.com/carrotflakes/kantera"
 keywords = []
 license = "MIT"
@@ -19,10 +19,10 @@ cairo = ["cairo-rs"]
 
 [dependencies]
 num-traits = "0.2"
-cairo-rs = { version = "0.7", optional = true }
+cairo-rs = { version = "0.9", optional = true }
 lazy_static = "1.4"
-regex = "1"
+regex = "1.5"
 rusttype = "0.8"
-image = "0.22"
+image = "0.24"
 rustfft = "3.0"
 gluten = { git = "https://github.com/carrotflakes/gluten.git", branch = "kantera", version = "*" }
