@@ -1338,7 +1338,7 @@ name = "kantera-web-ui"
 version = "0.1.0"
 dependencies = [
  "actix",
- "actix-codec 0.2.0",
+ "actix-codec 0.3.0",
  "actix-cors",
  "actix-files",
  "actix-multipart",
