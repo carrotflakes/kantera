@@ -28,16 +28,16 @@ fn main() {
 
     let img = Rc::new({
         let img = image::open("./out.jpg").unwrap();
-        let buf = img.as_rgba8().unwrap();
+        let buf = img.as_rgb8().unwrap();
         Image {
             width: buf.width() as usize,
             height: buf.height() as usize,
-            vec: buf.pixels().map(|image::Rgba([r, g, b, a])| {
+            vec: buf.pixels().map(|image::Rgb([r, g, b])| {
                 Rgba(
                     *r as f64 / std::u8::MAX as f64,
                     *g as f64 / std::u8::MAX as f64,
                     *b as f64 / std::u8::MAX as f64,
-                    *a as f64 / std::u8::MAX as f64)
+                    1.0)
             }).collect()
         }
     });
