@@ -10,7 +10,7 @@ edition = "2018"
 kantera = { git = "https://github.com/carrotflakes/kantera.git" }
 futures = "0.3.1"
 actix = "0.9"
-actix-codec = "0.2"
+actix-codec = "0.5"
 actix-web = "2.0"
 actix-web-actors = "2.0.0"
 actix-files = "0.2.0"
