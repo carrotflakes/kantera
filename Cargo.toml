@@ -19,7 +19,7 @@ cairo = ["cairo-rs"]
 
 [dependencies]
 num-traits = "0.2"
-cairo-rs = { version = "0.9", optional = true }
+cairo-rs = { version = "0.18", optional = true }
 lazy_static = "1.4"
 regex = "1.5"
 rusttype = "0.8"

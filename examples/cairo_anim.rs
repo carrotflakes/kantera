@@ -15,21 +15,21 @@ fn main() {
 
         for i in ["5", "4", "3", "2", "1"].iter() {
             ctx.set_source_rgb(0.1, 0.1, 0.1);
-            ctx.paint();
+            ctx.paint().unwrap();
 
             for j in 0..30 {
                 ctx.move_to(160.0, 120.0);
                 ctx.line_to(((j as f64 / 30.0 - 0.25) * PI * 2.0).cos() * 100.0 + 160.0,
                             ((j as f64 / 30.0 - 0.25) * PI * 2.0).sin() * 100.0 + 120.0);
                 ctx.set_source_rgb(1.0, 0.0, 0.0);
-                ctx.stroke();
+                ctx.stroke().unwrap();
 
                 ctx.set_font_size(60.0);
                 let text = i;
-                let ext = ctx.text_extents(text);
-                ctx.move_to((320 as f64 - ext.width) / 2.0, (240 as f64 + ext.height) / 2.0);
+                let ext = ctx.text_extents(text).unwrap();
+                ctx.move_to((320 as f64 - ext.width()) / 2.0, (240 as f64 + ext.height()) / 2.0);
                 ctx.set_source_rgb(0.9, 0.9, 0.9);
-                ctx.show_text(text);
+                ctx.show_text(text).unwrap();
 
                 ctx.push();
             }

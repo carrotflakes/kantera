@@ -9,14 +9,14 @@ fn make_image() -> kantera::image::Image<Rgba> {
         ctx.move_to(0.0, 0.0);
         ctx.line_to(width as f64, height as f64);
         ctx.set_source_rgb(1.0, 0.0, 0.0);
-        ctx.stroke();
+        ctx.stroke().unwrap();
 
         ctx.set_font_size(60.0);
         let text = "kantera";
-        let ext = ctx.text_extents(text);
-        ctx.move_to((width as f64 - ext.width) / 2.0, (height as f64 + ext.height) / 2.0);
+        let ext = ctx.text_extents(text).unwrap();
+        ctx.move_to((width as f64 - ext.width()) / 2.0, (height as f64 + ext.height()) / 2.0);
         ctx.set_source_rgb(0.9, 0.9, 0.9);
-        ctx.show_text(text);
+        ctx.show_text(text).unwrap();
     })
 }
 
