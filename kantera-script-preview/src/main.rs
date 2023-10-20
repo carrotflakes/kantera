@@ -65,10 +65,10 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .app_data(data.clone())
             .wrap(
-                Cors::new()
+                Cors::default()
+                    .allow_any_origin()
                     .allowed_methods(vec!["GET", "POST"])
-                    .max_age(3600)
-                    .finish(),
+                    .max_age(3600),
             )
             .wrap(middleware::Logger::default())
             .service(ws_index)

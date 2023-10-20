@@ -152,14 +152,12 @@ impl RenderingEngineInner {
             {
                 self.subscribers.retain(|s| s.connected());
                 for subscriber in self.subscribers.iter() {
-                    subscriber
-                        .do_send(Frame {
-                            video: self.frame_bin.clone(),
-                            audio: self.audio_frame_bin.clone(),
-                            samplerate: self.samplerate,
-                            current_frame: frame,
-                        })
-                        .unwrap();
+                    subscriber.do_send(Frame {
+                        video: self.frame_bin.clone(),
+                        audio: self.audio_frame_bin.clone(),
+                        samplerate: self.samplerate,
+                        current_frame: frame,
+                    });
                 }
             }
 
