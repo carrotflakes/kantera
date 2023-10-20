@@ -10,7 +10,7 @@ Process for make video from Rust code:
 1. Build renderer with `render` trait.
 1. Render it use `render_to_mp4` function.
 
-![kantera-logo](https://github.com/carrotflakes/kantera/raw/master/out.jpg)
+![kantera-logo](https://github.com/carrotflakes/kantera/raw/main/out.jpg)
 
 TODO:
 
