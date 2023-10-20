@@ -29,7 +29,7 @@ impl<U: AudioInterpolation<f64>> AudioRender for AudioBufferRender<f64, U> {
     }
 
     fn duration(&self) -> f64 {
-        (self.audio_buffer.sample_num * self.audio_buffer.sample_rate) as f64
+        self.audio_buffer.sample_num as f64 / self.audio_buffer.sample_rate as f64
     }
 }
 
@@ -54,6 +54,6 @@ impl<U: AudioInterpolation<u16>> AudioRender for AudioBufferRender<u16, U> {
     }
 
     fn duration(&self) -> f64 {
-        (self.audio_buffer.sample_num * self.audio_buffer.sample_rate) as f64
+        self.audio_buffer.sample_num as f64 / self.audio_buffer.sample_rate as f64
     }
 }
